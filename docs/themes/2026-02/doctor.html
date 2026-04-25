@@ -1,0 +1,1623 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>医師の負荷分布 ／ 2026-02 | 外来再編分析</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&family=DM+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F3EF; --surface:#FFFFFF; --surface2:#FAF9F6; --surface3:#F0EDE8;
+    --border:#E5E3DF; --border-strong:#D6D3CC;
+    --text:#2C2A28; --text-soft:#5A5651; --dim:#8A847C; --muted:#B0ABA3;
+    --header:#3D3A35; --header-line:#4F4B45;
+    --blue:#3F7FC1; --blue-light:#E7F0FA;
+    --naika:#2B9DB8; --naika-bg:#E4F3F6;
+    --geka:#D08620;  --geka-bg:#FAEEDB;
+    --other:#8B6FB6; --other-bg:#EFEAF5;
+    --up:#2F7A4B; --up-bg:#E5F1E9;
+    --down:#A33838; --down-bg:#F5E4E4;
+    --flat:#8A847C; --flat-bg:#EDEBE7;
+    --warn:#8A6D1A; --warn-bg:#FAF3E0; --warn-border:#D4B860;
+    --grade-s-bg:#C89020;  --grade-s-fg:#FFFFFF;
+    --grade-a-bg:#2F7A4B;  --grade-a-fg:#FFFFFF;
+    --grade-b-bg:#2E5F85;  --grade-b-fg:#FFFFFF;
+    --grade-c-bg:#7A746B;  --grade-c-fg:#FFFFFF;
+    --grade-d-bg:#A33838;  --grade-d-fg:#FFFFFF;
+    --grade-na-bg:#E5E3DF; --grade-na-fg:#8A847C;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.55;}
+  a{color:inherit;text-decoration:none;}
+
+  /* ===== Global header (sticky) ===== */
+  header.site{position:sticky;top:0;z-index:30;background:var(--header);color:#fff;
+              border-bottom:3px solid var(--geka);box-shadow:0 2px 8px rgba(0,0,0,.06);}
+  .gh-row1{display:flex;align-items:center;gap:14px;padding:12px 28px;
+           border-bottom:1px solid var(--header-line);flex-wrap:wrap;}
+  .gh-logo{width:34px;height:34px;background:var(--geka);border-radius:8px;
+           display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;
+           font-family:'DM Mono',monospace;flex-shrink:0;}
+  .gh-title h1{font-size:16px;font-weight:700;color:#fff;margin:0;line-height:1.2;}
+  .gh-title .sub{font-size:11px;color:rgba(255,255,255,.65);font-family:'DM Mono',monospace;}
+  .gh-meta{margin-left:auto;display:flex;gap:14px;align-items:center;font-size:11px;
+           color:rgba(255,255,255,.65);font-family:'DM Mono',monospace;flex-wrap:wrap;}
+
+  .gh-row2{display:flex;align-items:center;gap:18px;padding:8px 28px;
+           background:rgba(0,0,0,.12);flex-wrap:wrap;}
+  .gh-views{display:flex;gap:4px;flex-wrap:wrap;}
+  .gh-views a{font-size:12px;color:rgba(255,255,255,.85);padding:6px 14px;border-radius:6px;
+              transition:background .15s, color .15s;font-weight:500;white-space:nowrap;}
+  .gh-views a:hover{background:rgba(255,255,255,.12);color:#fff;}
+  .gh-views a.active{background:#fff;color:var(--header);font-weight:700;}
+  .gh-views a.disabled{color:rgba(255,255,255,.35);cursor:not-allowed;}
+
+  .gh-month{margin-left:auto;display:flex;gap:8px;align-items:center;font-size:12px;color:rgba(255,255,255,.85);flex-wrap:nowrap;}
+  .gh-month label{color:rgba(255,255,255,.6);font-size:11px;letter-spacing:.04em;text-transform:uppercase;font-weight:700;}
+  .gh-month select{background:rgba(255,255,255,.95);color:var(--text);
+                   border:none;padding:5px 10px;border-radius:6px;
+                   font-family:'DM Mono',monospace;font-size:13px;font-weight:600;cursor:pointer;
+                   min-width:110px;}
+  .gh-month button{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.2);
+                   padding:4px 10px;border-radius:5px;font-size:12px;cursor:pointer;
+                   font-family:'DM Mono',monospace;}
+  .gh-month button:hover:not(:disabled){background:rgba(255,255,255,.2);}
+  .gh-month button:disabled{opacity:.35;cursor:not-allowed;}
+
+  /* ===== ヘッダのレスポンシブ ===== */
+  @media (max-width: 760px){
+    .gh-row1, .gh-row2{padding-left:14px;padding-right:14px;}
+    .gh-meta{margin-left:0;flex-basis:100%;}
+    .gh-month{margin-left:0;width:100%;justify-content:flex-end;}
+    .gh-views{flex-basis:100%;justify-content:flex-start;}
+  }
+  @media (max-width: 760px){
+    .container{padding:16px 14px 30px;}
+    .breadcrumb{padding:8px 14px;}
+  }
+
+  .breadcrumb{background:var(--surface2);border-bottom:1px solid var(--border);
+              padding:8px 28px;font-size:12px;color:var(--text-soft);
+              display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .breadcrumb a{color:var(--blue);}
+  .breadcrumb a:hover{text-decoration:underline;}
+  .breadcrumb .sep{color:var(--dim);}
+  .breadcrumb .current{color:var(--text);font-weight:600;}
+
+  .container{max-width:1400px;margin:0 auto;padding:24px 28px 40px;}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+        padding:22px 26px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.03);}
+  .card-head{display:flex;align-items:baseline;gap:10px;margin-bottom:16px;
+             padding-bottom:10px;border-bottom:1px solid var(--border);}
+  .card-num{font-size:10px;font-family:'DM Mono',monospace;color:var(--blue);
+            background:var(--blue-light);padding:3px 8px;border-radius:4px;
+            font-weight:700;letter-spacing:.04em;}
+  .card-title{font-size:15px;font-weight:700;color:var(--text);}
+  .card-sub{font-size:12px;color:var(--dim);margin-left:4px;}
+  h2{font-size:16px;font-weight:700;color:var(--text);}
+  h3{font-size:13px;font-weight:600;color:var(--text-soft);margin-bottom:8px;}
+  p{font-size:13px;color:var(--text-soft);line-height:1.6;}
+  .meta{font-size:12px;color:var(--dim);margin-top:4px;}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  table thead th{background:var(--surface2);padding:9px 12px;text-align:left;
+                 font-size:11px;font-weight:700;color:var(--text-soft);
+                 border-bottom:1px solid var(--border-strong);text-transform:uppercase;letter-spacing:.04em;}
+  table tbody td{padding:8px 12px;border-bottom:1px solid var(--border);}
+  table tbody tr:hover td{background:var(--surface2);}
+  table .num{text-align:right;font-family:'DM Mono',monospace;}
+  table .num.warn{color:var(--warn);font-weight:700;}
+
+  .type-badge{display:inline-block;padding:1px 8px;border-radius:4px;font-size:10px;
+              font-weight:700;letter-spacing:.04em;margin-left:6px;vertical-align:middle;}
+  .type-badge.naika{background:var(--naika-bg);color:var(--naika);}
+  .type-badge.geka{background:var(--geka-bg);color:var(--geka);}
+  .type-badge.other{background:var(--other-bg);color:var(--other);}
+
+  .summary-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+               gap:12px;margin-bottom:16px;}
+  .summary-stat{background:var(--surface2);padding:12px 14px;border-radius:8px;border:1px solid var(--border);}
+  .summary-stat-k{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.04em;font-weight:700;}
+  .summary-stat-v{font-size:22px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text);margin-top:4px;}
+  .summary-stat-u{font-size:11px;color:var(--text-soft);margin-left:3px;font-weight:500;}
+  .summary-stat-norm{font-size:10px;color:var(--dim);font-family:'DM Mono',monospace;margin-top:2px;}
+
+  .nav-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+  .nav-pill{padding:6px 12px;background:var(--surface2);border:1px solid var(--border);
+            border-radius:6px;font-size:12px;color:var(--text-soft);transition:all .15s;}
+  .nav-pill:hover{border-color:var(--blue);color:var(--blue);}
+  .nav-pill.current{background:var(--header);color:#fff;border-color:var(--header);}
+
+  .chart-wrap{position:relative;height:240px;}
+
+  .lateral-nav{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;
+               padding:14px 22px;background:var(--surface2);border:1px solid var(--border);
+               border-radius:10px;margin-top:24px;}
+  .lateral-nav a{font-size:12px;color:var(--blue);padding:6px 12px;
+                 border-radius:6px;background:var(--surface);
+                 border:1px solid var(--border);transition:all .15s;}
+  .lateral-nav a:hover{border-color:var(--blue);background:var(--blue-light);}
+  .lateral-nav .group{display:flex;gap:6px;flex-wrap:wrap;}
+
+  .empty{color:var(--dim);font-size:13px;padding:16px;background:var(--surface3);
+         border-radius:6px;text-align:center;}
+
+  .score-badge{display:inline-block;min-width:36px;padding:2px 8px;
+               border-radius:4px;font-weight:700;text-align:center;
+               font-family:'DM Mono',monospace;font-size:12px;}
+  .score-high{background:var(--down);color:#fff;}
+  .score-mid{background:#E0A344;color:#fff;}
+  .score-low{background:var(--surface3);color:var(--text-soft);}
+
+  /* Grade badges (monthly scorecard) */
+  .grade{display:inline-block;min-width:24px;padding:2px 8px;border-radius:4px;
+         font-weight:700;text-align:center;font-family:'DM Mono',monospace;font-size:12px;}
+  .grade-S{background:var(--grade-s-bg);color:var(--grade-s-fg);}
+  .grade-A{background:var(--grade-a-bg);color:var(--grade-a-fg);}
+  .grade-B{background:var(--grade-b-bg);color:var(--grade-b-fg);}
+  .grade-C{background:var(--grade-c-bg);color:var(--grade-c-fg);}
+  .grade-D{background:var(--grade-d-bg);color:var(--grade-d-fg);}
+  .grade-NA{background:var(--grade-na-bg);color:var(--grade-na-fg);}
+
+  footer.site{padding:18px 28px;text-align:center;color:var(--dim);font-size:11px;
+              border-top:1px solid var(--border);margin-top:20px;}
+  footer.site .feedback-link{color:var(--blue);}
+
+  /* テーマドロップダウン */
+  .gh-dropdown{position:relative;}
+  .gh-dropdown-menu{
+    display:none;position:absolute;top:calc(100% + 4px);left:0;
+    background:var(--header);border:1px solid var(--header-line);
+    border-radius:8px;min-width:200px;z-index:100;padding:6px 0;
+    box-shadow:0 4px 16px rgba(0,0,0,.2);
+  }
+  .gh-dropdown:hover .gh-dropdown-menu,
+  .gh-dropdown:focus-within .gh-dropdown-menu{ display:block; }
+  .gh-dropdown-menu a{
+    display:block;padding:8px 16px;font-size:12px;
+    color:rgba(255,255,255,.85);white-space:nowrap;
+  }
+  .gh-dropdown-menu a:hover{background:rgba(255,255,255,.12);color:#fff;}
+  .gh-dropdown-menu a.active{background:rgba(255,255,255,.15);color:#fff;font-weight:700;}
+</style>
+
+<style>
+.heatmap-wrap{overflow-x:auto;margin-top:8px;}
+.heatmap-tbl{border-collapse:collapse;font-size:11px;white-space:nowrap;}
+.heatmap-tbl th{padding:4px 6px;background:var(--surface2);font-weight:700;
+                color:var(--text-soft);font-size:10px;border:1px solid var(--border);}
+.heatmap-tbl td{padding:4px 5px;text-align:center;border:1px solid var(--border);
+                font-family:'DM Mono',monospace;font-size:10px;min-width:36px;}
+.heatmap-tbl .row-label{font-weight:700;color:var(--text);background:var(--surface2);
+                         text-align:left;padding-left:8px;min-width:32px;}
+</style>
+
+</head>
+<body data-view="theme-doctor" data-month="2026-02">
+
+<header class="site">
+  <div class="gh-row1">
+    <div class="gh-logo">OR</div>
+    <div class="gh-title">
+      <h1>外来再編分析</h1>
+      <div class="sub">Outpatient Restructuring</div>
+    </div>
+    <div class="gh-meta">
+      <div>更新 2026-04-26 05:16</div>
+      
+    </div>
+  </div>
+  <div class="gh-row2">
+    <div class="gh-views">
+      <a href="../../index.html">ホーム</a>
+      <a href="../../monthly/2026-02.html">月次経営サマリ</a>
+      <a href="../../dept/2026-02/index.html">診療科 再編診断</a>
+      <div class="gh-dropdown">
+        <a href="../../themes/2026-02/referral.html"
+           class="active"
+           style="display:flex;align-items:center;gap:4px;">テーマ分析 <span style="font-size:9px;">▾</span></a>
+        <div class="gh-dropdown-menu">
+          <a href="../../themes/2026-02/referral.html"
+             >紹介・逆紹介</a>
+          <a href="../../themes/2026-02/slot.html"
+             >予約枠の再編</a>
+          <a href="../../themes/2026-02/nursing.html"
+             >時間帯と看護師配置</a>
+          <a href="../../themes/2026-02/doctor.html"
+             class="active">医師の負荷分布</a>
+        </div>
+      </div>
+    </div>
+    
+    <div class="gh-month">
+      <label>月:</label>
+      <button id="gh-prev-month" type="button" title="前月">←</button>
+      <select id="gh-month-select">
+        
+        <option value="2026-04">2026-04</option>
+        
+        <option value="2026-03">2026-03</option>
+        
+        <option value="2026-02" selected>2026-02</option>
+        
+        <option value="2026-01">2026-01</option>
+        
+        <option value="2025-12">2025-12</option>
+        
+        <option value="2025-11">2025-11</option>
+        
+      </select>
+      <button id="gh-next-month" type="button" title="翌月">→</button>
+    </div>
+    
+  </div>
+</header>
+
+
+<div class="breadcrumb">
+  
+    
+    <a href="../../index.html">ホーム</a>
+    
+    <span class="sep">/</span>
+  
+    
+    <span class="current">テーマ：医師の負荷分布 ／ 2026-02</span>
+    
+    
+  
+</div>
+
+
+<main class="container">
+
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">00</span>
+    <h2>医師の負荷分布 — 当月サマリ</h2>
+    <span class="card-sub">2026-02 ／ 評価対象科（匿名ID） ／ 実営業日 18日（祝日・病院休 2日除外）</span>
+  </div>
+  <p style="font-size:13px;color:var(--text-soft);line-height:1.7;">
+    医師ごとの出勤日当たり担当件数を時間帯別に集計し、特定時間帯への偏りや
+    多忙医師を可視化します。外来枠配置の最適化や増枠・縮小の判断材料として使用します。
+  </p>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">01</span>
+    <h2>医師 負荷 TOP25 — 日平均担当件数</h2>
+    <span class="card-sub">評価対象科・区分=全体・平日（月〜金）の件数合計 ÷ 出勤日数</span>
+  </div>
+  
+  <table>
+    <thead>
+      <tr>
+        <th>診療科</th>
+        <th>医師匿名ID</th>
+        <th class="num">月間総件数</th>
+        <th class="num">出勤日数</th>
+        <th class="num">日平均件数</th>
+        <th style="min-width:160px;">負荷（棒）</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      
+      <tr>
+        <td>乳腺外科</td>
+        <td>DR_BR006</td>
+        <td class="num">910</td>
+        <td class="num">4</td>
+        <td class="num">227.5</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:100.0%;
+                        background:var(--blue);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>泌尿器科</td>
+        <td>DR_U003</td>
+        <td class="num">403</td>
+        <td class="num">3</td>
+        <td class="num">134.3</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:59.0%;
+                        background:var(--blue);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>泌尿器科</td>
+        <td>DR_U001</td>
+        <td class="num">450</td>
+        <td class="num">4</td>
+        <td class="num">112.5</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:49.5%;
+                        background:var(--blue);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>放射線治療科</td>
+        <td>DR_RT002</td>
+        <td class="num">436</td>
+        <td class="num">4</td>
+        <td class="num">109.0</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:47.9%;
+                        background:var(--blue);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>眼科</td>
+        <td>DR_E017</td>
+        <td class="num">432</td>
+        <td class="num">4</td>
+        <td class="num">108.0</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:47.5%;
+                        background:var(--blue);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>産婦人科</td>
+        <td>DR_G004</td>
+        <td class="num">307</td>
+        <td class="num">3</td>
+        <td class="num">102.3</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:45.0%;
+                        background:var(--blue);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>泌尿器科</td>
+        <td>DR_U010</td>
+        <td class="num">389</td>
+        <td class="num">4</td>
+        <td class="num">97.2</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:42.7%;
+                        background:var(--blue);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>泌尿器科</td>
+        <td>DR_U008</td>
+        <td class="num">366</td>
+        <td class="num">4</td>
+        <td class="num">91.5</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:40.2%;
+                        background:var(--blue);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>乳腺外科</td>
+        <td>DR_BR014</td>
+        <td class="num">362</td>
+        <td class="num">4</td>
+        <td class="num">90.5</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:39.8%;
+                        background:var(--blue);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>腎内科</td>
+        <td>DR_NE002</td>
+        <td class="num">345</td>
+        <td class="num">4</td>
+        <td class="num">86.2</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:37.9%;
+                        background:var(--blue);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>眼科</td>
+        <td>DR_E006</td>
+        <td class="num">242</td>
+        <td class="num">3</td>
+        <td class="num">80.7</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:35.5%;
+                        background:var(--blue);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>産婦人科</td>
+        <td>DR_G001</td>
+        <td class="num">238</td>
+        <td class="num">3</td>
+        <td class="num">79.3</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:34.9%;
+                        background:var(--blue);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>眼科</td>
+        <td>DR_E001</td>
+        <td class="num">316</td>
+        <td class="num">4</td>
+        <td class="num">79.0</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:34.7%;
+                        background:var(--blue);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>産婦人科</td>
+        <td>DR_G003</td>
+        <td class="num">309</td>
+        <td class="num">4</td>
+        <td class="num">77.2</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:33.9%;
+                        background:var(--blue);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>呼吸器内科</td>
+        <td>DR_RS2004</td>
+        <td class="num">306</td>
+        <td class="num">4</td>
+        <td class="num">76.5</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:33.6%;
+                        background:var(--blue);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>脳神経内科</td>
+        <td>DR_NR001</td>
+        <td class="num">303</td>
+        <td class="num">4</td>
+        <td class="num">75.8</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:33.3%;
+                        background:var(--blue);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>総合内科</td>
+        <td>DR_GM004</td>
+        <td class="num">302</td>
+        <td class="num">4</td>
+        <td class="num">75.5</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:33.2%;
+                        background:var(--blue);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>腎内科</td>
+        <td>DR_NE001</td>
+        <td class="num">296</td>
+        <td class="num">4</td>
+        <td class="num">74.0</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:32.5%;
+                        background:var(--blue);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>眼科</td>
+        <td>DR_E011</td>
+        <td class="num">294</td>
+        <td class="num">4</td>
+        <td class="num">73.5</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:32.3%;
+                        background:var(--blue);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>産婦人科</td>
+        <td>DR_G005</td>
+        <td class="num">218</td>
+        <td class="num">3</td>
+        <td class="num">72.7</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:32.0%;
+                        background:var(--blue);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>眼科</td>
+        <td>DR_E009</td>
+        <td class="num">288</td>
+        <td class="num">4</td>
+        <td class="num">72.0</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:31.6%;
+                        background:var(--blue);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>循環器内科</td>
+        <td>DR_CV001</td>
+        <td class="num">215</td>
+        <td class="num">3</td>
+        <td class="num">71.7</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:31.5%;
+                        background:var(--blue);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>消化器内科</td>
+        <td>DR_GI006</td>
+        <td class="num">286</td>
+        <td class="num">4</td>
+        <td class="num">71.5</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:31.4%;
+                        background:var(--blue);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>リウマチ膠原病内科</td>
+        <td>DR_RH009</td>
+        <td class="num">283</td>
+        <td class="num">4</td>
+        <td class="num">70.8</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:31.1%;
+                        background:var(--blue);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>一般消化器外科</td>
+        <td>DR_GS003</td>
+        <td class="num">279</td>
+        <td class="num">4</td>
+        <td class="num">69.8</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:30.7%;
+                        background:var(--blue);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+    </tbody>
+  </table>
+  
+  <p class="meta">日平均 = 月間件数合計 ÷ 出勤日数（区分=全体、月〜金のみ）。</p>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">02</span>
+    <h2>30分bin × 曜日 医師件数ヒートマップ（評価科合計）</h2>
+    <span class="card-sub">全評価対象科・全医師の月間延べ件数合計（616 が最大値）</span>
+  </div>
+  
+  <div class="heatmap-wrap">
+    <table class="heatmap-tbl">
+      <thead>
+        <tr>
+          <th>曜日</th>
+          
+          <th>08:00</th>
+          
+          <th>08:30</th>
+          
+          <th>09:00</th>
+          
+          <th>09:30</th>
+          
+          <th>10:00</th>
+          
+          <th>10:30</th>
+          
+          <th>11:00</th>
+          
+          <th>11:30</th>
+          
+          <th>12:00</th>
+          
+          <th>12:30</th>
+          
+          <th>13:00</th>
+          
+          <th>13:30</th>
+          
+          <th>14:00</th>
+          
+          <th>14:30</th>
+          
+          <th>15:00</th>
+          
+          <th>15:30</th>
+          
+          <th>16:00</th>
+          
+          <th>16:30</th>
+          
+          <th>17:00</th>
+          
+          <th>17:30</th>
+          
+          <th>18:00</th>
+          
+          <th>18:30</th>
+          
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td class="row-label">月</td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.01);
+                     color:var(--text);">
+            5
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.09);
+                     color:var(--text);">
+            67
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.48);
+                     color:var(--text);">
+            351
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.59);
+                     color:#fff;">
+            426
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.66);
+                     color:#fff;">
+            480
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.64);
+                     color:#fff;">
+            465
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.60);
+                     color:#fff;">
+            433
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.58);
+                     color:#fff;">
+            420
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.47);
+                     color:var(--text);">
+            339
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.37);
+                     color:var(--text);">
+            269
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.33);
+                     color:var(--text);">
+            242
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.36);
+                     color:var(--text);">
+            258
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.37);
+                     color:var(--text);">
+            265
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.32);
+                     color:var(--text);">
+            235
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.29);
+                     color:var(--text);">
+            207
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.24);
+                     color:var(--text);">
+            173
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.15);
+                     color:var(--text);">
+            106
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.10);
+                     color:var(--text);">
+            73
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.05);
+                     color:var(--text);">
+            39
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.02);
+                     color:var(--text);">
+            14
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.03);
+                     color:var(--text);">
+            20
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.02);
+                     color:var(--text);">
+            13
+          </td>
+          
+        </tr>
+        
+        <tr>
+          <td class="row-label">火</td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.02);
+                     color:var(--text);">
+            17
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.16);
+                     color:var(--text);">
+            119
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.75);
+                     color:#fff;">
+            541
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.85);
+                     color:#fff;">
+            616
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.83);
+                     color:#fff;">
+            602
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.84);
+                     color:#fff;">
+            606
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.80);
+                     color:#fff;">
+            577
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.72);
+                     color:#fff;">
+            523
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.58);
+                     color:#fff;">
+            418
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.43);
+                     color:var(--text);">
+            313
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.44);
+                     color:var(--text);">
+            321
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.44);
+                     color:var(--text);">
+            318
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.48);
+                     color:var(--text);">
+            349
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.44);
+                     color:var(--text);">
+            316
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.33);
+                     color:var(--text);">
+            243
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.26);
+                     color:var(--text);">
+            185
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.19);
+                     color:var(--text);">
+            137
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.12);
+                     color:var(--text);">
+            90
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.07);
+                     color:var(--text);">
+            54
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.04);
+                     color:var(--text);">
+            27
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.02);
+                     color:var(--text);">
+            14
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.02);
+                     color:var(--text);">
+            12
+          </td>
+          
+        </tr>
+        
+        <tr>
+          <td class="row-label">水</td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.01);
+                     color:var(--text);">
+            6
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.12);
+                     color:var(--text);">
+            86
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.53);
+                     color:#fff;">
+            381
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.63);
+                     color:#fff;">
+            454
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.67);
+                     color:#fff;">
+            488
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.73);
+                     color:#fff;">
+            529
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.69);
+                     color:#fff;">
+            503
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.62);
+                     color:#fff;">
+            449
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.49);
+                     color:var(--text);">
+            352
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.39);
+                     color:var(--text);">
+            284
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.37);
+                     color:var(--text);">
+            267
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.39);
+                     color:var(--text);">
+            284
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.40);
+                     color:var(--text);">
+            292
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.35);
+                     color:var(--text);">
+            251
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.33);
+                     color:var(--text);">
+            242
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.28);
+                     color:var(--text);">
+            204
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.21);
+                     color:var(--text);">
+            153
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.14);
+                     color:var(--text);">
+            99
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.08);
+                     color:var(--text);">
+            55
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.02);
+                     color:var(--text);">
+            17
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.03);
+                     color:var(--text);">
+            20
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.01);
+                     color:var(--text);">
+            10
+          </td>
+          
+        </tr>
+        
+        <tr>
+          <td class="row-label">木</td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.01);
+                     color:var(--text);">
+            4
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.12);
+                     color:var(--text);">
+            88
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.56);
+                     color:#fff;">
+            408
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.71);
+                     color:#fff;">
+            518
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.76);
+                     color:#fff;">
+            548
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.78);
+                     color:#fff;">
+            562
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.70);
+                     color:#fff;">
+            509
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.64);
+                     color:#fff;">
+            466
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.49);
+                     color:var(--text);">
+            357
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.38);
+                     color:var(--text);">
+            274
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.36);
+                     color:var(--text);">
+            264
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.38);
+                     color:var(--text);">
+            273
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.42);
+                     color:var(--text);">
+            302
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.43);
+                     color:var(--text);">
+            312
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.35);
+                     color:var(--text);">
+            252
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.29);
+                     color:var(--text);">
+            213
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.21);
+                     color:var(--text);">
+            155
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.15);
+                     color:var(--text);">
+            109
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.09);
+                     color:var(--text);">
+            65
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.05);
+                     color:var(--text);">
+            38
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.03);
+                     color:var(--text);">
+            21
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.02);
+                     color:var(--text);">
+            13
+          </td>
+          
+        </tr>
+        
+        <tr>
+          <td class="row-label">金</td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.00);
+                     color:var(--text);">
+            3
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.14);
+                     color:var(--text);">
+            105
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.63);
+                     color:#fff;">
+            454
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.73);
+                     color:#fff;">
+            530
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.81);
+                     color:#fff;">
+            589
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.79);
+                     color:#fff;">
+            570
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.76);
+                     color:#fff;">
+            549
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.73);
+                     color:#fff;">
+            531
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.58);
+                     color:#fff;">
+            421
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.44);
+                     color:var(--text);">
+            320
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.36);
+                     color:var(--text);">
+            263
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.35);
+                     color:var(--text);">
+            257
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.39);
+                     color:var(--text);">
+            282
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.39);
+                     color:var(--text);">
+            282
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.37);
+                     color:var(--text);">
+            270
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.32);
+                     color:var(--text);">
+            232
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.23);
+                     color:var(--text);">
+            166
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.11);
+                     color:var(--text);">
+            81
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.06);
+                     color:var(--text);">
+            47
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.04);
+                     color:var(--text);">
+            29
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.02);
+                     color:var(--text);">
+            14
+          </td>
+          
+          
+          
+          <td style="background:rgba(139,111,182,0.01);
+                     color:var(--text);">
+            4
+          </td>
+          
+        </tr>
+        
+      </tbody>
+    </table>
+  </div>
+  
+  <p class="meta">
+    値は月間延べ件数（14_doctor_hourly.csv の件数合計を評価科全体で集約）。
+    色が濃い時間帯は同時並行の外来が多く、対診・緊急対応が重なりやすいタイムゾーン。
+  </p>
+</div>
+
+<div class="lateral-nav">
+  <div class="group">
+    <a href="../2026-01/doctor.html">← 前月</a>
+    <a href="../2026-03/doctor.html">翌月 →</a>
+  </div>
+  <div class="group">
+    <a href="../../index.html">↑ ホーム</a>
+  </div>
+</div>
+
+
+</main>
+
+<footer class="site">
+  外来再編分析ダッシュボード
+  
+</footer>
+
+<script>
+/* グローバルヘッダ：月セレクタとビュー切替の連動。
+   現在のビュー（data-view）と現在の科コード（data-code）を保ったまま
+   月だけを切り替える。ホームの場合はその月の monthly に遷移する。 */
+(function(){
+  const body = document.body;
+  const view = body.getAttribute('data-view');
+  const code = body.getAttribute('data-code');
+  const sel = document.getElementById('gh-month-select');
+  const prevBtn = document.getElementById('gh-prev-month');
+  const nextBtn = document.getElementById('gh-next-month');
+  if (!sel) return;
+
+  const months = Array.from(sel.options).map(o => o.value); // 新→旧
+
+  function targetUrl(month, view, code){
+    /* root から見たパス。各ページで root_prefix が異なるため
+       絶対パスではなく、ビューに応じた相対パスを構築する。 */
+    if (view === 'home') {
+      return rootPrefix() + 'monthly/' + month + '.html';
+    }
+    if (view === 'monthly') {
+      return rootPrefix() + 'monthly/' + month + '.html';
+    }
+    if (view === 'dept' || view === 'dept-detail') {
+      const filename = code ? (code + '.html') : 'index.html';
+      return rootPrefix() + 'dept/' + month + '/' + filename;
+    }
+    if (view && view.startsWith('theme-')) {
+      const slug = view.replace('theme-', '');
+      return rootPrefix() + 'themes/' + month + '/' + slug + '.html';
+    }
+    return rootPrefix() + 'index.html';
+  }
+
+  function rootPrefix(){
+    /* グローバルヘッダの「ホーム」リンクから root_prefix を推測する。
+       href の末尾が "index.html" でその直前までが prefix。 */
+    const a = document.querySelector('header.site .gh-views a');
+    if (!a) return '';
+    const href = a.getAttribute('href') || '';
+    return href.replace(/index\.html$/, '');
+  }
+
+  sel.addEventListener('change', () => {
+    const m = sel.value;
+    location.href = targetUrl(m, view, code);
+  });
+
+  function shiftMonth(delta){
+    /* sel.options は新→旧で並んでいる。delta=-1 で前月（旧側=index増）、+1 で翌月。 */
+    const idx = sel.selectedIndex;
+    const newIdx = idx - delta; // 翌月に進む = 新側＝idx 減
+    if (newIdx < 0 || newIdx >= sel.options.length) return;
+    sel.selectedIndex = newIdx;
+    sel.dispatchEvent(new Event('change'));
+  }
+  if (prevBtn) prevBtn.addEventListener('click', () => shiftMonth(-1));
+  if (nextBtn) nextBtn.addEventListener('click', () => shiftMonth(+1));
+
+  // 端で押せないボタンは disabled に
+  function refreshBtns(){
+    const idx = sel.selectedIndex;
+    if (prevBtn) prevBtn.disabled = (idx >= sel.options.length - 1);
+    if (nextBtn) nextBtn.disabled = (idx <= 0);
+  }
+  refreshBtns();
+  sel.addEventListener('change', refreshBtns);
+})();
+</script>
+
+
+</body>
+</html>

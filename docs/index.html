@@ -164,6 +164,23 @@
   footer.site{padding:18px 28px;text-align:center;color:var(--dim);font-size:11px;
               border-top:1px solid var(--border);margin-top:20px;}
   footer.site .feedback-link{color:var(--blue);}
+
+  /* テーマドロップダウン */
+  .gh-dropdown{position:relative;}
+  .gh-dropdown-menu{
+    display:none;position:absolute;top:calc(100% + 4px);left:0;
+    background:var(--header);border:1px solid var(--header-line);
+    border-radius:8px;min-width:200px;z-index:100;padding:6px 0;
+    box-shadow:0 4px 16px rgba(0,0,0,.2);
+  }
+  .gh-dropdown:hover .gh-dropdown-menu,
+  .gh-dropdown:focus-within .gh-dropdown-menu{ display:block; }
+  .gh-dropdown-menu a{
+    display:block;padding:8px 16px;font-size:12px;
+    color:rgba(255,255,255,.85);white-space:nowrap;
+  }
+  .gh-dropdown-menu a:hover{background:rgba(255,255,255,.12);color:#fff;}
+  .gh-dropdown-menu a.active{background:rgba(255,255,255,.15);color:#fff;font-weight:700;}
 </style>
 
 <style>
@@ -183,7 +200,7 @@
       <div class="sub">Outpatient Restructuring</div>
     </div>
     <div class="gh-meta">
-      <div>更新 2026-04-25 20:53</div>
+      <div>更新 2026-04-26 05:16</div>
       <div>※ 件数は 22営業日換算</div>
     </div>
   </div>
@@ -192,6 +209,21 @@
       <a href="index.html" class="active">ホーム</a>
       <a href="monthly/2026-04.html">月次経営サマリ</a>
       <a href="dept/2026-04/index.html">診療科 再編診断</a>
+      <div class="gh-dropdown">
+        <a href="themes/2026-04/referral.html"
+           
+           style="display:flex;align-items:center;gap:4px;">テーマ分析 <span style="font-size:9px;">▾</span></a>
+        <div class="gh-dropdown-menu">
+          <a href="themes/2026-04/referral.html"
+             >紹介・逆紹介</a>
+          <a href="themes/2026-04/slot.html"
+             >予約枠の再編</a>
+          <a href="themes/2026-04/nursing.html"
+             >時間帯と看護師配置</a>
+          <a href="themes/2026-04/doctor.html"
+             >医師の負荷分布</a>
+        </div>
+      </div>
     </div>
     
     <div class="gh-month">
@@ -301,41 +333,49 @@
   <div class="card-head">
     <span class="card-num">●</span>
     <h2>分析テーマ</h2>
-    <span class="card-sub">横断的な再編分析（Phase 3 以降で順次追加）</span>
+    <span class="card-sub">横断的な再編分析</span>
   </div>
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;">
     
-    <div style="padding:14px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;opacity:.55;">
+    
+    <a href="themes/2026-04/referral.html" style="display:block;padding:14px 16px;background:var(--surface2);
+       border:1px solid var(--border);border-radius:8px;transition:border-color .15s, box-shadow .15s;
+       text-decoration:none;">
       <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">紹介・逆紹介</div>
-      <div style="font-size:12px;color:var(--text-soft);">薬再診スコア／逆紹介候補リスト／紹介率推移</div>
-      
-      <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--dim);margin-top:6px;letter-spacing:.06em;">PHASE 3 PREDICTED</div>
-      
-    </div>
+      <div style="font-size:12px;color:var(--text-soft);line-height:1.5;">薬再診スコア全科横断 / 逆紹介候補件数ランキング / 紹介率・未来院率トレンド</div>
+      <div style="font-size:11px;color:var(--blue);margin-top:8px;font-weight:600;">開く →</div>
+    </a>
     
-    <div style="padding:14px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;opacity:.55;">
+    
+    
+    <a href="themes/2026-04/slot.html" style="display:block;padding:14px 16px;background:var(--surface2);
+       border:1px solid var(--border);border-radius:8px;transition:border-color .15s, box-shadow .15s;
+       text-decoration:none;">
       <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">予約枠の再編</div>
-      <div style="font-size:12px;color:var(--text-soft);">枠×時間帯ヒートマップ／命名乖離・稀用枠の検出</div>
-      
-      <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--dim);margin-top:6px;letter-spacing:.06em;">PHASE 3 PREDICTED</div>
-      
-    </div>
+      <div style="font-size:12px;color:var(--text-soft);line-height:1.5;">命名乖離枠 / 稀用枠（月5件未満）/ 科別枠ミックスサマリ</div>
+      <div style="font-size:11px;color:var(--blue);margin-top:8px;font-weight:600;">開く →</div>
+    </a>
     
-    <div style="padding:14px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;opacity:.55;">
+    
+    
+    <a href="themes/2026-04/nursing.html" style="display:block;padding:14px 16px;background:var(--surface2);
+       border:1px solid var(--border);border-radius:8px;transition:border-color .15s, box-shadow .15s;
+       text-decoration:none;">
       <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">時間帯と看護師配置</div>
-      <div style="font-size:12px;color:var(--text-soft);">曜日×時間帯ヒートマップ／15時前後の負荷分布</div>
-      
-      <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--dim);margin-top:6px;letter-spacing:.06em;">PHASE 3 PREDICTED</div>
-      
-    </div>
+      <div style="font-size:12px;color:var(--text-soft);line-height:1.5;">曜日×時間帯ヒートマップ / 15時以降比率ランキング / 30分bin来院分布</div>
+      <div style="font-size:11px;color:var(--blue);margin-top:8px;font-weight:600;">開く →</div>
+    </a>
     
-    <div style="padding:14px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;opacity:.55;">
+    
+    
+    <a href="themes/2026-04/doctor.html" style="display:block;padding:14px 16px;background:var(--surface2);
+       border:1px solid var(--border);border-radius:8px;transition:border-color .15s, box-shadow .15s;
+       text-decoration:none;">
       <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">医師の負荷分布</div>
-      <div style="font-size:12px;color:var(--text-soft);">医師×時間帯ヒートマップ（匿名）</div>
-      
-      <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--dim);margin-top:6px;letter-spacing:.06em;">PHASE 3 PREDICTED</div>
-      
-    </div>
+      <div style="font-size:12px;color:var(--text-soft);line-height:1.5;">日平均担当件数 TOP / 曜日×時間帯 医師件数ヒートマップ（匿名）</div>
+      <div style="font-size:11px;color:var(--blue);margin-top:8px;font-weight:600;">開く →</div>
+    </a>
+    
     
   </div>
 </div>
@@ -375,6 +415,10 @@
     if (view === 'dept' || view === 'dept-detail') {
       const filename = code ? (code + '.html') : 'index.html';
       return rootPrefix() + 'dept/' + month + '/' + filename;
+    }
+    if (view && view.startsWith('theme-')) {
+      const slug = view.replace('theme-', '');
+      return rootPrefix() + 'themes/' + month + '/' + slug + '.html';
     }
     return rootPrefix() + 'index.html';
   }

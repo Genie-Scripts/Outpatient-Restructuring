@@ -1,0 +1,125 @@
+{% extends "_layout.html" %}
+{% block extra_head %}
+<style>
+.heatmap-wrap{overflow-x:auto;margin-top:8px;}
+.heatmap-tbl{border-collapse:collapse;font-size:11px;white-space:nowrap;}
+.heatmap-tbl th{padding:4px 6px;background:var(--surface2);font-weight:700;
+                color:var(--text-soft);font-size:10px;border:1px solid var(--border);}
+.heatmap-tbl td{padding:4px 5px;text-align:center;border:1px solid var(--border);
+                font-family:'DM Mono',monospace;font-size:10px;min-width:36px;}
+.heatmap-tbl .row-label{font-weight:700;color:var(--text);background:var(--surface2);
+                         text-align:left;padding-left:8px;min-width:32px;}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">00</span>
+    <h2>医師の負荷分布 — 当月サマリ</h2>
+    <span class="card-sub">{{ month }} ／ 評価対象科（匿名ID） ／ 実営業日 {{ biz_days }}日{% if excluded_days > 0 %}（祝日・病院休 {{ excluded_days }}日除外）{% endif %}</span>
+  </div>
+  <p style="font-size:13px;color:var(--text-soft);line-height:1.7;">
+    医師ごとの出勤日当たり担当件数を時間帯別に集計し、特定時間帯への偏りや
+    多忙医師を可視化します。外来枠配置の最適化や増枠・縮小の判断材料として使用します。
+  </p>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">01</span>
+    <h2>医師 負荷 TOP{{ doctor_top_rows | length }} — 日平均担当件数</h2>
+    <span class="card-sub">評価対象科・区分=全体・平日（月〜金）の件数合計 ÷ 出勤日数</span>
+  </div>
+  {% if doctor_top_rows %}
+  <table>
+    <thead>
+      <tr>
+        <th>診療科</th>
+        <th>医師匿名ID</th>
+        <th class="num">月間総件数</th>
+        <th class="num">出勤日数</th>
+        <th class="num">日平均件数</th>
+        <th style="min-width:160px;">負荷（棒）</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% set _max = doctor_top_rows[0].daily_avg %}
+      {% for r in doctor_top_rows %}
+      <tr>
+        <td>{{ r.dept }}</td>
+        <td>{{ r.medic }}</td>
+        <td class="num">{{ "{:,}".format(r.total) }}</td>
+        <td class="num">{{ r.days }}</td>
+        <td class="num">{{ r.daily_avg }}</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:{{ (r.daily_avg / _max * 100)|round(1) if _max > 0 else 0 }}%;
+                        background:var(--blue);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">医師別データがありません。</div>
+  {% endif %}
+  <p class="meta">日平均 = 月間件数合計 ÷ 出勤日数（区分=全体、月〜金のみ）。</p>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">02</span>
+    <h2>30分bin × 曜日 医師件数ヒートマップ（評価科合計）</h2>
+    <span class="card-sub">全評価対象科・全医師の月間延べ件数合計（{{ heatmap.max_val }} が最大値）</span>
+  </div>
+  {% if heatmap.rows %}
+  <div class="heatmap-wrap">
+    <table class="heatmap-tbl">
+      <thead>
+        <tr>
+          <th>曜日</th>
+          {% for b in heatmap.bins %}
+          <th>{{ b }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in heatmap.rows %}
+        <tr>
+          <td class="row-label">{{ row.label }}</td>
+          {% for i in range(heatmap.bins | length) %}
+          {% set v = row.counts[i] %}
+          {% set intensity = row.intens[i] %}
+          <td style="background:rgba(139,111,182,{{ '%.2f' | format(intensity * 0.85) }});
+                     color:{% if intensity > 0.6 %}#fff{% else %}var(--text){% endif %};">
+            {% if v > 0 %}{{ v }}{% endif %}
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty">医師時間帯データがありません。</div>
+  {% endif %}
+  <p class="meta">
+    値は月間延べ件数（14_doctor_hourly.csv の件数合計を評価科全体で集約）。
+    色が濃い時間帯は同時並行の外来が多く、対診・緊急対応が重なりやすいタイムゾーン。
+  </p>
+</div>
+
+<div class="lateral-nav">
+  <div class="group">
+    {% if prev_month_href %}<a href="{{ prev_month_href }}">← 前月</a>{% endif %}
+    {% if next_month_href %}<a href="{{ next_month_href }}">翌月 →</a>{% endif %}
+  </div>
+  <div class="group">
+    <a href="../../index.html">↑ ホーム</a>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,158 @@
+{% extends "_layout.html" %}
+{% block content %}
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">00</span>
+    <h2>予約枠の再編 — 当月サマリ</h2>
+    <span class="card-sub">{{ month }} ／ 評価対象科 ／ 実営業日 {{ biz_days }}日{% if excluded_days > 0 %}（祝日・病院休 {{ excluded_days }}日除外）{% endif %}</span>
+  </div>
+  <div class="summary-row">
+    <div class="summary-stat">
+      <div class="summary-stat-k">命名乖離枠</div>
+      <div class="summary-stat-v">{{ mismatch_count }}<span class="summary-stat-u">枠</span></div>
+    </div>
+    <div class="summary-stat">
+      <div class="summary-stat-k">稀用枠（月5件未満）</div>
+      <div class="summary-stat-v">{{ rare_count }}<span class="summary-stat-u">枠</span></div>
+    </div>
+    <div class="summary-stat">
+      <div class="summary-stat-k">対象科数</div>
+      <div class="summary-stat-v">{{ dept_rows | length }}<span class="summary-stat-u">科</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">01</span>
+    <h2>命名乖離 — 「初診」名称なのに初診率が低い枠</h2>
+    <span class="card-sub">枠名称に「初診」を含む ∧ 実際の初診率 &lt; 50% ∧ 月間件数5件以上</span>
+  </div>
+  {% if mismatch_rows %}
+  <div style="overflow-x:auto;">
+  <table>
+    <thead>
+      <tr>
+        <th>診療科</th>
+        <th>予約名称</th>
+        <th class="num">総件数</th>
+        <th class="num">初診</th>
+        <th class="num">再診</th>
+        <th class="num warn">初診率</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in mismatch_rows %}
+      <tr>
+        <td>{{ r.dept }}</td>
+        <td>{{ r.name }}</td>
+        <td class="num">{{ "{:,}".format(r.total) }}</td>
+        <td class="num">{{ "{:,}".format(r.sho) }}</td>
+        <td class="num">{{ "{:,}".format(r.sai) }}</td>
+        <td class="num warn">{{ r.sho_rate }}%</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <div class="empty">命名乖離の枠はありません。</div>
+  {% endif %}
+  <p class="meta">「初診」名称の枠に再診が集中している場合、枠名称の変更または枠種の分離・統合が有効です。</p>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">02</span>
+    <h2>稀用枠 — 月間件数 5件未満の枠</h2>
+    <span class="card-sub">縮小・統合・廃止の候補</span>
+  </div>
+  {% if rare_rows %}
+  <div style="overflow-x:auto;">
+  <table>
+    <thead>
+      <tr>
+        <th>診療科</th>
+        <th>予約名称</th>
+        <th class="num">総件数</th>
+        <th class="num">初診</th>
+        <th class="num">再診</th>
+        <th class="num">初診率</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rare_rows %}
+      <tr>
+        <td>{{ r.dept }}</td>
+        <td>{{ r.name }}</td>
+        <td class="num">{{ r.total }}</td>
+        <td class="num">{{ r.sho }}</td>
+        <td class="num">{{ r.sai }}</td>
+        <td class="num">{{ r.sho_rate }}%</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <div class="empty">稀用枠はありません。</div>
+  {% endif %}
+  <p class="meta">稀用枠は既存枠への吸収合併か廃止を検討してください。年単位で継続して件数が増えない場合は廃止が妥当です。</p>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">03</span>
+    <h2>科別 枠ミックス サマリ</h2>
+    <span class="card-sub">評価対象科の枠数・命名乖離枠数・稀用枠数（件数降順）</span>
+  </div>
+  {% if dept_rows %}
+  <div style="overflow-x:auto;">
+  <table>
+    <thead>
+      <tr>
+        <th>診療科</th>
+        <th class="num">総件数</th>
+        <th class="num">初診率</th>
+        <th class="num">枠種数</th>
+        <th class="num">命名乖離</th>
+        <th class="num">稀用枠</th>
+        <th>アクション</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in dept_rows %}
+      <tr>
+        <td>{{ r.dept }}</td>
+        <td class="num">{{ "{:,}".format(r.total) }}</td>
+        <td class="num">{{ r.sho_rate }}%</td>
+        <td class="num">{{ r.slot_count }}</td>
+        <td class="num{% if r.mismatch_count > 0 %} warn{% endif %}">{{ r.mismatch_count }}</td>
+        <td class="num{% if r.rare_count > 0 %} warn{% endif %}">{{ r.rare_count }}</td>
+        <td>
+          {% if r.mismatch_count > 0 %}<span class="score-badge score-mid">命名乖離</span> {% endif %}
+          {% if r.rare_count > 0 %}<span class="score-badge score-low">稀用</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <div class="empty">データがありません。</div>
+  {% endif %}
+  <p class="meta">各科の詳細は「診療科 再編診断」の 04 枠ミックスセクションで確認できます。</p>
+</div>
+
+<div class="lateral-nav">
+  <div class="group">
+    {% if prev_month_href %}<a href="{{ prev_month_href }}">← 前月</a>{% endif %}
+    {% if next_month_href %}<a href="{{ next_month_href }}">翌月 →</a>{% endif %}
+  </div>
+  <div class="group">
+    <a href="../../index.html">↑ ホーム</a>
+  </div>
+</div>
+
+{% endblock %}

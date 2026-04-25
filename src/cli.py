@@ -21,6 +21,7 @@ from src.core.data_loader import list_available_months
 from src.dashboards.dept_planning import build_dept_planning
 from src.dashboards.hub import build_hub
 from src.dashboards.monthly import build_monthly_dashboard
+from src.dashboards.themes import build_all_themes
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +35,7 @@ def _setup_logging(verbose: bool) -> None:
 
 
 def _build_one_month(month: str, docs_root: Path) -> None:
-    """指定月の monthly + dept_planning を生成する。"""
+    """指定月の monthly + dept_planning + テーマページを生成する。"""
     logger.info("=== %s のビルド開始 ===", month)
 
     build_monthly_dashboard(
@@ -51,6 +52,14 @@ def _build_one_month(month: str, docs_root: Path) -> None:
         aggregated_root=paths.aggregated_root(),
         templates_dir=paths.templates_dir(),
         output_dir=docs_root / "dept" / month,
+        classification_path=paths.classification_path(),
+    )
+
+    build_all_themes(
+        month=month,
+        aggregated_root=paths.aggregated_root(),
+        templates_dir=paths.templates_dir(),
+        output_dir=docs_root / "themes" / month,
         classification_path=paths.classification_path(),
     )
 

@@ -164,6 +164,23 @@
   footer.site{padding:18px 28px;text-align:center;color:var(--dim);font-size:11px;
               border-top:1px solid var(--border);margin-top:20px;}
   footer.site .feedback-link{color:var(--blue);}
+
+  /* テーマドロップダウン */
+  .gh-dropdown{position:relative;}
+  .gh-dropdown-menu{
+    display:none;position:absolute;top:calc(100% + 4px);left:0;
+    background:var(--header);border:1px solid var(--header-line);
+    border-radius:8px;min-width:200px;z-index:100;padding:6px 0;
+    box-shadow:0 4px 16px rgba(0,0,0,.2);
+  }
+  .gh-dropdown:hover .gh-dropdown-menu,
+  .gh-dropdown:focus-within .gh-dropdown-menu{ display:block; }
+  .gh-dropdown-menu a{
+    display:block;padding:8px 16px;font-size:12px;
+    color:rgba(255,255,255,.85);white-space:nowrap;
+  }
+  .gh-dropdown-menu a:hover{background:rgba(255,255,255,.12);color:#fff;}
+  .gh-dropdown-menu a.active{background:rgba(255,255,255,.15);color:#fff;font-weight:700;}
 </style>
 {% block extra_head %}{% endblock %}
 </head>
@@ -186,6 +203,21 @@
       <a href="{{ root_prefix }}index.html"{% if active == 'home' %} class="active"{% endif %}>ホーム</a>
       <a href="{{ root_prefix }}monthly/{{ current_month or latest_month }}.html"{% if active == 'monthly' %} class="active"{% endif %}>月次経営サマリ</a>
       <a href="{{ root_prefix }}dept/{{ current_month or latest_month }}/index.html"{% if active == 'dept' or active == 'dept-detail' %} class="active"{% endif %}>診療科 再編診断</a>
+      <div class="gh-dropdown">
+        <a href="{{ root_prefix }}themes/{{ current_month or latest_month }}/referral.html"
+           {% if (active or '').startswith('theme-') %}class="active"{% endif %}
+           style="display:flex;align-items:center;gap:4px;">テーマ分析 <span style="font-size:9px;">▾</span></a>
+        <div class="gh-dropdown-menu">
+          <a href="{{ root_prefix }}themes/{{ current_month or latest_month }}/referral.html"
+             {% if active == 'theme-referral' %}class="active"{% endif %}>紹介・逆紹介</a>
+          <a href="{{ root_prefix }}themes/{{ current_month or latest_month }}/slot.html"
+             {% if active == 'theme-slot' %}class="active"{% endif %}>予約枠の再編</a>
+          <a href="{{ root_prefix }}themes/{{ current_month or latest_month }}/nursing.html"
+             {% if active == 'theme-nursing' %}class="active"{% endif %}>時間帯と看護師配置</a>
+          <a href="{{ root_prefix }}themes/{{ current_month or latest_month }}/doctor.html"
+             {% if active == 'theme-doctor' %}class="active"{% endif %}>医師の負荷分布</a>
+        </div>
+      </div>
     </div>
     {% if all_months %}
     <div class="gh-month">
@@ -251,6 +283,10 @@
     if (view === 'dept' || view === 'dept-detail') {
       const filename = code ? (code + '.html') : 'index.html';
       return rootPrefix() + 'dept/' + month + '/' + filename;
+    }
+    if (view && view.startsWith('theme-')) {
+      const slug = view.replace('theme-', '');
+      return rootPrefix() + 'themes/' + month + '/' + slug + '.html';
     }
     return rootPrefix() + 'index.html';
   }

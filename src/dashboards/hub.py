@@ -169,28 +169,34 @@ def _build_kpis(trend: list[dict[str, Any]]) -> dict[str, Any] | None:
     }
 
 
-def _build_themes() -> list[dict[str, Any]]:
-    """分析テーマナビ（Phase 3 以降で href を埋める）。"""
+def _build_themes(latest_month: str | None) -> list[dict[str, Any]]:
+    """分析テーマナビ。latest_month が確定していればリンクを生成する。"""
+    m = latest_month or ""
+    base = f"themes/{m}/" if m else ""
     return [
         {
             "title": "紹介・逆紹介",
-            "desc": "薬再診スコア／逆紹介候補リスト／紹介率推移",
-            "href": None,
+            "desc": "薬再診スコア全科横断 / 逆紹介候補件数ランキング / 紹介率・未来院率トレンド",
+            "href": f"{base}referral.html" if m else None,
+            "slug": "referral",
         },
         {
             "title": "予約枠の再編",
-            "desc": "枠×時間帯ヒートマップ／命名乖離・稀用枠の検出",
-            "href": None,
+            "desc": "命名乖離枠 / 稀用枠（月5件未満）/ 科別枠ミックスサマリ",
+            "href": f"{base}slot.html" if m else None,
+            "slug": "slot",
         },
         {
             "title": "時間帯と看護師配置",
-            "desc": "曜日×時間帯ヒートマップ／15時前後の負荷分布",
-            "href": None,
+            "desc": "曜日×時間帯ヒートマップ / 15時以降比率ランキング / 30分bin来院分布",
+            "href": f"{base}nursing.html" if m else None,
+            "slug": "nursing",
         },
         {
             "title": "医師の負荷分布",
-            "desc": "医師×時間帯ヒートマップ（匿名）",
-            "href": None,
+            "desc": "日平均担当件数 TOP / 曜日×時間帯 医師件数ヒートマップ（匿名）",
+            "href": f"{base}doctor.html" if m else None,
+            "slug": "doctor",
         },
     ]
 
@@ -233,7 +239,7 @@ def build_hub(
         all_months=list(reversed(all_months)),  # 新→旧
         kpis=kpis,
         trend_json=json.dumps(trend, ensure_ascii=False),
-        themes=_build_themes(),
+        themes=_build_themes(latest),
         norm_base=NORMALIZATION_BASE_DAYS,
         generated_at=datetime.now().strftime("%Y-%m-%d %H:%M"),
         feedback_url=feedback_url,

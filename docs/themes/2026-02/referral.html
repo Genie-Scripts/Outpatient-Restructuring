@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>紹介・逆紹介 ／ 2026-02 | 外来再編分析</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&family=DM+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F3EF; --surface:#FFFFFF; --surface2:#FAF9F6; --surface3:#F0EDE8;
+    --border:#E5E3DF; --border-strong:#D6D3CC;
+    --text:#2C2A28; --text-soft:#5A5651; --dim:#8A847C; --muted:#B0ABA3;
+    --header:#3D3A35; --header-line:#4F4B45;
+    --blue:#3F7FC1; --blue-light:#E7F0FA;
+    --naika:#2B9DB8; --naika-bg:#E4F3F6;
+    --geka:#D08620;  --geka-bg:#FAEEDB;
+    --other:#8B6FB6; --other-bg:#EFEAF5;
+    --up:#2F7A4B; --up-bg:#E5F1E9;
+    --down:#A33838; --down-bg:#F5E4E4;
+    --flat:#8A847C; --flat-bg:#EDEBE7;
+    --warn:#8A6D1A; --warn-bg:#FAF3E0; --warn-border:#D4B860;
+    --grade-s-bg:#C89020;  --grade-s-fg:#FFFFFF;
+    --grade-a-bg:#2F7A4B;  --grade-a-fg:#FFFFFF;
+    --grade-b-bg:#2E5F85;  --grade-b-fg:#FFFFFF;
+    --grade-c-bg:#7A746B;  --grade-c-fg:#FFFFFF;
+    --grade-d-bg:#A33838;  --grade-d-fg:#FFFFFF;
+    --grade-na-bg:#E5E3DF; --grade-na-fg:#8A847C;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.55;}
+  a{color:inherit;text-decoration:none;}
+
+  /* ===== Global header (sticky) ===== */
+  header.site{position:sticky;top:0;z-index:30;background:var(--header);color:#fff;
+              border-bottom:3px solid var(--geka);box-shadow:0 2px 8px rgba(0,0,0,.06);}
+  .gh-row1{display:flex;align-items:center;gap:14px;padding:12px 28px;
+           border-bottom:1px solid var(--header-line);flex-wrap:wrap;}
+  .gh-logo{width:34px;height:34px;background:var(--geka);border-radius:8px;
+           display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;
+           font-family:'DM Mono',monospace;flex-shrink:0;}
+  .gh-title h1{font-size:16px;font-weight:700;color:#fff;margin:0;line-height:1.2;}
+  .gh-title .sub{font-size:11px;color:rgba(255,255,255,.65);font-family:'DM Mono',monospace;}
+  .gh-meta{margin-left:auto;display:flex;gap:14px;align-items:center;font-size:11px;
+           color:rgba(255,255,255,.65);font-family:'DM Mono',monospace;flex-wrap:wrap;}
+
+  .gh-row2{display:flex;align-items:center;gap:18px;padding:8px 28px;
+           background:rgba(0,0,0,.12);flex-wrap:wrap;}
+  .gh-views{display:flex;gap:4px;flex-wrap:wrap;}
+  .gh-views a{font-size:12px;color:rgba(255,255,255,.85);padding:6px 14px;border-radius:6px;
+              transition:background .15s, color .15s;font-weight:500;white-space:nowrap;}
+  .gh-views a:hover{background:rgba(255,255,255,.12);color:#fff;}
+  .gh-views a.active{background:#fff;color:var(--header);font-weight:700;}
+  .gh-views a.disabled{color:rgba(255,255,255,.35);cursor:not-allowed;}
+
+  .gh-month{margin-left:auto;display:flex;gap:8px;align-items:center;font-size:12px;color:rgba(255,255,255,.85);flex-wrap:nowrap;}
+  .gh-month label{color:rgba(255,255,255,.6);font-size:11px;letter-spacing:.04em;text-transform:uppercase;font-weight:700;}
+  .gh-month select{background:rgba(255,255,255,.95);color:var(--text);
+                   border:none;padding:5px 10px;border-radius:6px;
+                   font-family:'DM Mono',monospace;font-size:13px;font-weight:600;cursor:pointer;
+                   min-width:110px;}
+  .gh-month button{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.2);
+                   padding:4px 10px;border-radius:5px;font-size:12px;cursor:pointer;
+                   font-family:'DM Mono',monospace;}
+  .gh-month button:hover:not(:disabled){background:rgba(255,255,255,.2);}
+  .gh-month button:disabled{opacity:.35;cursor:not-allowed;}
+
+  /* ===== ヘッダのレスポンシブ ===== */
+  @media (max-width: 760px){
+    .gh-row1, .gh-row2{padding-left:14px;padding-right:14px;}
+    .gh-meta{margin-left:0;flex-basis:100%;}
+    .gh-month{margin-left:0;width:100%;justify-content:flex-end;}
+    .gh-views{flex-basis:100%;justify-content:flex-start;}
+  }
+  @media (max-width: 760px){
+    .container{padding:16px 14px 30px;}
+    .breadcrumb{padding:8px 14px;}
+  }
+
+  .breadcrumb{background:var(--surface2);border-bottom:1px solid var(--border);
+              padding:8px 28px;font-size:12px;color:var(--text-soft);
+              display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .breadcrumb a{color:var(--blue);}
+  .breadcrumb a:hover{text-decoration:underline;}
+  .breadcrumb .sep{color:var(--dim);}
+  .breadcrumb .current{color:var(--text);font-weight:600;}
+
+  .container{max-width:1400px;margin:0 auto;padding:24px 28px 40px;}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+        padding:22px 26px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.03);}
+  .card-head{display:flex;align-items:baseline;gap:10px;margin-bottom:16px;
+             padding-bottom:10px;border-bottom:1px solid var(--border);}
+  .card-num{font-size:10px;font-family:'DM Mono',monospace;color:var(--blue);
+            background:var(--blue-light);padding:3px 8px;border-radius:4px;
+            font-weight:700;letter-spacing:.04em;}
+  .card-title{font-size:15px;font-weight:700;color:var(--text);}
+  .card-sub{font-size:12px;color:var(--dim);margin-left:4px;}
+  h2{font-size:16px;font-weight:700;color:var(--text);}
+  h3{font-size:13px;font-weight:600;color:var(--text-soft);margin-bottom:8px;}
+  p{font-size:13px;color:var(--text-soft);line-height:1.6;}
+  .meta{font-size:12px;color:var(--dim);margin-top:4px;}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  table thead th{background:var(--surface2);padding:9px 12px;text-align:left;
+                 font-size:11px;font-weight:700;color:var(--text-soft);
+                 border-bottom:1px solid var(--border-strong);text-transform:uppercase;letter-spacing:.04em;}
+  table tbody td{padding:8px 12px;border-bottom:1px solid var(--border);}
+  table tbody tr:hover td{background:var(--surface2);}
+  table .num{text-align:right;font-family:'DM Mono',monospace;}
+  table .num.warn{color:var(--warn);font-weight:700;}
+
+  .type-badge{display:inline-block;padding:1px 8px;border-radius:4px;font-size:10px;
+              font-weight:700;letter-spacing:.04em;margin-left:6px;vertical-align:middle;}
+  .type-badge.naika{background:var(--naika-bg);color:var(--naika);}
+  .type-badge.geka{background:var(--geka-bg);color:var(--geka);}
+  .type-badge.other{background:var(--other-bg);color:var(--other);}
+
+  .summary-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+               gap:12px;margin-bottom:16px;}
+  .summary-stat{background:var(--surface2);padding:12px 14px;border-radius:8px;border:1px solid var(--border);}
+  .summary-stat-k{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.04em;font-weight:700;}
+  .summary-stat-v{font-size:22px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text);margin-top:4px;}
+  .summary-stat-u{font-size:11px;color:var(--text-soft);margin-left:3px;font-weight:500;}
+  .summary-stat-norm{font-size:10px;color:var(--dim);font-family:'DM Mono',monospace;margin-top:2px;}
+
+  .nav-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+  .nav-pill{padding:6px 12px;background:var(--surface2);border:1px solid var(--border);
+            border-radius:6px;font-size:12px;color:var(--text-soft);transition:all .15s;}
+  .nav-pill:hover{border-color:var(--blue);color:var(--blue);}
+  .nav-pill.current{background:var(--header);color:#fff;border-color:var(--header);}
+
+  .chart-wrap{position:relative;height:240px;}
+
+  .lateral-nav{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;
+               padding:14px 22px;background:var(--surface2);border:1px solid var(--border);
+               border-radius:10px;margin-top:24px;}
+  .lateral-nav a{font-size:12px;color:var(--blue);padding:6px 12px;
+                 border-radius:6px;background:var(--surface);
+                 border:1px solid var(--border);transition:all .15s;}
+  .lateral-nav a:hover{border-color:var(--blue);background:var(--blue-light);}
+  .lateral-nav .group{display:flex;gap:6px;flex-wrap:wrap;}
+
+  .empty{color:var(--dim);font-size:13px;padding:16px;background:var(--surface3);
+         border-radius:6px;text-align:center;}
+
+  .score-badge{display:inline-block;min-width:36px;padding:2px 8px;
+               border-radius:4px;font-weight:700;text-align:center;
+               font-family:'DM Mono',monospace;font-size:12px;}
+  .score-high{background:var(--down);color:#fff;}
+  .score-mid{background:#E0A344;color:#fff;}
+  .score-low{background:var(--surface3);color:var(--text-soft);}
+
+  /* Grade badges (monthly scorecard) */
+  .grade{display:inline-block;min-width:24px;padding:2px 8px;border-radius:4px;
+         font-weight:700;text-align:center;font-family:'DM Mono',monospace;font-size:12px;}
+  .grade-S{background:var(--grade-s-bg);color:var(--grade-s-fg);}
+  .grade-A{background:var(--grade-a-bg);color:var(--grade-a-fg);}
+  .grade-B{background:var(--grade-b-bg);color:var(--grade-b-fg);}
+  .grade-C{background:var(--grade-c-bg);color:var(--grade-c-fg);}
+  .grade-D{background:var(--grade-d-bg);color:var(--grade-d-fg);}
+  .grade-NA{background:var(--grade-na-bg);color:var(--grade-na-fg);}
+
+  footer.site{padding:18px 28px;text-align:center;color:var(--dim);font-size:11px;
+              border-top:1px solid var(--border);margin-top:20px;}
+  footer.site .feedback-link{color:var(--blue);}
+
+  /* テーマドロップダウン */
+  .gh-dropdown{position:relative;}
+  .gh-dropdown-menu{
+    display:none;position:absolute;top:calc(100% + 4px);left:0;
+    background:var(--header);border:1px solid var(--header-line);
+    border-radius:8px;min-width:200px;z-index:100;padding:6px 0;
+    box-shadow:0 4px 16px rgba(0,0,0,.2);
+  }
+  .gh-dropdown:hover .gh-dropdown-menu,
+  .gh-dropdown:focus-within .gh-dropdown-menu{ display:block; }
+  .gh-dropdown-menu a{
+    display:block;padding:8px 16px;font-size:12px;
+    color:rgba(255,255,255,.85);white-space:nowrap;
+  }
+  .gh-dropdown-menu a:hover{background:rgba(255,255,255,.12);color:#fff;}
+  .gh-dropdown-menu a.active{background:rgba(255,255,255,.15);color:#fff;font-weight:700;}
+</style>
+
+</head>
+<body data-view="theme-referral" data-month="2026-02">
+
+<header class="site">
+  <div class="gh-row1">
+    <div class="gh-logo">OR</div>
+    <div class="gh-title">
+      <h1>外来再編分析</h1>
+      <div class="sub">Outpatient Restructuring</div>
+    </div>
+    <div class="gh-meta">
+      <div>更新 2026-04-26 05:16</div>
+      
+    </div>
+  </div>
+  <div class="gh-row2">
+    <div class="gh-views">
+      <a href="../../index.html">ホーム</a>
+      <a href="../../monthly/2026-02.html">月次経営サマリ</a>
+      <a href="../../dept/2026-02/index.html">診療科 再編診断</a>
+      <div class="gh-dropdown">
+        <a href="../../themes/2026-02/referral.html"
+           class="active"
+           style="display:flex;align-items:center;gap:4px;">テーマ分析 <span style="font-size:9px;">▾</span></a>
+        <div class="gh-dropdown-menu">
+          <a href="../../themes/2026-02/referral.html"
+             class="active">紹介・逆紹介</a>
+          <a href="../../themes/2026-02/slot.html"
+             >予約枠の再編</a>
+          <a href="../../themes/2026-02/nursing.html"
+             >時間帯と看護師配置</a>
+          <a href="../../themes/2026-02/doctor.html"
+             >医師の負荷分布</a>
+        </div>
+      </div>
+    </div>
+    
+    <div class="gh-month">
+      <label>月:</label>
+      <button id="gh-prev-month" type="button" title="前月">←</button>
+      <select id="gh-month-select">
+        
+        <option value="2026-04">2026-04</option>
+        
+        <option value="2026-03">2026-03</option>
+        
+        <option value="2026-02" selected>2026-02</option>
+        
+        <option value="2026-01">2026-01</option>
+        
+        <option value="2025-12">2025-12</option>
+        
+        <option value="2025-11">2025-11</option>
+        
+      </select>
+      <button id="gh-next-month" type="button" title="翌月">→</button>
+    </div>
+    
+  </div>
+</header>
+
+
+<div class="breadcrumb">
+  
+    
+    <a href="../../index.html">ホーム</a>
+    
+    <span class="sep">/</span>
+  
+    
+    <span class="current">テーマ：紹介・逆紹介 ／ 2026-02</span>
+    
+    
+  
+</div>
+
+
+<main class="container">
+
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">00</span>
+    <h2>紹介・逆紹介 当月サマリ</h2>
+    <span class="card-sub">2026-02 ／ 評価対象科合計 ／ 実営業日 18日（祝日・病院休 2日除外）</span>
+  </div>
+  <div class="summary-row">
+    <div class="summary-stat">
+      <div class="summary-stat-k">総件数</div>
+      <div class="summary-stat-v">27,798<span class="summary-stat-u">件</span></div>
+    </div>
+    <div class="summary-stat">
+      <div class="summary-stat-k">初診件数</div>
+      <div class="summary-stat-v">2,410<span class="summary-stat-u">件</span></div>
+    </div>
+    <div class="summary-stat">
+      <div class="summary-stat-k">紹介率（初診）</div>
+      <div class="summary-stat-v">64.0<span class="summary-stat-u">%</span></div>
+    </div>
+    <div class="summary-stat">
+      <div class="summary-stat-k">未来院率</div>
+      <div class="summary-stat-v">4.9<span class="summary-stat-u">%</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">01</span>
+    <h2>逆紹介候補 — 科別件数</h2>
+    <span class="card-sub">全評価科横断・件数降順 TOP27（合計 1,792 件）</span>
+  </div>
+  
+  <table>
+    <thead>
+      <tr>
+        <th>診療科</th>
+        <th class="num">逆紹介候補件数</th>
+        <th style="min-width:180px;">割合（棒グラフ）</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      
+      <tr>
+        <td>泌尿器科</td>
+        <td class="num">428</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:100.0%;background:var(--down);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>耳鼻咽喉科</td>
+        <td class="num">165</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:38.6%;background:var(--down);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>皮膚科</td>
+        <td class="num">136</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:31.8%;background:var(--down);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>総合内科</td>
+        <td class="num">108</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:25.2%;background:var(--down);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>眼科</td>
+        <td class="num">105</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:24.5%;background:var(--down);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>消化器内科</td>
+        <td class="num">96</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:22.4%;background:var(--down);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>整形外科</td>
+        <td class="num">95</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:22.2%;background:var(--down);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>放射線治療科</td>
+        <td class="num">78</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:18.2%;background:var(--down);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>循環器内科</td>
+        <td class="num">72</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:16.8%;background:var(--down);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>歯科口腔外科</td>
+        <td class="num">63</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:14.7%;background:var(--down);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>産婦人科</td>
+        <td class="num">60</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:14.0%;background:var(--down);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>乳腺外科</td>
+        <td class="num">57</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:13.3%;background:var(--down);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>呼吸器内科</td>
+        <td class="num">49</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:11.4%;background:var(--down);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>一般消化器外科</td>
+        <td class="num">46</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:10.7%;background:var(--down);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>脳神経内科</td>
+        <td class="num">46</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:10.7%;background:var(--down);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>リウマチ膠原病内科</td>
+        <td class="num">45</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:10.5%;background:var(--down);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>血液内科</td>
+        <td class="num">34</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:7.9%;background:var(--down);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>メンタルケア科</td>
+        <td class="num">30</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:7.0%;background:var(--down);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>腎内科</td>
+        <td class="num">25</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:5.8%;background:var(--down);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>小児科</td>
+        <td class="num">18</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:4.2%;background:var(--down);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>形成外科</td>
+        <td class="num">14</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:3.3%;background:var(--down);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>心臓血管外科</td>
+        <td class="num">7</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:1.6%;background:var(--down);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>脳神経外科</td>
+        <td class="num">7</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:1.6%;background:var(--down);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>呼吸器外科</td>
+        <td class="num">4</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:0.9%;background:var(--down);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>アレルギー科</td>
+        <td class="num">2</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:0.5%;background:var(--down);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>救急科</td>
+        <td class="num">1</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:0.2%;background:var(--down);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>臨床腫瘍科</td>
+        <td class="num">1</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:0.2%;background:var(--down);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      
+    </tbody>
+  </table>
+  
+  <p class="meta">抽出条件：再診 ∧ 紹介状無し ∧ 併科無 ∧ 診察前検査なし ∧ 診察時間 9分以下</p>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">02</span>
+    <h2>薬再診ハイスコア — 全科横断 TOP30</h2>
+    <span class="card-sub">スコア = 短時間再診比率・紹介状なし再診比率・診察時間中央値の合成（60以上が見直し候補）</span>
+  </div>
+  
+  <div style="overflow-x:auto;">
+  <table>
+    <thead>
+      <tr>
+        <th>診療科</th>
+        <th>医師匿名ID</th>
+        <th>予約名称</th>
+        <th class="num">再診件数</th>
+        <th class="num">短時間比率</th>
+        <th class="num">紹介状なし比率</th>
+        <th class="num">中央値(分)</th>
+        <th class="num">スコア</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td>眼科</td>
+        <td>DR_E032</td>
+        <td>SL_0447</td>
+        <td class="num">14</td>
+        <td class="num">100.0%</td>
+        <td class="num">100.0%</td>
+        <td class="num">0.0</td>
+        <td class="num">
+          <span class="score-badge score-high">100.0</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>眼科</td>
+        <td>DR_E021</td>
+        <td>SL_0200</td>
+        <td class="num">45</td>
+        <td class="num">100.0%</td>
+        <td class="num">100.0%</td>
+        <td class="num">0.0</td>
+        <td class="num">
+          <span class="score-badge score-high">100.0</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>眼科</td>
+        <td>DR_E021</td>
+        <td>SL_0218</td>
+        <td class="num">18</td>
+        <td class="num">100.0%</td>
+        <td class="num">100.0%</td>
+        <td class="num">0.0</td>
+        <td class="num">
+          <span class="score-badge score-high">100.0</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>耳鼻咽喉科</td>
+        <td>DR_ENT005</td>
+        <td>SL_0009</td>
+        <td class="num">11</td>
+        <td class="num">100.0%</td>
+        <td class="num">100.0%</td>
+        <td class="num">0.0</td>
+        <td class="num">
+          <span class="score-badge score-high">100.0</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>眼科</td>
+        <td>DR_E020</td>
+        <td>SL_0400</td>
+        <td class="num">47</td>
+        <td class="num">100.0%</td>
+        <td class="num">100.0%</td>
+        <td class="num">0.0</td>
+        <td class="num">
+          <span class="score-badge score-high">100.0</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>メンタルケア科</td>
+        <td>DR_MN005</td>
+        <td>SL_0609</td>
+        <td class="num">11</td>
+        <td class="num">100.0%</td>
+        <td class="num">100.0%</td>
+        <td class="num">0.0</td>
+        <td class="num">
+          <span class="score-badge score-high">100.0</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>耳鼻咽喉科</td>
+        <td>DR_ENT005</td>
+        <td>SL_0099</td>
+        <td class="num">69</td>
+        <td class="num">98.6%</td>
+        <td class="num">100.0%</td>
+        <td class="num">0.0</td>
+        <td class="num">
+          <span class="score-badge score-high">99.5</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>泌尿器科</td>
+        <td>DR_U005</td>
+        <td>SL_0009</td>
+        <td class="num">243</td>
+        <td class="num">98.4%</td>
+        <td class="num">100.0%</td>
+        <td class="num">0.0</td>
+        <td class="num">
+          <span class="score-badge score-high">99.5</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>泌尿器科</td>
+        <td>DR_U013</td>
+        <td>SL_0137</td>
+        <td class="num">58</td>
+        <td class="num">98.3%</td>
+        <td class="num">100.0%</td>
+        <td class="num">0.0</td>
+        <td class="num">
+          <span class="score-badge score-high">99.4</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>眼科</td>
+        <td>DR_E020</td>
+        <td>SL_0009</td>
+        <td class="num">50</td>
+        <td class="num">98.0%</td>
+        <td class="num">100.0%</td>
+        <td class="num">0.0</td>
+        <td class="num">
+          <span class="score-badge score-high">99.3</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>整形外科</td>
+        <td>DR_OR009</td>
+        <td>SL_0165</td>
+        <td class="num">51</td>
+        <td class="num">98.0%</td>
+        <td class="num">100.0%</td>
+        <td class="num">0.0</td>
+        <td class="num">
+          <span class="score-badge score-high">99.3</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>産婦人科</td>
+        <td>DR_G012</td>
+        <td>SL_0358</td>
+        <td class="num">40</td>
+        <td class="num">97.5%</td>
+        <td class="num">100.0%</td>
+        <td class="num">0.0</td>
+        <td class="num">
+          <span class="score-badge score-high">99.2</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>耳鼻咽喉科</td>
+        <td>DR_ENT003</td>
+        <td>SL_0064</td>
+        <td class="num">167</td>
+        <td class="num">97.6%</td>
+        <td class="num">100.0%</td>
+        <td class="num">0.0</td>
+        <td class="num">
+          <span class="score-badge score-high">99.2</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>整形外科</td>
+        <td>DR_OR009</td>
+        <td>SL_0009</td>
+        <td class="num">38</td>
+        <td class="num">97.4%</td>
+        <td class="num">100.0%</td>
+        <td class="num">0.0</td>
+        <td class="num">
+          <span class="score-badge score-high">99.1</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>眼科</td>
+        <td>DR_E018</td>
+        <td>SL_0170</td>
+        <td class="num">293</td>
+        <td class="num">96.6%</td>
+        <td class="num">100.0%</td>
+        <td class="num">0.0</td>
+        <td class="num">
+          <span class="score-badge score-high">98.9</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>眼科</td>
+        <td>DR_E003</td>
+        <td>SL_0035</td>
+        <td class="num">133</td>
+        <td class="num">96.2%</td>
+        <td class="num">100.0%</td>
+        <td class="num">0.0</td>
+        <td class="num">
+          <span class="score-badge score-high">98.7</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>耳鼻咽喉科</td>
+        <td>DR_ENT003</td>
+        <td>SL_0063</td>
+        <td class="num">25</td>
+        <td class="num">96.0%</td>
+        <td class="num">100.0%</td>
+        <td class="num">0.0</td>
+        <td class="num">
+          <span class="score-badge score-high">98.7</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>泌尿器科</td>
+        <td>DR_U002</td>
+        <td>SL_0009</td>
+        <td class="num">235</td>
+        <td class="num">96.2%</td>
+        <td class="num">100.0%</td>
+        <td class="num">0.0</td>
+        <td class="num">
+          <span class="score-badge score-high">98.7</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>産婦人科</td>
+        <td>DR_G010</td>
+        <td>SL_0331</td>
+        <td class="num">23</td>
+        <td class="num">95.7%</td>
+        <td class="num">100.0%</td>
+        <td class="num">0.0</td>
+        <td class="num">
+          <span class="score-badge score-high">98.6</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>耳鼻咽喉科</td>
+        <td>DR_ENT022</td>
+        <td>SL_0716</td>
+        <td class="num">86</td>
+        <td class="num">93.0%</td>
+        <td class="num">100.0%</td>
+        <td class="num">0.0</td>
+        <td class="num">
+          <span class="score-badge score-high">97.7</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>放射線治療科</td>
+        <td>DR_U002</td>
+        <td>SL_0009</td>
+        <td class="num">14</td>
+        <td class="num">92.9%</td>
+        <td class="num">100.0%</td>
+        <td class="num">0.0</td>
+        <td class="num">
+          <span class="score-badge score-high">97.6</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>歯科口腔外科</td>
+        <td>DR_OS015</td>
+        <td>SL_0009</td>
+        <td class="num">11</td>
+        <td class="num">90.9%</td>
+        <td class="num">100.0%</td>
+        <td class="num">0.0</td>
+        <td class="num">
+          <span class="score-badge score-high">97.0</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>眼科</td>
+        <td>DR_E005</td>
+        <td>SL_0054</td>
+        <td class="num">153</td>
+        <td class="num">88.9%</td>
+        <td class="num">100.0%</td>
+        <td class="num">0.0</td>
+        <td class="num">
+          <span class="score-badge score-high">96.3</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>泌尿器科</td>
+        <td>DR_U008</td>
+        <td>SL_0009</td>
+        <td class="num">36</td>
+        <td class="num">88.9%</td>
+        <td class="num">100.0%</td>
+        <td class="num">0.0</td>
+        <td class="num">
+          <span class="score-badge score-high">96.3</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>眼科</td>
+        <td>DR_E002</td>
+        <td>SL_0136</td>
+        <td class="num">170</td>
+        <td class="num">91.2%</td>
+        <td class="num">100.0%</td>
+        <td class="num">2.0</td>
+        <td class="num">
+          <span class="score-badge score-high">96.0</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>泌尿器科</td>
+        <td>DR_U011</td>
+        <td>SL_0009</td>
+        <td class="num">52</td>
+        <td class="num">82.7%</td>
+        <td class="num">100.0%</td>
+        <td class="num">0.0</td>
+        <td class="num">
+          <span class="score-badge score-high">94.2</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>泌尿器科</td>
+        <td>DR_U003</td>
+        <td>SL_0009</td>
+        <td class="num">28</td>
+        <td class="num">82.1%</td>
+        <td class="num">100.0%</td>
+        <td class="num">1.0</td>
+        <td class="num">
+          <span class="score-badge score-high">93.5</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>腎内科</td>
+        <td>DR_NE004</td>
+        <td>SL_0348</td>
+        <td class="num">35</td>
+        <td class="num">80.0%</td>
+        <td class="num">100.0%</td>
+        <td class="num">0.0</td>
+        <td class="num">
+          <span class="score-badge score-high">93.3</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>消化器内科</td>
+        <td>DR_GI001</td>
+        <td>SL_0009</td>
+        <td class="num">153</td>
+        <td class="num">77.8%</td>
+        <td class="num">100.0%</td>
+        <td class="num">0.0</td>
+        <td class="num">
+          <span class="score-badge score-high">92.6</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>眼科</td>
+        <td>DR_E023</td>
+        <td>SL_0009</td>
+        <td class="num">18</td>
+        <td class="num">77.8%</td>
+        <td class="num">100.0%</td>
+        <td class="num">1.0</td>
+        <td class="num">
+          <span class="score-badge score-high">92.0</span>
+        </td>
+      </tr>
+      
+    </tbody>
+  </table>
+  </div>
+  
+  <p class="meta">スコア70以上（赤）は逆紹介・運用見直しの優先候補。科ごとの詳細は診療科 再編診断ページを参照。</p>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">03</span>
+    <h2>紹介率・未来院率 トレンド（直近6か月）</h2>
+    <span class="card-sub">評価対象科合計</span>
+  </div>
+  <div class="chart-wrap" style="height:260px;"><canvas id="chartTrend"></canvas></div>
+  <p class="meta">紹介率 = 紹介状あり初診 ÷ 初診件数。未来院率 = 未来院件数 ÷ 総件数。</p>
+</div>
+
+<div class="lateral-nav">
+  <div class="group">
+    <a href="../2026-01/referral.html">← 前月</a>
+    <a href="../2026-03/referral.html">翌月 →</a>
+  </div>
+  <div class="group">
+    <a href="../../index.html">↑ ホーム</a>
+  </div>
+</div>
+
+
+</main>
+
+<footer class="site">
+  外来再編分析ダッシュボード
+  
+</footer>
+
+<script>
+/* グローバルヘッダ：月セレクタとビュー切替の連動。
+   現在のビュー（data-view）と現在の科コード（data-code）を保ったまま
+   月だけを切り替える。ホームの場合はその月の monthly に遷移する。 */
+(function(){
+  const body = document.body;
+  const view = body.getAttribute('data-view');
+  const code = body.getAttribute('data-code');
+  const sel = document.getElementById('gh-month-select');
+  const prevBtn = document.getElementById('gh-prev-month');
+  const nextBtn = document.getElementById('gh-next-month');
+  if (!sel) return;
+
+  const months = Array.from(sel.options).map(o => o.value); // 新→旧
+
+  function targetUrl(month, view, code){
+    /* root から見たパス。各ページで root_prefix が異なるため
+       絶対パスではなく、ビューに応じた相対パスを構築する。 */
+    if (view === 'home') {
+      return rootPrefix() + 'monthly/' + month + '.html';
+    }
+    if (view === 'monthly') {
+      return rootPrefix() + 'monthly/' + month + '.html';
+    }
+    if (view === 'dept' || view === 'dept-detail') {
+      const filename = code ? (code + '.html') : 'index.html';
+      return rootPrefix() + 'dept/' + month + '/' + filename;
+    }
+    if (view && view.startsWith('theme-')) {
+      const slug = view.replace('theme-', '');
+      return rootPrefix() + 'themes/' + month + '/' + slug + '.html';
+    }
+    return rootPrefix() + 'index.html';
+  }
+
+  function rootPrefix(){
+    /* グローバルヘッダの「ホーム」リンクから root_prefix を推測する。
+       href の末尾が "index.html" でその直前までが prefix。 */
+    const a = document.querySelector('header.site .gh-views a');
+    if (!a) return '';
+    const href = a.getAttribute('href') || '';
+    return href.replace(/index\.html$/, '');
+  }
+
+  sel.addEventListener('change', () => {
+    const m = sel.value;
+    location.href = targetUrl(m, view, code);
+  });
+
+  function shiftMonth(delta){
+    /* sel.options は新→旧で並んでいる。delta=-1 で前月（旧側=index増）、+1 で翌月。 */
+    const idx = sel.selectedIndex;
+    const newIdx = idx - delta; // 翌月に進む = 新側＝idx 減
+    if (newIdx < 0 || newIdx >= sel.options.length) return;
+    sel.selectedIndex = newIdx;
+    sel.dispatchEvent(new Event('change'));
+  }
+  if (prevBtn) prevBtn.addEventListener('click', () => shiftMonth(-1));
+  if (nextBtn) nextBtn.addEventListener('click', () => shiftMonth(+1));
+
+  // 端で押せないボタンは disabled に
+  function refreshBtns(){
+    const idx = sel.selectedIndex;
+    if (prevBtn) prevBtn.disabled = (idx >= sel.options.length - 1);
+    if (nextBtn) nextBtn.disabled = (idx <= 0);
+  }
+  refreshBtns();
+  sel.addEventListener('change', refreshBtns);
+})();
+</script>
+
+
+<script>
+const TREND_DATA = [{"month": "2025-11", "ref_rate": 65.3, "mirain_rate": 4.8, "sho": 2616, "ref": 1709}, {"month": "2025-12", "ref_rate": 69.0, "mirain_rate": 4.8, "sho": 2809, "ref": 1938}, {"month": "2026-01", "ref_rate": 66.0, "mirain_rate": 5.0, "sho": 2722, "ref": 1796}, {"month": "2026-02", "ref_rate": 64.0, "mirain_rate": 4.9, "sho": 2410, "ref": 1543}];
+if (TREND_DATA && TREND_DATA.length > 0 && document.getElementById('chartTrend')) {
+  new Chart(document.getElementById('chartTrend'), {
+    type: 'line',
+    data: {
+      labels: TREND_DATA.map(d => d.month),
+      datasets: [
+        {
+          label: '紹介率（%）',
+          data: TREND_DATA.map(d => d.ref_rate),
+          borderColor: '#3F7FC1', backgroundColor: 'rgba(63,127,193,.1)',
+          borderWidth: 2.5, tension: 0.25, fill: true, yAxisID: 'y',
+        },
+        {
+          label: '未来院率（%）',
+          data: TREND_DATA.map(d => d.mirain_rate),
+          borderColor: '#D08620', backgroundColor: 'rgba(208,134,32,.1)',
+          borderWidth: 2, tension: 0.25, fill: false, yAxisID: 'y',
+        },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: {
+          callbacks: {
+            afterBody: function(items) {
+              const i = items[0]?.dataIndex;
+              const d = TREND_DATA[i];
+              return d ? [`初診 ${d.sho.toLocaleString()} 件 ／ 紹介状あり ${d.ref.toLocaleString()} 件`] : [];
+            }
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: { beginAtZero: true, title: { display: true, text: '率（%）' } },
+      },
+    },
+  });
+}
+</script>
+
+</body>
+</html>

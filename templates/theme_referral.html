@@ -1,0 +1,179 @@
+{% extends "_layout.html" %}
+{% block content %}
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">00</span>
+    <h2>紹介・逆紹介 当月サマリ</h2>
+    <span class="card-sub">{{ month }} ／ 評価対象科合計 ／ 実営業日 {{ biz_days }}日{% if excluded_days > 0 %}（祝日・病院休 {{ excluded_days }}日除外）{% endif %}</span>
+  </div>
+  <div class="summary-row">
+    <div class="summary-stat">
+      <div class="summary-stat-k">総件数</div>
+      <div class="summary-stat-v">{{ "{:,}".format(summary.total) }}<span class="summary-stat-u">件</span></div>
+    </div>
+    <div class="summary-stat">
+      <div class="summary-stat-k">初診件数</div>
+      <div class="summary-stat-v">{{ "{:,}".format(summary.sho) }}<span class="summary-stat-u">件</span></div>
+    </div>
+    <div class="summary-stat">
+      <div class="summary-stat-k">紹介率（初診）</div>
+      <div class="summary-stat-v">{{ summary.ref_rate }}<span class="summary-stat-u">%</span></div>
+    </div>
+    <div class="summary-stat">
+      <div class="summary-stat-k">未来院率</div>
+      <div class="summary-stat-v">{{ summary.mirain_rate }}<span class="summary-stat-u">%</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">01</span>
+    <h2>逆紹介候補 — 科別件数</h2>
+    <span class="card-sub">全評価科横断・件数降順 TOP{{ reverse_referral_dept_rows | length }}（合計 {{ "{:,}".format(reverse_referral_total) }} 件）</span>
+  </div>
+  {% if reverse_referral_dept_rows %}
+  <table>
+    <thead>
+      <tr>
+        <th>診療科</th>
+        <th class="num">逆紹介候補件数</th>
+        <th style="min-width:180px;">割合（棒グラフ）</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% set _max = reverse_referral_dept_rows[0].count %}
+      {% for r in reverse_referral_dept_rows %}
+      <tr>
+        <td>{{ r.name }}</td>
+        <td class="num">{{ "{:,}".format(r.count) }}</td>
+        <td>
+          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:{{ (r.count / _max * 100)|round(1) }}%;background:var(--down);border-radius:3px;"></div>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">逆紹介候補データがありません。</div>
+  {% endif %}
+  <p class="meta">抽出条件：再診 ∧ 紹介状無し ∧ 併科無 ∧ 診察前検査なし ∧ 診察時間 9分以下</p>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">02</span>
+    <h2>薬再診ハイスコア — 全科横断 TOP{{ drug_revisit_rows | length }}</h2>
+    <span class="card-sub">スコア = 短時間再診比率・紹介状なし再診比率・診察時間中央値の合成（60以上が見直し候補）</span>
+  </div>
+  {% if drug_revisit_rows %}
+  <div style="overflow-x:auto;">
+  <table>
+    <thead>
+      <tr>
+        <th>診療科</th>
+        <th>医師匿名ID</th>
+        <th>予約名称</th>
+        <th class="num">再診件数</th>
+        <th class="num">短時間比率</th>
+        <th class="num">紹介状なし比率</th>
+        <th class="num">中央値(分)</th>
+        <th class="num">スコア</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in drug_revisit_rows %}
+      <tr>
+        <td>{{ r.dept }}</td>
+        <td>{{ r.medic }}</td>
+        <td>{{ r.slot }}</td>
+        <td class="num">{{ r.sai }}</td>
+        <td class="num">{{ r.short_ratio }}%</td>
+        <td class="num">{{ r.no_shokai_ratio }}%</td>
+        <td class="num">{% if r.median is not none %}{{ r.median }}{% else %}-{% endif %}</td>
+        <td class="num">
+          <span class="score-badge {% if r.score >= 70 %}score-high{% elif r.score >= 60 %}score-mid{% else %}score-low{% endif %}">{{ r.score }}</span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <div class="empty">採点対象（再診件数 ≥ 10）の医師×枠がありません。</div>
+  {% endif %}
+  <p class="meta">スコア70以上（赤）は逆紹介・運用見直しの優先候補。科ごとの詳細は診療科 再編診断ページを参照。</p>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">03</span>
+    <h2>紹介率・未来院率 トレンド（直近6か月）</h2>
+    <span class="card-sub">評価対象科合計</span>
+  </div>
+  <div class="chart-wrap" style="height:260px;"><canvas id="chartTrend"></canvas></div>
+  <p class="meta">紹介率 = 紹介状あり初診 ÷ 初診件数。未来院率 = 未来院件数 ÷ 総件数。</p>
+</div>
+
+<div class="lateral-nav">
+  <div class="group">
+    {% if prev_month_href %}<a href="{{ prev_month_href }}">← 前月</a>{% endif %}
+    {% if next_month_href %}<a href="{{ next_month_href }}">翌月 →</a>{% endif %}
+  </div>
+  <div class="group">
+    <a href="../../index.html">↑ ホーム</a>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const TREND_DATA = {{ trend_json | safe }};
+if (TREND_DATA && TREND_DATA.length > 0 && document.getElementById('chartTrend')) {
+  new Chart(document.getElementById('chartTrend'), {
+    type: 'line',
+    data: {
+      labels: TREND_DATA.map(d => d.month),
+      datasets: [
+        {
+          label: '紹介率（%）',
+          data: TREND_DATA.map(d => d.ref_rate),
+          borderColor: '#3F7FC1', backgroundColor: 'rgba(63,127,193,.1)',
+          borderWidth: 2.5, tension: 0.25, fill: true, yAxisID: 'y',
+        },
+        {
+          label: '未来院率（%）',
+          data: TREND_DATA.map(d => d.mirain_rate),
+          borderColor: '#D08620', backgroundColor: 'rgba(208,134,32,.1)',
+          borderWidth: 2, tension: 0.25, fill: false, yAxisID: 'y',
+        },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: {
+          callbacks: {
+            afterBody: function(items) {
+              const i = items[0]?.dataIndex;
+              const d = TREND_DATA[i];
+              return d ? [`初診 ${d.sho.toLocaleString()} 件 ／ 紹介状あり ${d.ref.toLocaleString()} 件`] : [];
+            }
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: { beginAtZero: true, title: { display: true, text: '率（%）' } },
+      },
+    },
+  });
+}
+</script>
+{% endblock %}

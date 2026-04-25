@@ -164,6 +164,23 @@
   footer.site{padding:18px 28px;text-align:center;color:var(--dim);font-size:11px;
               border-top:1px solid var(--border);margin-top:20px;}
   footer.site .feedback-link{color:var(--blue);}
+
+  /* テーマドロップダウン */
+  .gh-dropdown{position:relative;}
+  .gh-dropdown-menu{
+    display:none;position:absolute;top:calc(100% + 4px);left:0;
+    background:var(--header);border:1px solid var(--header-line);
+    border-radius:8px;min-width:200px;z-index:100;padding:6px 0;
+    box-shadow:0 4px 16px rgba(0,0,0,.2);
+  }
+  .gh-dropdown:hover .gh-dropdown-menu,
+  .gh-dropdown:focus-within .gh-dropdown-menu{ display:block; }
+  .gh-dropdown-menu a{
+    display:block;padding:8px 16px;font-size:12px;
+    color:rgba(255,255,255,.85);white-space:nowrap;
+  }
+  .gh-dropdown-menu a:hover{background:rgba(255,255,255,.12);color:#fff;}
+  .gh-dropdown-menu a.active{background:rgba(255,255,255,.15);color:#fff;font-weight:700;}
 </style>
 
 </head>
@@ -177,7 +194,7 @@
       <div class="sub">Outpatient Restructuring</div>
     </div>
     <div class="gh-meta">
-      <div>更新 2026-04-25 20:53</div>
+      <div>更新 2026-04-26 05:16</div>
       
     </div>
   </div>
@@ -186,6 +203,21 @@
       <a href="../../index.html">ホーム</a>
       <a href="../../monthly/2026-03.html">月次経営サマリ</a>
       <a href="../../dept/2026-03/index.html" class="active">診療科 再編診断</a>
+      <div class="gh-dropdown">
+        <a href="../../themes/2026-03/referral.html"
+           
+           style="display:flex;align-items:center;gap:4px;">テーマ分析 <span style="font-size:9px;">▾</span></a>
+        <div class="gh-dropdown-menu">
+          <a href="../../themes/2026-03/referral.html"
+             >紹介・逆紹介</a>
+          <a href="../../themes/2026-03/slot.html"
+             >予約枠の再編</a>
+          <a href="../../themes/2026-03/nursing.html"
+             >時間帯と看護師配置</a>
+          <a href="../../themes/2026-03/doctor.html"
+             >医師の負荷分布</a>
+        </div>
+      </div>
     </div>
     
     <div class="gh-month">
@@ -810,6 +842,10 @@
     if (view === 'dept' || view === 'dept-detail') {
       const filename = code ? (code + '.html') : 'index.html';
       return rootPrefix() + 'dept/' + month + '/' + filename;
+    }
+    if (view && view.startsWith('theme-')) {
+      const slug = view.replace('theme-', '');
+      return rootPrefix() + 'themes/' + month + '/' + slug + '.html';
     }
     return rootPrefix() + 'index.html';
   }
