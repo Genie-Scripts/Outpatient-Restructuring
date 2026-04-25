@@ -165,16 +165,15 @@
               border-top:1px solid var(--border);margin-top:20px;}
   footer.site .feedback-link{color:var(--blue);}
 
-  /* テーマドロップダウン */
+  /* テーマドロップダウン（JS クリックトグル） */
   .gh-dropdown{position:relative;}
   .gh-dropdown-menu{
-    display:none;position:absolute;top:calc(100% + 4px);left:0;
+    display:none;position:absolute;top:calc(100% + 6px);left:0;
     background:var(--header);border:1px solid var(--header-line);
     border-radius:8px;min-width:200px;z-index:100;padding:6px 0;
     box-shadow:0 4px 16px rgba(0,0,0,.2);
   }
-  .gh-dropdown:hover .gh-dropdown-menu,
-  .gh-dropdown:focus-within .gh-dropdown-menu{ display:block; }
+  .gh-dropdown-menu.open{ display:block; }
   .gh-dropdown-menu a{
     display:block;padding:8px 16px;font-size:12px;
     color:rgba(255,255,255,.85);white-space:nowrap;
@@ -204,9 +203,13 @@
       <a href="{{ root_prefix }}monthly/{{ current_month or latest_month }}.html"{% if active == 'monthly' %} class="active"{% endif %}>月次経営サマリ</a>
       <a href="{{ root_prefix }}dept/{{ current_month or latest_month }}/index.html"{% if active == 'dept' or active == 'dept-detail' %} class="active"{% endif %}>診療科 再編診断</a>
       <div class="gh-dropdown">
-        <a href="{{ root_prefix }}themes/{{ current_month or latest_month }}/referral.html"
+        <button type="button" id="gh-theme-btn"
            {% if (active or '').startswith('theme-') %}class="active"{% endif %}
-           style="display:flex;align-items:center;gap:4px;">テーマ分析 <span style="font-size:9px;">▾</span></a>
+           style="background:none;border:none;cursor:pointer;font-family:inherit;font-size:12px;
+                  color:{% if (active or '').startswith('theme-') %}var(--header){% else %}rgba(255,255,255,.85){% endif %};
+                  padding:6px 14px;border-radius:6px;font-weight:{% if (active or '').startswith('theme-') %}700{% else %}500{% endif %};
+                  display:flex;align-items:center;gap:4px;white-space:nowrap;
+                  {% if (active or '').startswith('theme-') %}background:#fff;{% endif %}">テーマ分析 <span style="font-size:9px;">▾</span></button>
         <div class="gh-dropdown-menu">
           <a href="{{ root_prefix }}themes/{{ current_month or latest_month }}/referral.html"
              {% if active == 'theme-referral' %}class="active"{% endif %}>紹介・逆紹介</a>
@@ -324,6 +327,24 @@
   }
   refreshBtns();
   sel.addEventListener('change', refreshBtns);
+})();
+
+/* テーマドロップダウン：クリックトグル */
+(function(){
+  const btn  = document.getElementById('gh-theme-btn');
+  const menu = btn && btn.parentElement.querySelector('.gh-dropdown-menu');
+  if (!btn || !menu) return;
+
+  btn.addEventListener('click', function(e){
+    e.stopPropagation();
+    menu.classList.toggle('open');
+  });
+
+  /* メニュー項目クリックで閉じる（ページ遷移前に閉じておく） */
+  menu.addEventListener('click', function(){ menu.classList.remove('open'); });
+
+  /* ドロップダウン外クリックで閉じる */
+  document.addEventListener('click', function(){ menu.classList.remove('open'); });
 })();
 </script>
 

@@ -165,16 +165,15 @@
               border-top:1px solid var(--border);margin-top:20px;}
   footer.site .feedback-link{color:var(--blue);}
 
-  /* テーマドロップダウン */
+  /* テーマドロップダウン（JS クリックトグル） */
   .gh-dropdown{position:relative;}
   .gh-dropdown-menu{
-    display:none;position:absolute;top:calc(100% + 4px);left:0;
+    display:none;position:absolute;top:calc(100% + 6px);left:0;
     background:var(--header);border:1px solid var(--header-line);
     border-radius:8px;min-width:200px;z-index:100;padding:6px 0;
     box-shadow:0 4px 16px rgba(0,0,0,.2);
   }
-  .gh-dropdown:hover .gh-dropdown-menu,
-  .gh-dropdown:focus-within .gh-dropdown-menu{ display:block; }
+  .gh-dropdown-menu.open{ display:block; }
   .gh-dropdown-menu a{
     display:block;padding:8px 16px;font-size:12px;
     color:rgba(255,255,255,.85);white-space:nowrap;
@@ -194,7 +193,7 @@
       <div class="sub">Outpatient Restructuring</div>
     </div>
     <div class="gh-meta">
-      <div>更新 2026-04-26 05:16</div>
+      <div>更新 2026-04-26 05:33</div>
       
     </div>
   </div>
@@ -204,9 +203,13 @@
       <a href="../../monthly/2026-04.html">月次経営サマリ</a>
       <a href="../../dept/2026-04/index.html" class="active">診療科 再編診断</a>
       <div class="gh-dropdown">
-        <a href="../../themes/2026-04/referral.html"
+        <button type="button" id="gh-theme-btn"
            
-           style="display:flex;align-items:center;gap:4px;">テーマ分析 <span style="font-size:9px;">▾</span></a>
+           style="background:none;border:none;cursor:pointer;font-family:inherit;font-size:12px;
+                  color:rgba(255,255,255,.85);
+                  padding:6px 14px;border-radius:6px;font-weight:500;
+                  display:flex;align-items:center;gap:4px;white-space:nowrap;
+                  ">テーマ分析 <span style="font-size:9px;">▾</span></button>
         <div class="gh-dropdown-menu">
           <a href="../../themes/2026-04/referral.html"
              >紹介・逆紹介</a>
@@ -637,6 +640,24 @@
   }
   refreshBtns();
   sel.addEventListener('change', refreshBtns);
+})();
+
+/* テーマドロップダウン：クリックトグル */
+(function(){
+  const btn  = document.getElementById('gh-theme-btn');
+  const menu = btn && btn.parentElement.querySelector('.gh-dropdown-menu');
+  if (!btn || !menu) return;
+
+  btn.addEventListener('click', function(e){
+    e.stopPropagation();
+    menu.classList.toggle('open');
+  });
+
+  /* メニュー項目クリックで閉じる（ページ遷移前に閉じておく） */
+  menu.addEventListener('click', function(){ menu.classList.remove('open'); });
+
+  /* ドロップダウン外クリックで閉じる */
+  document.addEventListener('click', function(){ menu.classList.remove('open'); });
 })();
 </script>
 
