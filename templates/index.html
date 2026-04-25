@@ -2,10 +2,18 @@
 {% block content %}
 
 {% if kpis %}
-<section class="card" style="display:grid;grid-template-columns:1.3fr 2.7fr;gap:16px;padding:0;border:none;background:transparent;box-shadow:none;">
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px;display:flex;flex-direction:column;gap:14px;">
+<section style="display:grid;grid-template-columns:1.3fr 2.7fr;gap:16px;margin-bottom:22px;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;
+              padding:20px 24px;display:flex;flex-direction:column;gap:14px;
+              box-shadow:0 1px 3px rgba(0,0,0,.03);">
     <div style="font-size:11px;color:var(--dim);font-family:'DM Mono',monospace;letter-spacing:.08em;text-transform:uppercase;font-weight:700;">最新月</div>
     <div style="font-size:36px;font-weight:700;font-family:'DM Mono',monospace;line-height:1;">{{ latest_month }}</div>
+    {% if kpis %}
+    <div style="font-size:11px;color:var(--text-soft);font-family:'DM Mono',monospace;">
+      実営業日 {{ kpis.biz_days }}日 ／ 暦日 {{ kpis.cal_days }}日<br>
+      件数表示は <strong>{{ kpis.norm_base }}営業日換算</strong>
+    </div>
+    {% endif %}
     {% if latest_month %}
     <a href="monthly/{{ latest_month }}.html" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:6px;background:var(--header);color:#fff;font-size:12px;font-weight:600;align-self:flex-start;">月次経営サマリを開く →</a>
     {% endif %}
@@ -13,7 +21,8 @@
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
     <div class="summary-stat" style="background:var(--surface);">
       <div class="summary-stat-k">総外来件数</div>
-      <div class="summary-stat-v">{{ "{:,}".format(kpis.total) }}<span class="summary-stat-u">件</span></div>
+      <div class="summary-stat-v">{{ "{:,}".format(kpis.total_norm) }}<span class="summary-stat-u">件</span></div>
+      <div class="summary-stat-norm">実数 {{ "{:,}".format(kpis.total) }} 件</div>
       <div style="font-size:11px;font-family:'DM Mono',monospace;font-weight:700;margin-top:4px;
                   color:{% if kpis.total_delta.sign == 'up' %}var(--up){% elif kpis.total_delta.sign == 'down' %}var(--down){% else %}var(--flat){% endif %};">
         {{ '+' if kpis.total_delta.pct > 0 else '' }}{{ kpis.total_delta.pct }}% MoM
@@ -21,7 +30,8 @@
     </div>
     <div class="summary-stat" style="background:var(--surface);">
       <div class="summary-stat-k">初診件数</div>
-      <div class="summary-stat-v">{{ "{:,}".format(kpis.sho) }}<span class="summary-stat-u">件</span></div>
+      <div class="summary-stat-v">{{ "{:,}".format(kpis.sho_norm) }}<span class="summary-stat-u">件</span></div>
+      <div class="summary-stat-norm">実数 {{ "{:,}".format(kpis.sho) }} 件</div>
       <div style="font-size:11px;font-family:'DM Mono',monospace;font-weight:700;margin-top:4px;
                   color:{% if kpis.sho_delta.sign == 'up' %}var(--up){% elif kpis.sho_delta.sign == 'down' %}var(--down){% else %}var(--flat){% endif %};">
         {{ '+' if kpis.sho_delta.pct > 0 else '' }}{{ kpis.sho_delta.pct }}% MoM
@@ -48,55 +58,16 @@
 <div class="card">
   <div class="card-head">
     <span class="card-num">●</span>
-    <h2>月次トレンド（全評価対象科 合計）</h2>
-    <span class="card-sub">総件数と初診件数</span>
+    <h2>月次トレンド（評価対象 {{ kpis.norm_base if kpis else '22' }}営業日換算）</h2>
+    <span class="card-sub">運用系3科を除く ／ 部分月も換算で揃えて比較</span>
   </div>
-  <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+  <div class="chart-wrap" style="height:280px;"><canvas id="trendChart"></canvas></div>
 </div>
 {% endif %}
 
 <div class="card">
   <div class="card-head">
-    <span class="card-num">01</span>
-    <h2>月次経営サマリ</h2>
-    <span class="card-sub">直近6ヶ月のKPIトレンド・診療科スコアカード</span>
-  </div>
-  {% if monthly_links %}
-  <div class="nav-pills">
-    {% for m in monthly_links %}
-    <a class="nav-pill {% if m.is_latest %}current{% endif %}" href="{{ m.href }}">
-      {{ m.month }}{% if m.is_latest %} ● 最新{% endif %}
-    </a>
-    {% endfor %}
-  </div>
-  {% else %}
-  <div class="empty">月次ダッシュボードがまだ生成されていません。</div>
-  {% endif %}
-</div>
-
-<div class="card">
-  <div class="card-head">
-    <span class="card-num">02</span>
-    <h2>診療科 再編診断</h2>
-    <span class="card-sub">時間帯・逆紹介・薬再診・枠ミックスの診断</span>
-  </div>
-  {% if dept_months %}
-    {% for dm in dept_months %}
-    <div style="margin-bottom:12px;">
-      <h3>{{ dm.month }}{% if dm.is_latest %} <span class="type-badge geka">最新</span>{% endif %}</h3>
-      <div class="nav-pills">
-        <a class="nav-pill" href="dept/{{ dm.month }}/index.html">この月の科一覧 ({{ dm.count }} 科)</a>
-      </div>
-    </div>
-    {% endfor %}
-  {% else %}
-    <div class="empty">診療科ページが未生成です。</div>
-  {% endif %}
-</div>
-
-<div class="card">
-  <div class="card-head">
-    <span class="card-num">03</span>
+    <span class="card-num">●</span>
     <h2>分析テーマ</h2>
     <span class="card-sub">横断的な再編分析（Phase 3 以降で順次追加）</span>
   </div>
@@ -124,10 +95,10 @@ if (TREND_DATA && TREND_DATA.length > 0 && document.getElementById('trendChart')
     data: {
       labels: TREND_DATA.map(d => d.month),
       datasets: [
-        { label: '総件数', data: TREND_DATA.map(d => d.total),
+        { label: '総件数（換算）', data: TREND_DATA.map(d => d.total_norm),
           borderColor: '#3D3A35', backgroundColor: 'rgba(61,58,53,.08)',
           borderWidth: 2.5, tension: 0.25, fill: true, yAxisID: 'y' },
-        { label: '初診件数', data: TREND_DATA.map(d => d.sho),
+        { label: '初診件数（換算）', data: TREND_DATA.map(d => d.sho_norm),
           borderColor: '#D08620', backgroundColor: 'rgba(208,134,32,.08)',
           borderWidth: 2, tension: 0.25, fill: false, yAxisID: 'y1' },
       ],
@@ -135,11 +106,24 @@ if (TREND_DATA && TREND_DATA.length > 0 && document.getElementById('trendChart')
     options: {
       responsive: true, maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
-      plugins: { legend: { position: 'bottom' } },
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: {
+          callbacks: {
+            afterLabel: function(ctx){
+              const i = ctx.dataIndex;
+              const row = TREND_DATA[i];
+              const isFirst = ctx.dataset.label.indexOf('総') >= 0;
+              const raw = isFirst ? row.total : row.sho;
+              return `（実数: ${raw.toLocaleString()} ・ ${row.biz_days}営業日）`;
+            }
+          }
+        }
+      },
       scales: {
         x: { grid: { display: false } },
-        y: { position: 'left', title: { display: true, text: '総件数' } },
-        y1: { position: 'right', title: { display: true, text: '初診件数' }, grid: { display: false } },
+        y: { position: 'left', title: { display: true, text: '総件数（換算）' } },
+        y1: { position: 'right', title: { display: true, text: '初診件数（換算）' }, grid: { display: false } },
       },
     },
   });

@@ -41,7 +41,9 @@ TIMEZONE_ORDER = [
     "午後後半(15-17時)",
     "夕方以降(17時〜)",
 ]
-WEEKDAY_LABELS = ["月", "火", "水", "木", "金", "土", "日"]
+# 外来は基本平日のため Mon-Fri のみ表示。土日のデータは集計には含むが軸からは省く。
+WEEKDAY_LABELS = ["月", "火", "水", "木", "金"]
+WEEKDAY_RANGE = range(5)
 
 _TYPE_KEY = {"内科系": "naika", "外科系": "geka", "その他": "other"}
 _TYPE_LABEL = {"naika": "内科", "geka": "外科", "other": "その他"}
@@ -89,7 +91,7 @@ def _timezone_chart_data(tz_df: pd.DataFrame, dept: str) -> dict[str, Any]:
     for zone in TIMEZONE_ORDER:
         zone_df = sub[sub["時間帯ゾーン"] == zone]
         counts = []
-        for wd in range(7):
+        for wd in WEEKDAY_RANGE:
             count = int(zone_df[zone_df["曜日"] == wd]["件数"].sum())
             counts.append(count)
         datasets.append({"label": zone, "data": counts})
@@ -284,6 +286,7 @@ def build_dept_planning(
     generated: list[Path] = []
 
     latest_month = months[-1] if months else month
+    all_months_desc = list(reversed(months))  # 新→旧、月セレクタ用
 
     for info in targets:
         summary = _summary_for_dept(data.referral_kpi, info.name, month)
@@ -312,6 +315,9 @@ def build_dept_planning(
             generated_at=datetime.now().strftime("%Y-%m-%d %H:%M"),
             root_prefix="../../",
             latest_month=latest_month,
+            current_month=month,
+            current_code=info.code,
+            all_months=all_months_desc,
             active="dept",
             breadcrumb=breadcrumb,
             dept_name=info.name,
@@ -339,7 +345,7 @@ def build_dept_planning(
         logger.info("再編診断HTML出力: %s", out_path)
 
     # 同月の科一覧 index.html も生成
-    _build_dept_index(env, targets, month, output_dir, latest_month)
+    _build_dept_index(env, targets, month, output_dir, latest_month, all_months_desc)
 
     return generated
 
@@ -350,6 +356,7 @@ def _build_dept_index(
     month: str,
     output_dir: Path,
     latest_month: str,
+    all_months_desc: list[str],
 ) -> Path:
     """同月内の科一覧ページを生成する（dept/<month>/index.html）。"""
     template = env.get_template("dept_index.html")
@@ -383,6 +390,8 @@ def _build_dept_index(
         title=f"診療科一覧 ／ {month}",
         root_prefix="../../",
         latest_month=latest_month,
+        current_month=month,
+        all_months=all_months_desc,
         active="dept",
         breadcrumb=breadcrumb,
         month=month,

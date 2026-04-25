@@ -11,7 +11,7 @@
     --bg:#F5F3EF; --surface:#FFFFFF; --surface2:#FAF9F6; --surface3:#F0EDE8;
     --border:#E5E3DF; --border-strong:#D6D3CC;
     --text:#2C2A28; --text-soft:#5A5651; --dim:#8A847C; --muted:#B0ABA3;
-    --header:#3D3A35;
+    --header:#3D3A35; --header-line:#4F4B45;
     --blue:#3F7FC1; --blue-light:#E7F0FA;
     --naika:#2B9DB8; --naika-bg:#E4F3F6;
     --geka:#D08620;  --geka-bg:#FAEEDB;
@@ -20,24 +20,50 @@
     --down:#A33838; --down-bg:#F5E4E4;
     --flat:#8A847C; --flat-bg:#EDEBE7;
     --warn:#8A6D1A; --warn-bg:#FAF3E0; --warn-border:#D4B860;
+    --grade-s-bg:#C89020;  --grade-s-fg:#FFFFFF;
+    --grade-a-bg:#2F7A4B;  --grade-a-fg:#FFFFFF;
+    --grade-b-bg:#2E5F85;  --grade-b-fg:#FFFFFF;
+    --grade-c-bg:#7A746B;  --grade-c-fg:#FFFFFF;
+    --grade-d-bg:#A33838;  --grade-d-fg:#FFFFFF;
+    --grade-na-bg:#E5E3DF; --grade-na-fg:#8A847C;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.55;}
   a{color:inherit;text-decoration:none;}
 
-  header.site{background:var(--header);color:#fff;padding:14px 28px;border-bottom:3px solid var(--geka);
-              display:flex;align-items:center;gap:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);
-              position:sticky;top:0;z-index:30;}
-  .logo{width:34px;height:34px;background:var(--geka);border-radius:8px;
-        display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;
-        font-family:'DM Mono',monospace;}
-  header.site h1{font-size:16px;font-weight:700;color:#fff;margin:0;}
-  header.site .sub{font-size:11px;color:rgba(255,255,255,.65);font-family:'DM Mono',monospace;}
-  header.site nav{margin-left:auto;display:flex;gap:6px;}
-  header.site nav a{font-size:12px;color:rgba(255,255,255,.85);padding:6px 12px;border-radius:6px;
-                    transition:background .15s;font-weight:500;}
-  header.site nav a:hover{background:rgba(255,255,255,.12);color:#fff;}
-  header.site nav a.active{background:rgba(255,255,255,.18);color:#fff;font-weight:700;}
+  /* ===== Global header (sticky) ===== */
+  header.site{position:sticky;top:0;z-index:30;background:var(--header);color:#fff;
+              border-bottom:3px solid var(--geka);box-shadow:0 2px 8px rgba(0,0,0,.06);}
+  .gh-row1{display:flex;align-items:center;gap:14px;padding:12px 28px;
+           border-bottom:1px solid var(--header-line);}
+  .gh-logo{width:34px;height:34px;background:var(--geka);border-radius:8px;
+           display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;
+           font-family:'DM Mono',monospace;}
+  .gh-title h1{font-size:16px;font-weight:700;color:#fff;margin:0;line-height:1.2;}
+  .gh-title .sub{font-size:11px;color:rgba(255,255,255,.65);font-family:'DM Mono',monospace;}
+  .gh-meta{margin-left:auto;display:flex;gap:14px;align-items:center;font-size:11px;
+           color:rgba(255,255,255,.65);font-family:'DM Mono',monospace;}
+
+  .gh-row2{display:flex;align-items:center;gap:18px;padding:8px 28px;
+           background:rgba(0,0,0,.12);}
+  .gh-views{display:flex;gap:4px;}
+  .gh-views a{font-size:12px;color:rgba(255,255,255,.85);padding:6px 14px;border-radius:6px;
+              transition:background .15s, color .15s;font-weight:500;}
+  .gh-views a:hover{background:rgba(255,255,255,.12);color:#fff;}
+  .gh-views a.active{background:#fff;color:var(--header);font-weight:700;}
+  .gh-views a.disabled{color:rgba(255,255,255,.35);cursor:not-allowed;}
+
+  .gh-month{margin-left:auto;display:flex;gap:8px;align-items:center;font-size:12px;color:rgba(255,255,255,.85);}
+  .gh-month label{color:rgba(255,255,255,.6);font-size:11px;letter-spacing:.04em;text-transform:uppercase;font-weight:700;}
+  .gh-month select{background:rgba(255,255,255,.95);color:var(--text);
+                   border:none;padding:5px 10px;border-radius:6px;
+                   font-family:'DM Mono',monospace;font-size:13px;font-weight:600;cursor:pointer;
+                   min-width:110px;}
+  .gh-month button{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.2);
+                   padding:4px 10px;border-radius:5px;font-size:12px;cursor:pointer;
+                   font-family:'DM Mono',monospace;}
+  .gh-month button:hover:not(:disabled){background:rgba(255,255,255,.2);}
+  .gh-month button:disabled{opacity:.35;cursor:not-allowed;}
 
   .breadcrumb{background:var(--surface2);border-bottom:1px solid var(--border);
               padding:8px 28px;font-size:12px;color:var(--text-soft);
@@ -84,6 +110,7 @@
   .summary-stat-k{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.04em;font-weight:700;}
   .summary-stat-v{font-size:22px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text);margin-top:4px;}
   .summary-stat-u{font-size:11px;color:var(--text-soft);margin-left:3px;font-weight:500;}
+  .summary-stat-norm{font-size:10px;color:var(--dim);font-family:'DM Mono',monospace;margin-top:2px;}
 
   .nav-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
   .nav-pill{padding:6px 12px;background:var(--surface2);border:1px solid var(--border);
@@ -112,25 +139,65 @@
   .score-mid{background:#E0A344;color:#fff;}
   .score-low{background:var(--surface3);color:var(--text-soft);}
 
+  /* Grade badges (monthly scorecard) */
+  .grade{display:inline-block;min-width:24px;padding:2px 8px;border-radius:4px;
+         font-weight:700;text-align:center;font-family:'DM Mono',monospace;font-size:12px;}
+  .grade-S{background:var(--grade-s-bg);color:var(--grade-s-fg);}
+  .grade-A{background:var(--grade-a-bg);color:var(--grade-a-fg);}
+  .grade-B{background:var(--grade-b-bg);color:var(--grade-b-fg);}
+  .grade-C{background:var(--grade-c-bg);color:var(--grade-c-fg);}
+  .grade-D{background:var(--grade-d-bg);color:var(--grade-d-fg);}
+  .grade-NA{background:var(--grade-na-bg);color:var(--grade-na-fg);}
+
   footer.site{padding:18px 28px;text-align:center;color:var(--dim);font-size:11px;
               border-top:1px solid var(--border);margin-top:20px;}
   footer.site .feedback-link{color:var(--blue);}
 </style>
 
 </head>
-<body>
+<body data-view="dept" data-month="2025-11" data-code="NR">
 
 <header class="site">
-  <div class="logo">OR</div>
-  <div>
-    <h1>外来再編分析</h1>
-    <div class="sub">Outpatient Restructuring</div>
+  <div class="gh-row1">
+    <div class="gh-logo">OR</div>
+    <div class="gh-title">
+      <h1>外来再編分析</h1>
+      <div class="sub">Outpatient Restructuring</div>
+    </div>
+    <div class="gh-meta">
+      <div>更新 2026-04-25 19:43</div>
+      
+    </div>
   </div>
-  <nav>
-    <a href="../../index.html">ホーム</a>
-    <a href="../../monthly/2026-04.html">月次</a>
-    <a href="../../dept/2026-04/index.html" class="active">診療科</a>
-  </nav>
+  <div class="gh-row2">
+    <div class="gh-views">
+      <a href="../../index.html">ホーム</a>
+      <a href="../../monthly/2025-11.html">月次経営サマリ</a>
+      <a href="../../dept/2025-11/index.html" class="active">診療科 再編診断</a>
+    </div>
+    
+    <div class="gh-month">
+      <label>月:</label>
+      <button id="gh-prev-month" type="button" title="前月">←</button>
+      <select id="gh-month-select">
+        
+        <option value="2026-04">2026-04</option>
+        
+        <option value="2026-03">2026-03</option>
+        
+        <option value="2026-02">2026-02</option>
+        
+        <option value="2026-01">2026-01</option>
+        
+        <option value="2025-12">2025-12</option>
+        
+        <option value="2025-11" selected>2025-11</option>
+        
+      </select>
+      <button id="gh-next-month" type="button" title="翌月">→</button>
+    </div>
+    
+  </div>
 </header>
 
 
@@ -708,9 +775,76 @@
   
 </footer>
 
+<script>
+/* グローバルヘッダ：月セレクタとビュー切替の連動。
+   現在のビュー（data-view）と現在の科コード（data-code）を保ったまま
+   月だけを切り替える。ホームの場合はその月の monthly に遷移する。 */
+(function(){
+  const body = document.body;
+  const view = body.getAttribute('data-view');
+  const code = body.getAttribute('data-code');
+  const sel = document.getElementById('gh-month-select');
+  const prevBtn = document.getElementById('gh-prev-month');
+  const nextBtn = document.getElementById('gh-next-month');
+  if (!sel) return;
+
+  const months = Array.from(sel.options).map(o => o.value); // 新→旧
+
+  function targetUrl(month, view, code){
+    /* root から見たパス。各ページで root_prefix が異なるため
+       絶対パスではなく、ビューに応じた相対パスを構築する。 */
+    if (view === 'home') {
+      return rootPrefix() + 'monthly/' + month + '.html';
+    }
+    if (view === 'monthly') {
+      return rootPrefix() + 'monthly/' + month + '.html';
+    }
+    if (view === 'dept' || view === 'dept-detail') {
+      const filename = code ? (code + '.html') : 'index.html';
+      return rootPrefix() + 'dept/' + month + '/' + filename;
+    }
+    return rootPrefix() + 'index.html';
+  }
+
+  function rootPrefix(){
+    /* グローバルヘッダの「ホーム」リンクから root_prefix を推測する。
+       href の末尾が "index.html" でその直前までが prefix。 */
+    const a = document.querySelector('header.site .gh-views a');
+    if (!a) return '';
+    const href = a.getAttribute('href') || '';
+    return href.replace(/index\.html$/, '');
+  }
+
+  sel.addEventListener('change', () => {
+    const m = sel.value;
+    location.href = targetUrl(m, view, code);
+  });
+
+  function shiftMonth(delta){
+    /* sel.options は新→旧で並んでいる。delta=-1 で前月（旧側=index増）、+1 で翌月。 */
+    const idx = sel.selectedIndex;
+    const newIdx = idx - delta; // 翌月に進む = 新側＝idx 減
+    if (newIdx < 0 || newIdx >= sel.options.length) return;
+    sel.selectedIndex = newIdx;
+    sel.dispatchEvent(new Event('change'));
+  }
+  if (prevBtn) prevBtn.addEventListener('click', () => shiftMonth(-1));
+  if (nextBtn) nextBtn.addEventListener('click', () => shiftMonth(+1));
+
+  // 端で押せないボタンは disabled に
+  function refreshBtns(){
+    const idx = sel.selectedIndex;
+    if (prevBtn) prevBtn.disabled = (idx >= sel.options.length - 1);
+    if (nextBtn) nextBtn.disabled = (idx <= 0);
+  }
+  refreshBtns();
+  sel.addEventListener('change', refreshBtns);
+})();
+</script>
+
 
 <script>
-const TZ_DATA = {"labels": ["月", "火", "水", "木", "金", "土", "日"], "datasets": [{"label": "午前(〜12時)", "data": [44, 55, 91, 133, 85, 0, 0]}, {"label": "午後前半(12-15時)", "data": [13, 4, 2, 5, 13, 0, 0]}, {"label": "午後後半(15-17時)", "data": [2, 1, 1, 1, 0, 0, 0]}, {"label": "夕方以降(17時〜)", "data": [0, 1, 0, 0, 0, 0, 0]}]};
+const TZ_DATA = {"labels": ["月", "火", "水", "木", "金"], "datasets": [{"label": "午前(〜12時)", "data": [44, 55, 91, 133, 85]}, {"label": "午後前半(12-15時)", "data": [13, 4, 2, 5, 13]}, {"label": "午後後半(15-17時)", "data": [2, 1, 1, 1, 0]}, {"label": "夕方以降(17時〜)", "data": [0, 1, 0, 0, 0]}]};
 if (TZ_DATA && TZ_DATA.labels && document.getElementById('chartTimezone')) {
   const palette = ['#3F7FC1', '#D08620', '#2B9DB8', '#8B6FB6'];
   new Chart(document.getElementById('chartTimezone'), {

@@ -1,10 +1,15 @@
 """planning サイトのトップページ生成。
 
 aggregated/ から最新月のKPIとトレンドを読み、
-月次サマリ＋診療科一覧＋テーマナビを掲載する静的トップを作る。
+ヒーローKPI + トレンドチャート + テーマナビを掲載する静的トップを作る。
 
-Phase 2 では monthly + dept_planning までしか移植していないため、
-テーマ欄には後続フェーズ用のプレースホルダを置いている。
+設計のポイント:
+- KPI／トレンドは `10_referral_kpi.csv` を **評価対象科のみ** で集計
+  （月次経営サマリと完全に同じ値になるよう揃える）
+- 件数系は **22営業日換算** とし、実数も併記する
+- 04 月選択ナビは _layout.html のグローバルヘッダで提供されるため
+  本ハブからは「月リンク」「科リンク」のセクションは廃止し、
+  ヒーロー + トレンド + テーマナビのみのシンプル構成にする
 """
 from __future__ import annotations
 
@@ -17,6 +22,13 @@ from typing import Any
 
 import pandas as pd
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+
+from src.core.classify import DeptClassifier
+from src.core.normalization import (
+    NORMALIZATION_BASE_DAYS,
+    normalize_int,
+    normalize_round,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -36,22 +48,16 @@ def _list_monthly(docs_dir: Path) -> list[str]:
     return sorted(months, reverse=True)
 
 
-def _list_dept_months(docs_dir: Path) -> list[dict[str, Any]]:
+def _list_dept_months(docs_dir: Path) -> list[str]:
     d = docs_dir / "dept"
     if not d.exists():
         return []
-    months: list[dict[str, Any]] = []
-    for sub in sorted(
-        (x for x in d.iterdir() if x.is_dir() and _MONTH_DIR_RE.match(x.name)),
-        reverse=True,
-    ):
-        codes = [f for f in sub.glob("*.html") if f.stem != "index"]
-        months.append({"month": sub.name, "count": len(codes)})
-    if months:
-        months[0]["is_latest"] = True
-    for m in months[1:]:
-        m["is_latest"] = False
-    return months
+    months = [
+        x.name
+        for x in d.iterdir()
+        if x.is_dir() and _MONTH_DIR_RE.match(x.name)
+    ]
+    return sorted(months, reverse=True)
 
 
 def _delta(cur: float, prev: float) -> dict[str, Any]:
@@ -67,51 +73,101 @@ def _delta(cur: float, prev: float) -> dict[str, Any]:
     return {"pct": round(pct, 1), "sign": sign}
 
 
-def _load_trend(aggregated_root: Path, months: list[str]) -> list[dict[str, Any]]:
+def _load_summary_meta(aggregated_root: Path, month: str) -> dict[str, Any]:
+    """00_summary.csv から日数情報を取り出す。"""
+    p = aggregated_root / month / "00_summary.csv"
+    if not p.exists():
+        return {"暦日数": 0, "営業日数": 0}
+    s = pd.read_csv(p, encoding="utf-8-sig").iloc[0]
+    return {
+        "暦日数": int(s.get("期間_暦日数", 0) or 0),
+        "営業日数": int(s.get("期間_営業日数", 0) or 0),
+    }
+
+
+def _load_trend(
+    aggregated_root: Path,
+    months: list[str],
+    eval_dept_names: set[str],
+) -> list[dict[str, Any]]:
+    """各月の 10_referral_kpi を **評価対象科のみ** で集計してトレンド行に変換する。
+
+    各月の値は件数の実数と22営業日換算の両方を返す。
+    """
     rows: list[dict[str, Any]] = []
     for m in sorted(months):
-        p = aggregated_root / m / "00_summary.csv"
-        if not p.exists():
+        kpi_path = aggregated_root / m / "10_referral_kpi.csv"
+        if not kpi_path.exists():
             continue
-        s = pd.read_csv(p, encoding="utf-8-sig").iloc[0]
-        sho = int(s["初診件数"])
-        total = int(s["総件数"])
-        ref = int(s["紹介状あり"])
-        miraiin = int(s["未来院件数"])
+        kpi = pd.read_csv(kpi_path, encoding="utf-8-sig")
+        sub = kpi[
+            (kpi["月"].astype(str) == m)
+            & (kpi["診療科名"].isin(eval_dept_names))
+        ]
+        if sub.empty:
+            continue
+        total = int(sub["総件数"].sum())
+        sho = int(sub["初診件数"].sum())
+        sai = int(sub["再診件数"].sum())
+        ref = int(sub["紹介状あり初診"].sum())
+        miraiin = int(sub["未来院件数"].sum())
+
+        meta = _load_summary_meta(aggregated_root, m)
+        biz = meta["営業日数"]
         rows.append(
             {
                 "month": m,
                 "total": total,
                 "sho": sho,
-                "sai": int(s["再診件数"]),
+                "sai": sai,
                 "ref_rate": round(ref / sho * 100, 1) if sho else 0.0,
                 "miraiin": miraiin,
                 "miraiin_rate": round(miraiin / total * 100, 1) if total else 0.0,
+                "biz_days": biz,
+                "cal_days": meta["暦日数"],
+                # 22営業日換算（部分月の補正にも有効）
+                "total_norm": normalize_int(total, biz),
+                "sho_norm": normalize_int(sho, biz),
+                "sai_norm": normalize_int(sai, biz),
+                "miraiin_norm": normalize_int(miraiin, biz),
             }
         )
     return rows
 
 
 def _build_kpis(trend: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """ヒーロー部用に最新月／前月比のKPIを組み立てる。
+
+    実数と22営業日換算の両方を持たせる。MoM比較は **換算ベース** で評価。
+    """
     if not trend:
         return None
     latest = trend[-1]
     prev = trend[-2] if len(trend) >= 2 else {}
+
+    # MoM 比較は換算後の値で（暦日数の差を排除）
     return {
         "total": latest["total"],
-        "total_delta": _delta(latest["total"], prev.get("total", 0)),
+        "total_norm": latest["total_norm"],
+        "total_delta": _delta(
+            latest["total_norm"], prev.get("total_norm", 0)
+        ),
         "sho": latest["sho"],
-        "sho_delta": _delta(latest["sho"], prev.get("sho", 0)),
+        "sho_norm": latest["sho_norm"],
+        "sho_delta": _delta(latest["sho_norm"], prev.get("sho_norm", 0)),
         "ref_rate": latest["ref_rate"],
         "miraiin_rate": latest["miraiin_rate"],
         "miraiin_rate_delta": _delta(
             latest["miraiin_rate"], prev.get("miraiin_rate", 0)
         ),
+        "biz_days": latest["biz_days"],
+        "cal_days": latest["cal_days"],
+        "norm_base": NORMALIZATION_BASE_DAYS,
     }
 
 
 def _build_themes() -> list[dict[str, Any]]:
-    """分析テーマナビ。Phase 3 以降で href を埋める。"""
+    """分析テーマナビ（Phase 3 以降で href を埋める）。"""
     return [
         {
             "title": "紹介・逆紹介",
@@ -140,24 +196,22 @@ def build_hub(
     docs_dir: Path,
     templates_dir: Path,
     aggregated_root: Path,
+    classification_path: Path,
     feedback_url: str | None = None,
 ) -> Path:
     """planning サイトのトップページ docs/index.html を生成する。"""
-    monthly_months = _list_monthly(docs_dir)
-    dept_months_meta = _list_dept_months(docs_dir)
+    classifier = DeptClassifier(classification_path)
+    eval_dept_names = {info.name for info in classifier.evaluation_targets()}
 
-    all_months = sorted(
-        set(monthly_months) | {dm["month"] for dm in dept_months_meta}
-    )
+    monthly_months = _list_monthly(docs_dir)
+    dept_months = _list_dept_months(docs_dir)
+    all_months = sorted(set(monthly_months) | set(dept_months))
     latest = all_months[-1] if all_months else None
 
-    trend = _load_trend(aggregated_root, all_months) if all_months else []
+    trend = (
+        _load_trend(aggregated_root, all_months, eval_dept_names) if all_months else []
+    )
     kpis = _build_kpis(trend)
-
-    monthly_links = [
-        {"month": m, "href": f"monthly/{m}.html", "is_latest": m == latest}
-        for m in monthly_months
-    ]
 
     env = Environment(
         loader=FileSystemLoader(str(templates_dir)),
@@ -173,11 +227,11 @@ def build_hub(
         breadcrumb=breadcrumb,
         root_prefix="",
         latest_month=latest or "",
+        all_months=list(reversed(all_months)),  # 新→旧
         kpis=kpis,
         trend_json=json.dumps(trend, ensure_ascii=False),
-        monthly_links=monthly_links,
-        dept_months=dept_months_meta,
         themes=_build_themes(),
+        norm_base=NORMALIZATION_BASE_DAYS,
         generated_at=datetime.now().strftime("%Y-%m-%d %H:%M"),
         feedback_url=feedback_url,
     )

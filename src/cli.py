@@ -41,7 +41,7 @@ def _build_one_month(month: str, docs_root: Path) -> None:
         month=month,
         output_path=docs_root / "monthly" / f"{month}.html",
         aggregated_root=paths.aggregated_root(),
-        template_path=paths.templates_dir() / "monthly.html",
+        templates_dir=paths.templates_dir(),
         classification_path=paths.classification_path(),
         targets_path=paths.targets_path(),
     )
@@ -89,6 +89,7 @@ def cmd_build(args: argparse.Namespace) -> int:
         docs_dir=docs_root,
         templates_dir=paths.templates_dir(),
         aggregated_root=aggregated_root,
+        classification_path=paths.classification_path(),
         feedback_url=args.feedback_url,
     )
     return 0
