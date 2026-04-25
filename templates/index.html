@@ -1,16 +1,24 @@
 {% extends "_layout.html" %}
+{% block extra_head %}
+<style>
+  @media (max-width: 760px){
+    .hero-grid{grid-template-columns:1fr !important;}
+  }
+</style>
+{% endblock %}
 {% block content %}
 
 {% if kpis %}
-<section style="display:grid;grid-template-columns:1.3fr 2.7fr;gap:16px;margin-bottom:22px;">
+<section class="hero-grid" style="display:grid;grid-template-columns:minmax(220px, 1.3fr) minmax(0, 2.7fr);gap:16px;margin-bottom:22px;">
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;
               padding:20px 24px;display:flex;flex-direction:column;gap:14px;
               box-shadow:0 1px 3px rgba(0,0,0,.03);">
     <div style="font-size:11px;color:var(--dim);font-family:'DM Mono',monospace;letter-spacing:.08em;text-transform:uppercase;font-weight:700;">最新月</div>
     <div style="font-size:36px;font-weight:700;font-family:'DM Mono',monospace;line-height:1;">{{ latest_month }}</div>
     {% if kpis %}
-    <div style="font-size:11px;color:var(--text-soft);font-family:'DM Mono',monospace;">
-      実営業日 {{ kpis.biz_days }}日 ／ 暦日 {{ kpis.cal_days }}日<br>
+    <div style="font-size:11px;color:var(--text-soft);font-family:'DM Mono',monospace;line-height:1.5;">
+      実営業日 <strong>{{ kpis.biz_days }}日</strong> ／ 暦日 {{ kpis.cal_days }}日<br>
+      {% if kpis.excluded_days > 0 %}（祝日・年末年始休 {{ kpis.excluded_days }}日除外）<br>{% endif %}
       件数表示は <strong>{{ kpis.norm_base }}営業日換算</strong>
     </div>
     {% endif %}
@@ -18,7 +26,7 @@
     <a href="monthly/{{ latest_month }}.html" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:6px;background:var(--header);color:#fff;font-size:12px;font-weight:600;align-self:flex-start;">月次経営サマリを開く →</a>
     {% endif %}
   </div>
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+  <div class="hero-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;">
     <div class="summary-stat" style="background:var(--surface);">
       <div class="summary-stat-k">総外来件数</div>
       <div class="summary-stat-v">{{ "{:,}".format(kpis.total_norm) }}<span class="summary-stat-u">件</span></div>
@@ -59,7 +67,7 @@
   <div class="card-head">
     <span class="card-num">●</span>
     <h2>月次トレンド（評価対象 {{ kpis.norm_base if kpis else '22' }}営業日換算）</h2>
-    <span class="card-sub">運用系3科を除く ／ 部分月も換算で揃えて比較</span>
+    <span class="card-sub">運用系3科を除く ／ 祝日・年末年始休（12/29-1/3）を除外した実営業日で正規化</span>
   </div>
   <div class="chart-wrap" style="height:280px;"><canvas id="trendChart"></canvas></div>
 </div>
@@ -115,7 +123,8 @@ if (TREND_DATA && TREND_DATA.length > 0 && document.getElementById('trendChart')
               const row = TREND_DATA[i];
               const isFirst = ctx.dataset.label.indexOf('総') >= 0;
               const raw = isFirst ? row.total : row.sho;
-              return `（実数: ${raw.toLocaleString()} ・ ${row.biz_days}営業日）`;
+              const excluded = row.excluded_days > 0 ? `・祝日休${row.excluded_days}日除外` : '';
+              return `（実数: ${raw.toLocaleString()} ／ 営業日${row.biz_days}日${excluded}）`;
             }
           }
         }

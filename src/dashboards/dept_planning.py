@@ -276,6 +276,14 @@ def build_dept_planning(
     months = list_available_months(aggregated_root)
     targets = classifier.evaluation_targets()
 
+    # 当月の営業日情報を取り出す
+    biz_days = 0
+    excluded_days = 0
+    s = data.summary
+    if not s.empty:
+        biz_days = int(s.iloc[0].get("期間_営業日数", 0) or 0)
+        excluded_days = int(s.iloc[0].get("期間_除外日数", 0) or 0)
+
     env = Environment(
         loader=FileSystemLoader(str(templates_dir)),
         autoescape=select_autoescape(["html"]),
@@ -335,6 +343,8 @@ def build_dept_planning(
             reverse_referral_total=rr_total,
             drug_revisit_rows=drug_rows,
             slot_rows=slot_rows,
+            biz_days=biz_days,
+            excluded_days=excluded_days,
             **nav,
             feedback_url=None,
         )

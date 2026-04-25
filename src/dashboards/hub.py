@@ -77,11 +77,12 @@ def _load_summary_meta(aggregated_root: Path, month: str) -> dict[str, Any]:
     """00_summary.csv から日数情報を取り出す。"""
     p = aggregated_root / month / "00_summary.csv"
     if not p.exists():
-        return {"暦日数": 0, "営業日数": 0}
+        return {"暦日数": 0, "営業日数": 0, "除外日数": 0}
     s = pd.read_csv(p, encoding="utf-8-sig").iloc[0]
     return {
         "暦日数": int(s.get("期間_暦日数", 0) or 0),
         "営業日数": int(s.get("期間_営業日数", 0) or 0),
+        "除外日数": int(s.get("期間_除外日数", 0) or 0),
     }
 
 
@@ -125,6 +126,7 @@ def _load_trend(
                 "miraiin_rate": round(miraiin / total * 100, 1) if total else 0.0,
                 "biz_days": biz,
                 "cal_days": meta["暦日数"],
+                "excluded_days": meta["除外日数"],
                 # 22営業日換算（部分月の補正にも有効）
                 "total_norm": normalize_int(total, biz),
                 "sho_norm": normalize_int(sho, biz),
@@ -162,6 +164,7 @@ def _build_kpis(trend: list[dict[str, Any]]) -> dict[str, Any] | None:
         ),
         "biz_days": latest["biz_days"],
         "cal_days": latest["cal_days"],
+        "excluded_days": latest["excluded_days"],
         "norm_base": NORMALIZATION_BASE_DAYS,
     }
 

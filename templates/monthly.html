@@ -13,7 +13,7 @@
   .screen-subhead{font-size:12px;color:var(--dim);margin-left:6px;}
 
   /* ===== KPI cards ===== */
-  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;}
+  .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:18px;}
   .kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;
        padding:16px 18px;position:relative;box-shadow:0 1px 3px rgba(0,0,0,.03);}
   .kpi-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px;}
@@ -55,11 +55,20 @@
   .d-red{background:var(--down);} .d-green{background:var(--up);}
   .d-gold{background:#C89020;}
 
-  .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
-  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;}
-  .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px;}
+  .g2{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:14px;margin-bottom:14px;}
+  .g3{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:14px;}
+  .g4{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:14px;}
   .chart-md{height:240px;position:relative;}
   .chart-xs{height:100px;position:relative;}
+
+  /* ===== レスポンシブ調整 ===== */
+  .hl-grid{grid-template-columns:repeat(auto-fit,minmax(260px,1fr));}
+  @media (max-width: 720px){
+    .screen-title{flex-wrap:wrap;}
+    .screen-subhead{flex-basis:100%;margin-left:0;margin-top:4px;}
+    .kpi-value{font-size:22px;}
+    .filter-bar{font-size:11px;}
+  }
 
   .note{font-size:11px;color:var(--dim);margin-top:8px;line-height:1.5;}
   .note-box{background:var(--blue-light);color:var(--text);padding:10px 14px;
@@ -131,7 +140,7 @@
   <div class="screen-title">
     <span class="screen-num">SCREEN 1</span>
     <span class="screen-head">エグゼクティブサマリー</span>
-    <span class="screen-subhead">{{ data.monthLabels[-1] }}・{{ norm_base }}営業日換算 ／ 当月実営業日 {{ data.biz_days[-1] }}日</span>
+    <span class="screen-subhead">{{ data.monthLabels[-1] }}・実営業日 {{ data.biz_days[-1] }}日（祝日・病院休 {{ data.excluded_days[-1] }}日除外）／ {{ norm_base }}営業日換算で表示</span>
   </div>
 
   <div class="kpi-grid">
@@ -383,9 +392,10 @@ const totalApr = DATA.total_sho_apr + DATA.total_sai_apr;
 const totalMar = hasPrev ? (DATA.total_sho_monthly[mar] + DATA.total_sai_monthly[mar]) : totalApr;
 const totalPct = hasPrev ? ((totalApr/totalMar - 1)*100).toFixed(1) : '0.0';
 document.getElementById('kpi1Val').innerHTML = fmtNum(totalApr) + '<span class="kpi-unit">件</span>';
+const exclTxt = DATA.excluded_days[apr] > 0 ? `（祝日・病院休 ${DATA.excluded_days[apr]}日除外）` : '';
 document.getElementById('kpi1Target').textContent = hasPrev
-  ? `前月 ${fmtNum(totalMar)}（換算）／ 当月実数 ${fmtNum(DATA.total_apr_raw)} 件 ／ 営業日 ${DATA.biz_days[apr]}日`
-  : `当月実数 ${fmtNum(DATA.total_apr_raw)} 件 ／ 営業日 ${DATA.biz_days[apr]}日`;
+  ? `前月 ${fmtNum(totalMar)}（換算）／ 実数 ${fmtNum(DATA.total_apr_raw)}件 ／ 実営業日 ${DATA.biz_days[apr]}日${exclTxt}`
+  : `実数 ${fmtNum(DATA.total_apr_raw)}件 ／ 実営業日 ${DATA.biz_days[apr]}日${exclTxt}`;
 const tr1 = document.getElementById('kpi1Trend');
 if (hasPrev) {
   tr1.className = 'kpi-trend ' + (totalPct>1?'trend-up':totalPct<-1?'trend-down':'trend-flat');

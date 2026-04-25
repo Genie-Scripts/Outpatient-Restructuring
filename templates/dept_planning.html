@@ -5,7 +5,7 @@
   <div class="card-head">
     <span class="card-num">00</span>
     <h2>{{ dept_name }} <span class="type-badge {{ type_key }}">{{ type_label }}</span></h2>
-    <span class="card-sub">{{ month }} ／ 再編診断</span>
+    <span class="card-sub">{{ month }} ／ 再編診断 ／ 実営業日 {{ biz_days }}日{% if excluded_days > 0 %}（祝日・病院休 {{ excluded_days }}日除外）{% endif %}</span>
   </div>
 
   <div class="summary-row">

@@ -35,25 +35,25 @@
   header.site{position:sticky;top:0;z-index:30;background:var(--header);color:#fff;
               border-bottom:3px solid var(--geka);box-shadow:0 2px 8px rgba(0,0,0,.06);}
   .gh-row1{display:flex;align-items:center;gap:14px;padding:12px 28px;
-           border-bottom:1px solid var(--header-line);}
+           border-bottom:1px solid var(--header-line);flex-wrap:wrap;}
   .gh-logo{width:34px;height:34px;background:var(--geka);border-radius:8px;
            display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;
-           font-family:'DM Mono',monospace;}
+           font-family:'DM Mono',monospace;flex-shrink:0;}
   .gh-title h1{font-size:16px;font-weight:700;color:#fff;margin:0;line-height:1.2;}
   .gh-title .sub{font-size:11px;color:rgba(255,255,255,.65);font-family:'DM Mono',monospace;}
   .gh-meta{margin-left:auto;display:flex;gap:14px;align-items:center;font-size:11px;
-           color:rgba(255,255,255,.65);font-family:'DM Mono',monospace;}
+           color:rgba(255,255,255,.65);font-family:'DM Mono',monospace;flex-wrap:wrap;}
 
   .gh-row2{display:flex;align-items:center;gap:18px;padding:8px 28px;
-           background:rgba(0,0,0,.12);}
-  .gh-views{display:flex;gap:4px;}
+           background:rgba(0,0,0,.12);flex-wrap:wrap;}
+  .gh-views{display:flex;gap:4px;flex-wrap:wrap;}
   .gh-views a{font-size:12px;color:rgba(255,255,255,.85);padding:6px 14px;border-radius:6px;
-              transition:background .15s, color .15s;font-weight:500;}
+              transition:background .15s, color .15s;font-weight:500;white-space:nowrap;}
   .gh-views a:hover{background:rgba(255,255,255,.12);color:#fff;}
   .gh-views a.active{background:#fff;color:var(--header);font-weight:700;}
   .gh-views a.disabled{color:rgba(255,255,255,.35);cursor:not-allowed;}
 
-  .gh-month{margin-left:auto;display:flex;gap:8px;align-items:center;font-size:12px;color:rgba(255,255,255,.85);}
+  .gh-month{margin-left:auto;display:flex;gap:8px;align-items:center;font-size:12px;color:rgba(255,255,255,.85);flex-wrap:nowrap;}
   .gh-month label{color:rgba(255,255,255,.6);font-size:11px;letter-spacing:.04em;text-transform:uppercase;font-weight:700;}
   .gh-month select{background:rgba(255,255,255,.95);color:var(--text);
                    border:none;padding:5px 10px;border-radius:6px;
@@ -64,6 +64,18 @@
                    font-family:'DM Mono',monospace;}
   .gh-month button:hover:not(:disabled){background:rgba(255,255,255,.2);}
   .gh-month button:disabled{opacity:.35;cursor:not-allowed;}
+
+  /* ===== ヘッダのレスポンシブ ===== */
+  @media (max-width: 760px){
+    .gh-row1, .gh-row2{padding-left:14px;padding-right:14px;}
+    .gh-meta{margin-left:0;flex-basis:100%;}
+    .gh-month{margin-left:0;width:100%;justify-content:flex-end;}
+    .gh-views{flex-basis:100%;justify-content:flex-start;}
+  }
+  @media (max-width: 760px){
+    .container{padding:16px 14px 30px;}
+    .breadcrumb{padding:8px 14px;}
+  }
 
   .breadcrumb{background:var(--surface2);border-bottom:1px solid var(--border);
               padding:8px 28px;font-size:12px;color:var(--text-soft);
@@ -154,6 +166,12 @@
   footer.site .feedback-link{color:var(--blue);}
 </style>
 
+<style>
+  @media (max-width: 760px){
+    .hero-grid{grid-template-columns:1fr !important;}
+  }
+</style>
+
 </head>
 <body data-view="home" data-month="2026-04">
 
@@ -165,7 +183,7 @@
       <div class="sub">Outpatient Restructuring</div>
     </div>
     <div class="gh-meta">
-      <div>更新 2026-04-25 19:43</div>
+      <div>更新 2026-04-25 20:53</div>
       <div>※ 件数は 22営業日換算</div>
     </div>
   </div>
@@ -215,15 +233,16 @@
 
 
 
-<section style="display:grid;grid-template-columns:1.3fr 2.7fr;gap:16px;margin-bottom:22px;">
+<section class="hero-grid" style="display:grid;grid-template-columns:minmax(220px, 1.3fr) minmax(0, 2.7fr);gap:16px;margin-bottom:22px;">
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;
               padding:20px 24px;display:flex;flex-direction:column;gap:14px;
               box-shadow:0 1px 3px rgba(0,0,0,.03);">
     <div style="font-size:11px;color:var(--dim);font-family:'DM Mono',monospace;letter-spacing:.08em;text-transform:uppercase;font-weight:700;">最新月</div>
     <div style="font-size:36px;font-weight:700;font-family:'DM Mono',monospace;line-height:1;">2026-04</div>
     
-    <div style="font-size:11px;color:var(--text-soft);font-family:'DM Mono',monospace;">
-      実営業日 16日 ／ 暦日 22日<br>
+    <div style="font-size:11px;color:var(--text-soft);font-family:'DM Mono',monospace;line-height:1.5;">
+      実営業日 <strong>16日</strong> ／ 暦日 22日<br>
+      
       件数表示は <strong>22営業日換算</strong>
     </div>
     
@@ -231,14 +250,14 @@
     <a href="monthly/2026-04.html" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:6px;background:var(--header);color:#fff;font-size:12px;font-weight:600;align-self:flex-start;">月次経営サマリを開く →</a>
     
   </div>
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+  <div class="hero-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;">
     <div class="summary-stat" style="background:var(--surface);">
       <div class="summary-stat-k">総外来件数</div>
       <div class="summary-stat-v">32,009<span class="summary-stat-u">件</span></div>
       <div class="summary-stat-norm">実数 23,279 件</div>
       <div style="font-size:11px;font-family:'DM Mono',monospace;font-weight:700;margin-top:4px;
                   color:var(--down);">
-        -2.6% MoM
+        -7.0% MoM
       </div>
     </div>
     <div class="summary-stat" style="background:var(--surface);">
@@ -246,8 +265,8 @@
       <div class="summary-stat-v">2,779<span class="summary-stat-u">件</span></div>
       <div class="summary-stat-norm">実数 2,021 件</div>
       <div style="font-size:11px;font-family:'DM Mono',monospace;font-weight:700;margin-top:4px;
-                  color:var(--up);">
-        +2.4% MoM
+                  color:var(--down);">
+        -2.3% MoM
       </div>
     </div>
     <div class="summary-stat" style="background:var(--surface);">
@@ -272,7 +291,7 @@
   <div class="card-head">
     <span class="card-num">●</span>
     <h2>月次トレンド（評価対象 22営業日換算）</h2>
-    <span class="card-sub">運用系3科を除く ／ 部分月も換算で揃えて比較</span>
+    <span class="card-sub">運用系3科を除く ／ 祝日・年末年始休（12/29-1/3）を除外した実営業日で正規化</span>
   </div>
   <div class="chart-wrap" style="height:280px;"><canvas id="trendChart"></canvas></div>
 </div>
@@ -398,7 +417,7 @@
 
 
 <script>
-const TREND_DATA = [{"month": "2025-11", "total": 27786, "sho": 2616, "sai": 25170, "ref_rate": 65.3, "miraiin": 1325, "miraiin_rate": 4.8, "biz_days": 20, "cal_days": 30, "total_norm": 30565, "sho_norm": 2878, "sai_norm": 27687, "miraiin_norm": 1458}, {"month": "2025-12", "total": 32352, "sho": 2809, "sai": 29543, "ref_rate": 69.0, "miraiin": 1560, "miraiin_rate": 4.8, "biz_days": 23, "cal_days": 31, "total_norm": 30945, "sho_norm": 2687, "sai_norm": 28259, "miraiin_norm": 1492}, {"month": "2026-01", "total": 29945, "sho": 2722, "sai": 27223, "ref_rate": 66.0, "miraiin": 1489, "miraiin_rate": 5.0, "biz_days": 22, "cal_days": 31, "total_norm": 29945, "sho_norm": 2722, "sai_norm": 27223, "miraiin_norm": 1489}, {"month": "2026-02", "total": 27798, "sho": 2410, "sai": 25388, "ref_rate": 64.0, "miraiin": 1370, "miraiin_rate": 4.9, "biz_days": 20, "cal_days": 28, "total_norm": 30578, "sho_norm": 2651, "sai_norm": 27927, "miraiin_norm": 1507}, {"month": "2026-03", "total": 32861, "sho": 2714, "sai": 30147, "ref_rate": 68.9, "miraiin": 1642, "miraiin_rate": 5.0, "biz_days": 22, "cal_days": 31, "total_norm": 32861, "sho_norm": 2714, "sai_norm": 30147, "miraiin_norm": 1642}, {"month": "2026-04", "total": 23279, "sho": 2021, "sai": 21258, "ref_rate": 69.0, "miraiin": 1150, "miraiin_rate": 4.9, "biz_days": 16, "cal_days": 22, "total_norm": 32009, "sho_norm": 2779, "sai_norm": 29230, "miraiin_norm": 1581}];
+const TREND_DATA = [{"month": "2025-11", "total": 27786, "sho": 2616, "sai": 25170, "ref_rate": 65.3, "miraiin": 1325, "miraiin_rate": 4.8, "biz_days": 18, "cal_days": 30, "excluded_days": 2, "total_norm": 33961, "sho_norm": 3197, "sai_norm": 30763, "miraiin_norm": 1619}, {"month": "2025-12", "total": 32352, "sho": 2809, "sai": 29543, "ref_rate": 69.0, "miraiin": 1560, "miraiin_rate": 4.8, "biz_days": 20, "cal_days": 31, "excluded_days": 3, "total_norm": 35587, "sho_norm": 3090, "sai_norm": 32497, "miraiin_norm": 1716}, {"month": "2026-01", "total": 29945, "sho": 2722, "sai": 27223, "ref_rate": 66.0, "miraiin": 1489, "miraiin_rate": 5.0, "biz_days": 19, "cal_days": 31, "excluded_days": 3, "total_norm": 34673, "sho_norm": 3152, "sai_norm": 31521, "miraiin_norm": 1724}, {"month": "2026-02", "total": 27798, "sho": 2410, "sai": 25388, "ref_rate": 64.0, "miraiin": 1370, "miraiin_rate": 4.9, "biz_days": 18, "cal_days": 28, "excluded_days": 2, "total_norm": 33975, "sho_norm": 2946, "sai_norm": 31030, "miraiin_norm": 1674}, {"month": "2026-03", "total": 32861, "sho": 2714, "sai": 30147, "ref_rate": 68.9, "miraiin": 1642, "miraiin_rate": 5.0, "biz_days": 21, "cal_days": 31, "excluded_days": 1, "total_norm": 34426, "sho_norm": 2843, "sai_norm": 31583, "miraiin_norm": 1720}, {"month": "2026-04", "total": 23279, "sho": 2021, "sai": 21258, "ref_rate": 69.0, "miraiin": 1150, "miraiin_rate": 4.9, "biz_days": 16, "cal_days": 22, "excluded_days": 0, "total_norm": 32009, "sho_norm": 2779, "sai_norm": 29230, "miraiin_norm": 1581}];
 if (TREND_DATA && TREND_DATA.length > 0 && document.getElementById('trendChart')) {
   new Chart(document.getElementById('trendChart').getContext('2d'), {
     type: 'line',
@@ -425,7 +444,8 @@ if (TREND_DATA && TREND_DATA.length > 0 && document.getElementById('trendChart')
               const row = TREND_DATA[i];
               const isFirst = ctx.dataset.label.indexOf('総') >= 0;
               const raw = isFirst ? row.total : row.sho;
-              return `（実数: ${raw.toLocaleString()} ・ ${row.biz_days}営業日）`;
+              const excluded = row.excluded_days > 0 ? `・祝日休${row.excluded_days}日除外` : '';
+              return `（実数: ${raw.toLocaleString()} ／ 営業日${row.biz_days}日${excluded}）`;
             }
           }
         }

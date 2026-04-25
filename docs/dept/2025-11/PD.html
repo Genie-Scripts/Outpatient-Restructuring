@@ -35,25 +35,25 @@
   header.site{position:sticky;top:0;z-index:30;background:var(--header);color:#fff;
               border-bottom:3px solid var(--geka);box-shadow:0 2px 8px rgba(0,0,0,.06);}
   .gh-row1{display:flex;align-items:center;gap:14px;padding:12px 28px;
-           border-bottom:1px solid var(--header-line);}
+           border-bottom:1px solid var(--header-line);flex-wrap:wrap;}
   .gh-logo{width:34px;height:34px;background:var(--geka);border-radius:8px;
            display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;
-           font-family:'DM Mono',monospace;}
+           font-family:'DM Mono',monospace;flex-shrink:0;}
   .gh-title h1{font-size:16px;font-weight:700;color:#fff;margin:0;line-height:1.2;}
   .gh-title .sub{font-size:11px;color:rgba(255,255,255,.65);font-family:'DM Mono',monospace;}
   .gh-meta{margin-left:auto;display:flex;gap:14px;align-items:center;font-size:11px;
-           color:rgba(255,255,255,.65);font-family:'DM Mono',monospace;}
+           color:rgba(255,255,255,.65);font-family:'DM Mono',monospace;flex-wrap:wrap;}
 
   .gh-row2{display:flex;align-items:center;gap:18px;padding:8px 28px;
-           background:rgba(0,0,0,.12);}
-  .gh-views{display:flex;gap:4px;}
+           background:rgba(0,0,0,.12);flex-wrap:wrap;}
+  .gh-views{display:flex;gap:4px;flex-wrap:wrap;}
   .gh-views a{font-size:12px;color:rgba(255,255,255,.85);padding:6px 14px;border-radius:6px;
-              transition:background .15s, color .15s;font-weight:500;}
+              transition:background .15s, color .15s;font-weight:500;white-space:nowrap;}
   .gh-views a:hover{background:rgba(255,255,255,.12);color:#fff;}
   .gh-views a.active{background:#fff;color:var(--header);font-weight:700;}
   .gh-views a.disabled{color:rgba(255,255,255,.35);cursor:not-allowed;}
 
-  .gh-month{margin-left:auto;display:flex;gap:8px;align-items:center;font-size:12px;color:rgba(255,255,255,.85);}
+  .gh-month{margin-left:auto;display:flex;gap:8px;align-items:center;font-size:12px;color:rgba(255,255,255,.85);flex-wrap:nowrap;}
   .gh-month label{color:rgba(255,255,255,.6);font-size:11px;letter-spacing:.04em;text-transform:uppercase;font-weight:700;}
   .gh-month select{background:rgba(255,255,255,.95);color:var(--text);
                    border:none;padding:5px 10px;border-radius:6px;
@@ -64,6 +64,18 @@
                    font-family:'DM Mono',monospace;}
   .gh-month button:hover:not(:disabled){background:rgba(255,255,255,.2);}
   .gh-month button:disabled{opacity:.35;cursor:not-allowed;}
+
+  /* ===== ヘッダのレスポンシブ ===== */
+  @media (max-width: 760px){
+    .gh-row1, .gh-row2{padding-left:14px;padding-right:14px;}
+    .gh-meta{margin-left:0;flex-basis:100%;}
+    .gh-month{margin-left:0;width:100%;justify-content:flex-end;}
+    .gh-views{flex-basis:100%;justify-content:flex-start;}
+  }
+  @media (max-width: 760px){
+    .container{padding:16px 14px 30px;}
+    .breadcrumb{padding:8px 14px;}
+  }
 
   .breadcrumb{background:var(--surface2);border-bottom:1px solid var(--border);
               padding:8px 28px;font-size:12px;color:var(--text-soft);
@@ -165,7 +177,7 @@
       <div class="sub">Outpatient Restructuring</div>
     </div>
     <div class="gh-meta">
-      <div>更新 2026-04-25 19:43</div>
+      <div>更新 2026-04-25 20:53</div>
       
     </div>
   </div>
@@ -228,7 +240,7 @@
   <div class="card-head">
     <span class="card-num">00</span>
     <h2>小児科 <span class="type-badge naika">内科</span></h2>
-    <span class="card-sub">2025-11 ／ 再編診断</span>
+    <span class="card-sub">2025-11 ／ 再編診断 ／ 実営業日 18日（祝日・病院休 2日除外）</span>
   </div>
 
   <div class="summary-row">

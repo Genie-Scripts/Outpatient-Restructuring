@@ -57,11 +57,12 @@ def _load_summary_meta(aggregated_root: Path, month: str) -> dict[str, int]:
     """00_summary.csv から営業日数を取り出す。"""
     p = aggregated_root / month / "00_summary.csv"
     if not p.exists():
-        return {"暦日数": 0, "営業日数": 0}
+        return {"暦日数": 0, "営業日数": 0, "除外日数": 0}
     s = pd.read_csv(p, encoding="utf-8-sig").iloc[0]
     return {
         "暦日数": int(s.get("期間_暦日数", 0) or 0),
         "営業日数": int(s.get("期間_営業日数", 0) or 0),
+        "除外日数": int(s.get("期間_除外日数", 0) or 0),
     }
 
 
@@ -96,6 +97,8 @@ def _build_dashboard_data(
     # 各月の営業日数を取得（換算用）
     month_meta = {m: _load_summary_meta(aggregated_root, m) for m in months}
     biz_days_per_month = [month_meta[m]["営業日数"] for m in months]
+    excluded_days_per_month = [month_meta[m]["除外日数"] for m in months]
+    cal_days_per_month = [month_meta[m]["暦日数"] for m in months]
 
     rr_best = rr[
         (rr["初再診区分"] == "再診")
@@ -267,6 +270,8 @@ def _build_dashboard_data(
         "months": months,
         "monthLabels": month_labels,
         "biz_days": biz_days_per_month,
+        "excluded_days": excluded_days_per_month,
+        "cal_days": cal_days_per_month,
         "norm_base": NORMALIZATION_BASE_DAYS,
         "depts": depts_data,
         # 換算配列（チャート用）
