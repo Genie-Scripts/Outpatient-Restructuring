@@ -1,0 +1,148 @@
+{% extends "_layout.html" %}
+{% block content %}
+
+{% if kpis %}
+<section class="card" style="display:grid;grid-template-columns:1.3fr 2.7fr;gap:16px;padding:0;border:none;background:transparent;box-shadow:none;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px;display:flex;flex-direction:column;gap:14px;">
+    <div style="font-size:11px;color:var(--dim);font-family:'DM Mono',monospace;letter-spacing:.08em;text-transform:uppercase;font-weight:700;">最新月</div>
+    <div style="font-size:36px;font-weight:700;font-family:'DM Mono',monospace;line-height:1;">{{ latest_month }}</div>
+    {% if latest_month %}
+    <a href="monthly/{{ latest_month }}.html" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:6px;background:var(--header);color:#fff;font-size:12px;font-weight:600;align-self:flex-start;">月次経営サマリを開く →</a>
+    {% endif %}
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+    <div class="summary-stat" style="background:var(--surface);">
+      <div class="summary-stat-k">総外来件数</div>
+      <div class="summary-stat-v">{{ "{:,}".format(kpis.total) }}<span class="summary-stat-u">件</span></div>
+      <div style="font-size:11px;font-family:'DM Mono',monospace;font-weight:700;margin-top:4px;
+                  color:{% if kpis.total_delta.sign == 'up' %}var(--up){% elif kpis.total_delta.sign == 'down' %}var(--down){% else %}var(--flat){% endif %};">
+        {{ '+' if kpis.total_delta.pct > 0 else '' }}{{ kpis.total_delta.pct }}% MoM
+      </div>
+    </div>
+    <div class="summary-stat" style="background:var(--surface);">
+      <div class="summary-stat-k">初診件数</div>
+      <div class="summary-stat-v">{{ "{:,}".format(kpis.sho) }}<span class="summary-stat-u">件</span></div>
+      <div style="font-size:11px;font-family:'DM Mono',monospace;font-weight:700;margin-top:4px;
+                  color:{% if kpis.sho_delta.sign == 'up' %}var(--up){% elif kpis.sho_delta.sign == 'down' %}var(--down){% else %}var(--flat){% endif %};">
+        {{ '+' if kpis.sho_delta.pct > 0 else '' }}{{ kpis.sho_delta.pct }}% MoM
+      </div>
+    </div>
+    <div class="summary-stat" style="background:var(--surface);">
+      <div class="summary-stat-k">紹介率</div>
+      <div class="summary-stat-v">{{ kpis.ref_rate }}<span class="summary-stat-u">%</span></div>
+      <div style="font-size:11px;color:var(--dim);margin-top:4px;">紹介状あり / 初診</div>
+    </div>
+    <div class="summary-stat" style="background:var(--surface);">
+      <div class="summary-stat-k">未来院率</div>
+      <div class="summary-stat-v">{{ kpis.miraiin_rate }}<span class="summary-stat-u">%</span></div>
+      <div style="font-size:11px;font-family:'DM Mono',monospace;font-weight:700;margin-top:4px;
+                  color:{% if kpis.miraiin_rate_delta.sign == 'up' %}var(--down){% elif kpis.miraiin_rate_delta.sign == 'down' %}var(--up){% else %}var(--flat){% endif %};">
+        {{ '+' if kpis.miraiin_rate_delta.pct > 0 else '' }}{{ kpis.miraiin_rate_delta.pct }}% MoM
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% if trend_json and trend_json != '[]' %}
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">●</span>
+    <h2>月次トレンド（全評価対象科 合計）</h2>
+    <span class="card-sub">総件数と初診件数</span>
+  </div>
+  <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">01</span>
+    <h2>月次経営サマリ</h2>
+    <span class="card-sub">直近6ヶ月のKPIトレンド・診療科スコアカード</span>
+  </div>
+  {% if monthly_links %}
+  <div class="nav-pills">
+    {% for m in monthly_links %}
+    <a class="nav-pill {% if m.is_latest %}current{% endif %}" href="{{ m.href }}">
+      {{ m.month }}{% if m.is_latest %} ● 最新{% endif %}
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty">月次ダッシュボードがまだ生成されていません。</div>
+  {% endif %}
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">02</span>
+    <h2>診療科 再編診断</h2>
+    <span class="card-sub">時間帯・逆紹介・薬再診・枠ミックスの診断</span>
+  </div>
+  {% if dept_months %}
+    {% for dm in dept_months %}
+    <div style="margin-bottom:12px;">
+      <h3>{{ dm.month }}{% if dm.is_latest %} <span class="type-badge geka">最新</span>{% endif %}</h3>
+      <div class="nav-pills">
+        <a class="nav-pill" href="dept/{{ dm.month }}/index.html">この月の科一覧 ({{ dm.count }} 科)</a>
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="empty">診療科ページが未生成です。</div>
+  {% endif %}
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">03</span>
+    <h2>分析テーマ</h2>
+    <span class="card-sub">横断的な再編分析（Phase 3 以降で順次追加）</span>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;">
+    {% for t in themes %}
+    <div style="padding:14px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;{% if not t.href %}opacity:.55;{% endif %}">
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">{{ t.title }}</div>
+      <div style="font-size:12px;color:var(--text-soft);">{{ t.desc }}</div>
+      {% if not t.href %}
+      <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--dim);margin-top:6px;letter-spacing:.06em;">PHASE 3 PREDICTED</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const TREND_DATA = {{ trend_json | safe }};
+if (TREND_DATA && TREND_DATA.length > 0 && document.getElementById('trendChart')) {
+  new Chart(document.getElementById('trendChart').getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: TREND_DATA.map(d => d.month),
+      datasets: [
+        { label: '総件数', data: TREND_DATA.map(d => d.total),
+          borderColor: '#3D3A35', backgroundColor: 'rgba(61,58,53,.08)',
+          borderWidth: 2.5, tension: 0.25, fill: true, yAxisID: 'y' },
+        { label: '初診件数', data: TREND_DATA.map(d => d.sho),
+          borderColor: '#D08620', backgroundColor: 'rgba(208,134,32,.08)',
+          borderWidth: 2, tension: 0.25, fill: false, yAxisID: 'y1' },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { position: 'bottom' } },
+      scales: {
+        x: { grid: { display: false } },
+        y: { position: 'left', title: { display: true, text: '総件数' } },
+        y1: { position: 'right', title: { display: true, text: '初診件数' }, grid: { display: false } },
+      },
+    },
+  });
+}
+</script>
+{% endblock %}

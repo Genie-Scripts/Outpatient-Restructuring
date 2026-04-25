@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+
+# 仮想環境
+.venv/
+venv/
+env/
+
+# macOS / エディタ
+.DS_Store
+.vscode/
+.idea/
+
+# 環境変数
+.env
+
+# 上流リポの浅いクローン取得先（.envやスクリプトから参照）
+.cache/
+upstream/
+
+# 上流リポからシンボリックリンクor浅いクローンで取得するデータ（コミットしない）
+# このリポには「契約面となる集計CSV」だけを取り込み、生データは取り込まない
+data/aggregated
+data/aggregated/
+config/dept_classification.csv
+config/dept_targets.csv
+
+# ローカル確認用
+local/
+Temp/

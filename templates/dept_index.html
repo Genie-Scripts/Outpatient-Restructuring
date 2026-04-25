@@ -1,0 +1,36 @@
+{% extends "_layout.html" %}
+{% block content %}
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">●</span>
+    <h2>診療科一覧 — {{ month }}</h2>
+    <span class="card-sub">再編診断ページへの入口</span>
+  </div>
+
+  {% for g in groups %}
+  <div style="margin-bottom:18px;">
+    <h3>
+      <span class="type-badge {{ g.type_key }}">{{ g.name }}</span>
+      <span class="meta">{{ g["items"]|length }} 科</span>
+    </h3>
+    <div class="nav-pills">
+      {% for it in g["items"] %}
+      <a class="nav-pill" href="{{ it.href }}">
+        <span style="font-family:'DM Mono',monospace;color:#8A847C;font-size:11px;">{{ it.code }}</span>
+        &nbsp;{{ it.name }}
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="lateral-nav">
+  <div class="group">
+    <a href="../../index.html">↑ ハブへ</a>
+    <a href="../../monthly/{{ month }}.html">{{ month }} 月次経営サマリへ</a>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,197 @@
+{% extends "_layout.html" %}
+{% block content %}
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">00</span>
+    <h2>{{ dept_name }} <span class="type-badge {{ type_key }}">{{ type_label }}</span></h2>
+    <span class="card-sub">{{ month }} ／ 再編診断</span>
+  </div>
+
+  <div class="summary-row">
+    <div class="summary-stat">
+      <div class="summary-stat-k">総件数</div>
+      <div class="summary-stat-v">{{ "{:,}".format(summary.total) }}<span class="summary-stat-u">件</span></div>
+    </div>
+    <div class="summary-stat">
+      <div class="summary-stat-k">初診率</div>
+      <div class="summary-stat-v">{{ summary.sho_rate }}<span class="summary-stat-u">%</span></div>
+    </div>
+    <div class="summary-stat">
+      <div class="summary-stat-k">紹介率（初診）</div>
+      <div class="summary-stat-v">{{ summary.shokai_rate }}<span class="summary-stat-u">%</span></div>
+    </div>
+    <div class="summary-stat">
+      <div class="summary-stat-k">未来院率</div>
+      <div class="summary-stat-v">{{ summary.mirain_rate }}<span class="summary-stat-u">%</span></div>
+    </div>
+  </div>
+  <p class="meta">※ 詳細な医師別内訳・KPI評価は医師フィードバックサイト側で確認できます。</p>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">01</span>
+    <h2>時間帯ゾーン × 曜日</h2>
+    <span class="card-sub">看護師リソース配分の検討素材</span>
+  </div>
+  <div class="chart-wrap"><canvas id="chartTimezone"></canvas></div>
+  <p class="meta">15時前後で稼働がどう分布しているかを確認。15時以降に偏りが大きい場合、看護師シフトと噛み合わない可能性。</p>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">02</span>
+    <h2>逆紹介候補</h2>
+    <span class="card-sub">短時間再診・紹介状なし・併科なし・診察前検査なし</span>
+  </div>
+  {% if reverse_referral %}
+  <table>
+    <thead>
+      <tr><th>診察時間階級</th><th class="num">件数</th></tr>
+    </thead>
+    <tbody>
+      {% for r in reverse_referral %}
+      <tr><td>{{ r.bucket }}</td><td class="num">{{ "{:,}".format(r.count) }}</td></tr>
+      {% endfor %}
+      <tr><th>合計</th><th class="num">{{ "{:,}".format(reverse_referral_total) }}</th></tr>
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">該当する候補はありません。</div>
+  {% endif %}
+  <p class="meta">抽出条件：再診 ∧ 紹介状無し ∧ 併科無 ∧ 診察前検査なし ∧ 診察時間 9分以下</p>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">03</span>
+    <h2>薬再診スコア（医師×枠）</h2>
+    <span class="card-sub">短時間再診比率・紹介状なし再診比率・診察時間中央値の合成スコア</span>
+  </div>
+  {% if drug_revisit_rows %}
+  <table>
+    <thead>
+      <tr>
+        <th>医師匿名ID</th>
+        <th>予約名称</th>
+        <th class="num">再診件数</th>
+        <th class="num">短時間比率</th>
+        <th class="num">紹介状なし比率</th>
+        <th class="num">中央値(分)</th>
+        <th class="num">スコア</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in drug_revisit_rows %}
+      <tr>
+        <td>{{ r.medic }}</td>
+        <td>{{ r.slot }}</td>
+        <td class="num">{{ r.sai }}</td>
+        <td class="num">{{ r.short_ratio }}%</td>
+        <td class="num">{{ r.no_shokai_ratio }}%</td>
+        <td class="num">{% if r.median is not none %}{{ "%.1f"|format(r.median) }}{% else %}-{% endif %}</td>
+        <td class="num">
+          {% if r.score is not none %}
+          <span class="score-badge
+            {% if r.score >= 70 %}score-high
+            {% elif r.score >= 50 %}score-mid
+            {% else %}score-low{% endif %}">{{ r.score }}</span>
+          {% else %}-{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">採点対象（再診件数 ≥ 10）の医師×枠がありません。</div>
+  {% endif %}
+  <p class="meta">スコア60以上は逆紹介・運用見直しの優先候補。70以上は赤バッジで強調。</p>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">04</span>
+    <h2>枠ミックスの当月内訳</h2>
+    <span class="card-sub">予約名称ごとの初診率と件数。枠再編の入力情報</span>
+  </div>
+  {% if slot_rows %}
+  <table>
+    <thead>
+      <tr>
+        <th>予約名称</th>
+        <th class="num">総件数</th>
+        <th class="num">初診</th>
+        <th class="num">再診</th>
+        <th class="num">紹介状あり初診</th>
+        <th class="num">初診率</th>
+        <th>分類</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in slot_rows %}
+      <tr>
+        <td>{{ s.name }}</td>
+        <td class="num">{{ "{:,}".format(s.total) }}</td>
+        <td class="num">{{ "{:,}".format(s.sho) }}</td>
+        <td class="num">{{ "{:,}".format(s.sai) }}</td>
+        <td class="num">{{ "{:,}".format(s.shokai_sho) }}</td>
+        <td class="num{% if s.is_mismatch %} warn{% endif %}">{{ s.sho_rate }}%</td>
+        <td>
+          {% for f in s.flags %}<span class="score-badge score-mid">{{ f }}</span> {% endfor %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">枠データがありません。</div>
+  {% endif %}
+  <p class="meta">分類フラグ：<b>稀用</b>＝月間件数 5未満（縮小・統合候補）、<b>命名乖離</b>＝「初診」名称なのに再診が半数以上。</p>
+</div>
+
+<div class="lateral-nav">
+  <div class="group">
+    {% if prev_dept_href %}<a href="{{ prev_dept_href }}">← {{ prev_dept_label }}</a>{% endif %}
+    {% if next_dept_href %}<a href="{{ next_dept_href }}">{{ next_dept_label }} →</a>{% endif %}
+  </div>
+  <div class="group">
+    {% if prev_month_href %}<a href="{{ prev_month_href }}">← 前月の同科</a>{% endif %}
+    {% if next_month_href %}<a href="{{ next_month_href }}">翌月の同科 →</a>{% endif %}
+  </div>
+  <div class="group">
+    <a href="../../index.html">↑ ハブへ</a>
+    <a href="index.html">この月の科一覧</a>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const TZ_DATA = {{ timezone_data_json | safe }};
+if (TZ_DATA && TZ_DATA.labels && document.getElementById('chartTimezone')) {
+  const palette = ['#3F7FC1', '#D08620', '#2B9DB8', '#8B6FB6'];
+  new Chart(document.getElementById('chartTimezone'), {
+    type: 'bar',
+    data: {
+      labels: TZ_DATA.labels,
+      datasets: TZ_DATA.datasets.map((ds, i) => ({
+        label: ds.label,
+        data: ds.data,
+        backgroundColor: palette[i % palette.length],
+      })),
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom' } },
+      scales: {
+        x: { stacked: true, grid: { display: false } },
+        y: { stacked: true, beginAtZero: true, grid: { color: '#EBE8E3' } },
+      },
+    },
+  });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>リウマチ膠原病内科 ／ 2026-04 | 外来再編分析</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&family=DM+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F3EF; --surface:#FFFFFF; --surface2:#FAF9F6; --surface3:#F0EDE8;
+    --border:#E5E3DF; --border-strong:#D6D3CC;
+    --text:#2C2A28; --text-soft:#5A5651; --dim:#8A847C; --muted:#B0ABA3;
+    --header:#3D3A35;
+    --blue:#3F7FC1; --blue-light:#E7F0FA;
+    --naika:#2B9DB8; --naika-bg:#E4F3F6;
+    --geka:#D08620;  --geka-bg:#FAEEDB;
+    --other:#8B6FB6; --other-bg:#EFEAF5;
+    --up:#2F7A4B; --up-bg:#E5F1E9;
+    --down:#A33838; --down-bg:#F5E4E4;
+    --flat:#8A847C; --flat-bg:#EDEBE7;
+    --warn:#8A6D1A; --warn-bg:#FAF3E0; --warn-border:#D4B860;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.55;}
+  a{color:inherit;text-decoration:none;}
+
+  header.site{background:var(--header);color:#fff;padding:14px 28px;border-bottom:3px solid var(--geka);
+              display:flex;align-items:center;gap:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);
+              position:sticky;top:0;z-index:30;}
+  .logo{width:34px;height:34px;background:var(--geka);border-radius:8px;
+        display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;
+        font-family:'DM Mono',monospace;}
+  header.site h1{font-size:16px;font-weight:700;color:#fff;margin:0;}
+  header.site .sub{font-size:11px;color:rgba(255,255,255,.65);font-family:'DM Mono',monospace;}
+  header.site nav{margin-left:auto;display:flex;gap:6px;}
+  header.site nav a{font-size:12px;color:rgba(255,255,255,.85);padding:6px 12px;border-radius:6px;
+                    transition:background .15s;font-weight:500;}
+  header.site nav a:hover{background:rgba(255,255,255,.12);color:#fff;}
+  header.site nav a.active{background:rgba(255,255,255,.18);color:#fff;font-weight:700;}
+
+  .breadcrumb{background:var(--surface2);border-bottom:1px solid var(--border);
+              padding:8px 28px;font-size:12px;color:var(--text-soft);
+              display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .breadcrumb a{color:var(--blue);}
+  .breadcrumb a:hover{text-decoration:underline;}
+  .breadcrumb .sep{color:var(--dim);}
+  .breadcrumb .current{color:var(--text);font-weight:600;}
+
+  .container{max-width:1400px;margin:0 auto;padding:24px 28px 40px;}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+        padding:22px 26px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.03);}
+  .card-head{display:flex;align-items:baseline;gap:10px;margin-bottom:16px;
+             padding-bottom:10px;border-bottom:1px solid var(--border);}
+  .card-num{font-size:10px;font-family:'DM Mono',monospace;color:var(--blue);
+            background:var(--blue-light);padding:3px 8px;border-radius:4px;
+            font-weight:700;letter-spacing:.04em;}
+  .card-title{font-size:15px;font-weight:700;color:var(--text);}
+  .card-sub{font-size:12px;color:var(--dim);margin-left:4px;}
+  h2{font-size:16px;font-weight:700;color:var(--text);}
+  h3{font-size:13px;font-weight:600;color:var(--text-soft);margin-bottom:8px;}
+  p{font-size:13px;color:var(--text-soft);line-height:1.6;}
+  .meta{font-size:12px;color:var(--dim);margin-top:4px;}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  table thead th{background:var(--surface2);padding:9px 12px;text-align:left;
+                 font-size:11px;font-weight:700;color:var(--text-soft);
+                 border-bottom:1px solid var(--border-strong);text-transform:uppercase;letter-spacing:.04em;}
+  table tbody td{padding:8px 12px;border-bottom:1px solid var(--border);}
+  table tbody tr:hover td{background:var(--surface2);}
+  table .num{text-align:right;font-family:'DM Mono',monospace;}
+  table .num.warn{color:var(--warn);font-weight:700;}
+
+  .type-badge{display:inline-block;padding:1px 8px;border-radius:4px;font-size:10px;
+              font-weight:700;letter-spacing:.04em;margin-left:6px;vertical-align:middle;}
+  .type-badge.naika{background:var(--naika-bg);color:var(--naika);}
+  .type-badge.geka{background:var(--geka-bg);color:var(--geka);}
+  .type-badge.other{background:var(--other-bg);color:var(--other);}
+
+  .summary-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+               gap:12px;margin-bottom:16px;}
+  .summary-stat{background:var(--surface2);padding:12px 14px;border-radius:8px;border:1px solid var(--border);}
+  .summary-stat-k{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.04em;font-weight:700;}
+  .summary-stat-v{font-size:22px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text);margin-top:4px;}
+  .summary-stat-u{font-size:11px;color:var(--text-soft);margin-left:3px;font-weight:500;}
+
+  .nav-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+  .nav-pill{padding:6px 12px;background:var(--surface2);border:1px solid var(--border);
+            border-radius:6px;font-size:12px;color:var(--text-soft);transition:all .15s;}
+  .nav-pill:hover{border-color:var(--blue);color:var(--blue);}
+  .nav-pill.current{background:var(--header);color:#fff;border-color:var(--header);}
+
+  .chart-wrap{position:relative;height:240px;}
+
+  .lateral-nav{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;
+               padding:14px 22px;background:var(--surface2);border:1px solid var(--border);
+               border-radius:10px;margin-top:24px;}
+  .lateral-nav a{font-size:12px;color:var(--blue);padding:6px 12px;
+                 border-radius:6px;background:var(--surface);
+                 border:1px solid var(--border);transition:all .15s;}
+  .lateral-nav a:hover{border-color:var(--blue);background:var(--blue-light);}
+  .lateral-nav .group{display:flex;gap:6px;flex-wrap:wrap;}
+
+  .empty{color:var(--dim);font-size:13px;padding:16px;background:var(--surface3);
+         border-radius:6px;text-align:center;}
+
+  .score-badge{display:inline-block;min-width:36px;padding:2px 8px;
+               border-radius:4px;font-weight:700;text-align:center;
+               font-family:'DM Mono',monospace;font-size:12px;}
+  .score-high{background:var(--down);color:#fff;}
+  .score-mid{background:#E0A344;color:#fff;}
+  .score-low{background:var(--surface3);color:var(--text-soft);}
+
+  footer.site{padding:18px 28px;text-align:center;color:var(--dim);font-size:11px;
+              border-top:1px solid var(--border);margin-top:20px;}
+  footer.site .feedback-link{color:var(--blue);}
+</style>
+
+</head>
+<body>
+
+<header class="site">
+  <div class="logo">OR</div>
+  <div>
+    <h1>外来再編分析</h1>
+    <div class="sub">Outpatient Restructuring</div>
+  </div>
+  <nav>
+    <a href="../../index.html">ホーム</a>
+    <a href="../../monthly/2026-04.html">月次</a>
+    <a href="../../dept/2026-04/index.html" class="active">診療科</a>
+  </nav>
+</header>
+
+
+<div class="breadcrumb">
+  
+    
+    <a href="../../index.html">ホーム</a>
+    
+    <span class="sep">/</span>
+  
+    
+    <a href="index.html">診療科</a>
+    
+    <span class="sep">/</span>
+  
+    
+    <span class="current">2026-04 ／ リウマチ膠原病内科</span>
+    
+    
+  
+</div>
+
+
+<main class="container">
+
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">00</span>
+    <h2>リウマチ膠原病内科 <span class="type-badge naika">内科</span></h2>
+    <span class="card-sub">2026-04 ／ 再編診断</span>
+  </div>
+
+  <div class="summary-row">
+    <div class="summary-stat">
+      <div class="summary-stat-k">総件数</div>
+      <div class="summary-stat-v">837<span class="summary-stat-u">件</span></div>
+    </div>
+    <div class="summary-stat">
+      <div class="summary-stat-k">初診率</div>
+      <div class="summary-stat-v">2.15<span class="summary-stat-u">%</span></div>
+    </div>
+    <div class="summary-stat">
+      <div class="summary-stat-k">紹介率（初診）</div>
+      <div class="summary-stat-v">94.44<span class="summary-stat-u">%</span></div>
+    </div>
+    <div class="summary-stat">
+      <div class="summary-stat-k">未来院率</div>
+      <div class="summary-stat-v">3.23<span class="summary-stat-u">%</span></div>
+    </div>
+  </div>
+  <p class="meta">※ 詳細な医師別内訳・KPI評価は医師フィードバックサイト側で確認できます。</p>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">01</span>
+    <h2>時間帯ゾーン × 曜日</h2>
+    <span class="card-sub">看護師リソース配分の検討素材</span>
+  </div>
+  <div class="chart-wrap"><canvas id="chartTimezone"></canvas></div>
+  <p class="meta">15時前後で稼働がどう分布しているかを確認。15時以降に偏りが大きい場合、看護師シフトと噛み合わない可能性。</p>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">02</span>
+    <h2>逆紹介候補</h2>
+    <span class="card-sub">短時間再診・紹介状なし・併科なし・診察前検査なし</span>
+  </div>
+  
+  <table>
+    <thead>
+      <tr><th>診察時間階級</th><th class="num">件数</th></tr>
+    </thead>
+    <tbody>
+      
+      <tr><td>0-4分</td><td class="num">22</td></tr>
+      
+      <tr><td>5-9分</td><td class="num">7</td></tr>
+      
+      <tr><th>合計</th><th class="num">29</th></tr>
+    </tbody>
+  </table>
+  
+  <p class="meta">抽出条件：再診 ∧ 紹介状無し ∧ 併科無 ∧ 診察前検査なし ∧ 診察時間 9分以下</p>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">03</span>
+    <h2>薬再診スコア（医師×枠）</h2>
+    <span class="card-sub">短時間再診比率・紹介状なし再診比率・診察時間中央値の合成スコア</span>
+  </div>
+  
+  <table>
+    <thead>
+      <tr>
+        <th>医師匿名ID</th>
+        <th>予約名称</th>
+        <th class="num">再診件数</th>
+        <th class="num">短時間比率</th>
+        <th class="num">紹介状なし比率</th>
+        <th class="num">中央値(分)</th>
+        <th class="num">スコア</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td>DR_RH005</td>
+        <td>SL_0156</td>
+        <td class="num">35</td>
+        <td class="num">68.6%</td>
+        <td class="num">100.0%</td>
+        <td class="num">0.0</td>
+        <td class="num">
+          
+          <span class="score-badge
+            score-high
+            ">89.5</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>DR_RH007</td>
+        <td>SL_0009</td>
+        <td class="num">29</td>
+        <td class="num">69.0%</td>
+        <td class="num">100.0%</td>
+        <td class="num">1.5</td>
+        <td class="num">
+          
+          <span class="score-badge
+            score-high
+            ">88.4</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>DR_RH009</td>
+        <td>SL_0009</td>
+        <td class="num">11</td>
+        <td class="num">54.5%</td>
+        <td class="num">100.0%</td>
+        <td class="num">3.0</td>
+        <td class="num">
+          
+          <span class="score-badge
+            score-high
+            ">82.3</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>DR_RH004</td>
+        <td>SL_0139</td>
+        <td class="num">75</td>
+        <td class="num">45.3%</td>
+        <td class="num">100.0%</td>
+        <td class="num">5.0</td>
+        <td class="num">
+          
+          <span class="score-badge
+            score-high
+            ">77.6</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>DR_RH009</td>
+        <td>SL_0210</td>
+        <td class="num">201</td>
+        <td class="num">36.3%</td>
+        <td class="num">100.0%</td>
+        <td class="num">5.0</td>
+        <td class="num">
+          
+          <span class="score-badge
+            score-high
+            ">74.6</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>DR_RH003</td>
+        <td>SL_0066</td>
+        <td class="num">102</td>
+        <td class="num">35.3%</td>
+        <td class="num">100.0%</td>
+        <td class="num">6.0</td>
+        <td class="num">
+          
+          <span class="score-badge
+            score-high
+            ">73.4</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>DR_RH003</td>
+        <td>SL_0009</td>
+        <td class="num">15</td>
+        <td class="num">26.7%</td>
+        <td class="num">100.0%</td>
+        <td class="num">6.0</td>
+        <td class="num">
+          
+          <span class="score-badge
+            score-high
+            ">70.6</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>DR_RH010</td>
+        <td>SL_0222</td>
+        <td class="num">66</td>
+        <td class="num">22.7%</td>
+        <td class="num">100.0%</td>
+        <td class="num">6.0</td>
+        <td class="num">
+          
+          <span class="score-badge
+            score-mid
+            ">69.2</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>DR_RH006</td>
+        <td>SL_0174</td>
+        <td class="num">117</td>
+        <td class="num">8.5%</td>
+        <td class="num">100.0%</td>
+        <td class="num">8.5</td>
+        <td class="num">
+          
+          <span class="score-badge
+            score-mid
+            ">62.4</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>DR_RH001</td>
+        <td>SL_0008</td>
+        <td class="num">37</td>
+        <td class="num">5.4%</td>
+        <td class="num">100.0%</td>
+        <td class="num">8.0</td>
+        <td class="num">
+          
+          <span class="score-badge
+            score-mid
+            ">61.8</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>DR_RH002</td>
+        <td>SL_0014</td>
+        <td class="num">53</td>
+        <td class="num">3.8%</td>
+        <td class="num">100.0%</td>
+        <td class="num">11.0</td>
+        <td class="num">
+          
+          <span class="score-badge
+            score-mid
+            ">58.8</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>DR_RH008</td>
+        <td>SL_0201</td>
+        <td class="num">16</td>
+        <td class="num">0.0%</td>
+        <td class="num">100.0%</td>
+        <td class="num">14.0</td>
+        <td class="num">
+          
+          <span class="score-badge
+            score-mid
+            ">55.0</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>DR_RH001</td>
+        <td>SL_0009</td>
+        <td class="num">3</td>
+        <td class="num">0.0%</td>
+        <td class="num">100.0%</td>
+        <td class="num">8.0</td>
+        <td class="num">
+          -
+        </td>
+      </tr>
+      
+      <tr>
+        <td>DR_RH002</td>
+        <td>SL_0009</td>
+        <td class="num">6</td>
+        <td class="num">33.3%</td>
+        <td class="num">100.0%</td>
+        <td class="num">8.5</td>
+        <td class="num">
+          -
+        </td>
+      </tr>
+      
+      <tr>
+        <td>DR_RH002</td>
+        <td>SL_0682</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+        <td class="num">100.0%</td>
+        <td class="num">18.0</td>
+        <td class="num">
+          -
+        </td>
+      </tr>
+      
+    </tbody>
+  </table>
+  
+  <p class="meta">スコア60以上は逆紹介・運用見直しの優先候補。70以上は赤バッジで強調。</p>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">04</span>
+    <h2>枠ミックスの当月内訳</h2>
+    <span class="card-sub">予約名称ごとの初診率と件数。枠再編の入力情報</span>
+  </div>
+  
+  <table>
+    <thead>
+      <tr>
+        <th>予約名称</th>
+        <th class="num">総件数</th>
+        <th class="num">初診</th>
+        <th class="num">再診</th>
+        <th class="num">紹介状あり初診</th>
+        <th class="num">初診率</th>
+        <th>分類</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td>SL_0210</td>
+        <td class="num">201</td>
+        <td class="num">0</td>
+        <td class="num">201</td>
+        <td class="num">0</td>
+        <td class="num">0.0%</td>
+        <td>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>SL_0174</td>
+        <td class="num">117</td>
+        <td class="num">0</td>
+        <td class="num">117</td>
+        <td class="num">0</td>
+        <td class="num">0.0%</td>
+        <td>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>SL_0066</td>
+        <td class="num">102</td>
+        <td class="num">0</td>
+        <td class="num">102</td>
+        <td class="num">0</td>
+        <td class="num">0.0%</td>
+        <td>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>SL_0009</td>
+        <td class="num">86</td>
+        <td class="num">0</td>
+        <td class="num">86</td>
+        <td class="num">0</td>
+        <td class="num">0.0%</td>
+        <td>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>SL_0139</td>
+        <td class="num">75</td>
+        <td class="num">0</td>
+        <td class="num">75</td>
+        <td class="num">0</td>
+        <td class="num">0.0%</td>
+        <td>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>SL_0222</td>
+        <td class="num">66</td>
+        <td class="num">0</td>
+        <td class="num">66</td>
+        <td class="num">0</td>
+        <td class="num">0.0%</td>
+        <td>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>SL_0014</td>
+        <td class="num">53</td>
+        <td class="num">0</td>
+        <td class="num">53</td>
+        <td class="num">0</td>
+        <td class="num">0.0%</td>
+        <td>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>SL_0008</td>
+        <td class="num">37</td>
+        <td class="num">0</td>
+        <td class="num">37</td>
+        <td class="num">0</td>
+        <td class="num">0.0%</td>
+        <td>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>SL_0156</td>
+        <td class="num">35</td>
+        <td class="num">0</td>
+        <td class="num">35</td>
+        <td class="num">0</td>
+        <td class="num">0.0%</td>
+        <td>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>SL_0201</td>
+        <td class="num">16</td>
+        <td class="num">0</td>
+        <td class="num">16</td>
+        <td class="num">0</td>
+        <td class="num">0.0%</td>
+        <td>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>SL_0368</td>
+        <td class="num">7</td>
+        <td class="num">0</td>
+        <td class="num">7</td>
+        <td class="num">0</td>
+        <td class="num">0.0%</td>
+        <td>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>SL_0005</td>
+        <td class="num">5</td>
+        <td class="num">0</td>
+        <td class="num">5</td>
+        <td class="num">0</td>
+        <td class="num">0.0%</td>
+        <td>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>SL_0176</td>
+        <td class="num">5</td>
+        <td class="num">0</td>
+        <td class="num">5</td>
+        <td class="num">0</td>
+        <td class="num">0.0%</td>
+        <td>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>SL_0340</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">0.0%</td>
+        <td>
+          <span class="score-badge score-mid">稀用</span> 
+        </td>
+      </tr>
+      
+      <tr>
+        <td>SL_0526</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">0.0%</td>
+        <td>
+          <span class="score-badge score-mid">稀用</span> 
+        </td>
+      </tr>
+      
+      <tr>
+        <td>SL_0065</td>
+        <td class="num">3</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">3</td>
+        <td class="num">100.0%</td>
+        <td>
+          <span class="score-badge score-mid">稀用</span> 
+        </td>
+      </tr>
+      
+      <tr>
+        <td>SL_0299</td>
+        <td class="num">3</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">2</td>
+        <td class="num">100.0%</td>
+        <td>
+          <span class="score-badge score-mid">稀用</span> 
+        </td>
+      </tr>
+      
+      <tr>
+        <td>SL_0426</td>
+        <td class="num">3</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">3</td>
+        <td class="num">100.0%</td>
+        <td>
+          <span class="score-badge score-mid">稀用</span> 
+        </td>
+      </tr>
+      
+      <tr>
+        <td>SL_0596</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">0.0%</td>
+        <td>
+          <span class="score-badge score-mid">稀用</span> 
+        </td>
+      </tr>
+      
+      <tr>
+        <td>SL_0496</td>
+        <td class="num">2</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">2</td>
+        <td class="num">100.0%</td>
+        <td>
+          <span class="score-badge score-mid">稀用</span> 
+        </td>
+      </tr>
+      
+    </tbody>
+  </table>
+  
+  <p class="meta">分類フラグ：<b>稀用</b>＝月間件数 5未満（縮小・統合候補）、<b>命名乖離</b>＝「初診」名称なのに再診が半数以上。</p>
+</div>
+
+<div class="lateral-nav">
+  <div class="group">
+    <a href="GS.html">← 一般消化器外科</a>
+    <a href="OS.html">歯科口腔外科 →</a>
+  </div>
+  <div class="group">
+    <a href="../2026-03/RH.html">← 前月の同科</a>
+    
+  </div>
+  <div class="group">
+    <a href="../../index.html">↑ ハブへ</a>
+    <a href="index.html">この月の科一覧</a>
+  </div>
+</div>
+
+
+</main>
+
+<footer class="site">
+  外来再編分析ダッシュボード
+  
+</footer>
+
+
+<script>
+const TZ_DATA = {"labels": ["月", "火", "水", "木", "金", "土", "日"], "datasets": [{"label": "午前(〜12時)", "data": [104, 135, 174, 151, 122, 0, 0]}, {"label": "午後前半(12-15時)", "data": [8, 5, 63, 37, 32, 0, 0]}, {"label": "午後後半(15-17時)", "data": [0, 3, 2, 0, 0, 0, 0]}, {"label": "夕方以降(17時〜)", "data": [0, 0, 0, 1, 0, 0, 0]}]};
+if (TZ_DATA && TZ_DATA.labels && document.getElementById('chartTimezone')) {
+  const palette = ['#3F7FC1', '#D08620', '#2B9DB8', '#8B6FB6'];
+  new Chart(document.getElementById('chartTimezone'), {
+    type: 'bar',
+    data: {
+      labels: TZ_DATA.labels,
+      datasets: TZ_DATA.datasets.map((ds, i) => ({
+        label: ds.label,
+        data: ds.data,
+        backgroundColor: palette[i % palette.length],
+      })),
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom' } },
+      scales: {
+        x: { stacked: true, grid: { display: false } },
+        y: { stacked: true, beginAtZero: true, grid: { color: '#EBE8E3' } },
+      },
+    },
+  });
+}
+</script>
+
+</body>
+</html>

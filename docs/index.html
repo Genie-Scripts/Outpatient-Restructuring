@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ホーム | 外来再編分析</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&family=DM+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F3EF; --surface:#FFFFFF; --surface2:#FAF9F6; --surface3:#F0EDE8;
+    --border:#E5E3DF; --border-strong:#D6D3CC;
+    --text:#2C2A28; --text-soft:#5A5651; --dim:#8A847C; --muted:#B0ABA3;
+    --header:#3D3A35;
+    --blue:#3F7FC1; --blue-light:#E7F0FA;
+    --naika:#2B9DB8; --naika-bg:#E4F3F6;
+    --geka:#D08620;  --geka-bg:#FAEEDB;
+    --other:#8B6FB6; --other-bg:#EFEAF5;
+    --up:#2F7A4B; --up-bg:#E5F1E9;
+    --down:#A33838; --down-bg:#F5E4E4;
+    --flat:#8A847C; --flat-bg:#EDEBE7;
+    --warn:#8A6D1A; --warn-bg:#FAF3E0; --warn-border:#D4B860;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.55;}
+  a{color:inherit;text-decoration:none;}
+
+  header.site{background:var(--header);color:#fff;padding:14px 28px;border-bottom:3px solid var(--geka);
+              display:flex;align-items:center;gap:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);
+              position:sticky;top:0;z-index:30;}
+  .logo{width:34px;height:34px;background:var(--geka);border-radius:8px;
+        display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;
+        font-family:'DM Mono',monospace;}
+  header.site h1{font-size:16px;font-weight:700;color:#fff;margin:0;}
+  header.site .sub{font-size:11px;color:rgba(255,255,255,.65);font-family:'DM Mono',monospace;}
+  header.site nav{margin-left:auto;display:flex;gap:6px;}
+  header.site nav a{font-size:12px;color:rgba(255,255,255,.85);padding:6px 12px;border-radius:6px;
+                    transition:background .15s;font-weight:500;}
+  header.site nav a:hover{background:rgba(255,255,255,.12);color:#fff;}
+  header.site nav a.active{background:rgba(255,255,255,.18);color:#fff;font-weight:700;}
+
+  .breadcrumb{background:var(--surface2);border-bottom:1px solid var(--border);
+              padding:8px 28px;font-size:12px;color:var(--text-soft);
+              display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .breadcrumb a{color:var(--blue);}
+  .breadcrumb a:hover{text-decoration:underline;}
+  .breadcrumb .sep{color:var(--dim);}
+  .breadcrumb .current{color:var(--text);font-weight:600;}
+
+  .container{max-width:1400px;margin:0 auto;padding:24px 28px 40px;}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+        padding:22px 26px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.03);}
+  .card-head{display:flex;align-items:baseline;gap:10px;margin-bottom:16px;
+             padding-bottom:10px;border-bottom:1px solid var(--border);}
+  .card-num{font-size:10px;font-family:'DM Mono',monospace;color:var(--blue);
+            background:var(--blue-light);padding:3px 8px;border-radius:4px;
+            font-weight:700;letter-spacing:.04em;}
+  .card-title{font-size:15px;font-weight:700;color:var(--text);}
+  .card-sub{font-size:12px;color:var(--dim);margin-left:4px;}
+  h2{font-size:16px;font-weight:700;color:var(--text);}
+  h3{font-size:13px;font-weight:600;color:var(--text-soft);margin-bottom:8px;}
+  p{font-size:13px;color:var(--text-soft);line-height:1.6;}
+  .meta{font-size:12px;color:var(--dim);margin-top:4px;}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  table thead th{background:var(--surface2);padding:9px 12px;text-align:left;
+                 font-size:11px;font-weight:700;color:var(--text-soft);
+                 border-bottom:1px solid var(--border-strong);text-transform:uppercase;letter-spacing:.04em;}
+  table tbody td{padding:8px 12px;border-bottom:1px solid var(--border);}
+  table tbody tr:hover td{background:var(--surface2);}
+  table .num{text-align:right;font-family:'DM Mono',monospace;}
+  table .num.warn{color:var(--warn);font-weight:700;}
+
+  .type-badge{display:inline-block;padding:1px 8px;border-radius:4px;font-size:10px;
+              font-weight:700;letter-spacing:.04em;margin-left:6px;vertical-align:middle;}
+  .type-badge.naika{background:var(--naika-bg);color:var(--naika);}
+  .type-badge.geka{background:var(--geka-bg);color:var(--geka);}
+  .type-badge.other{background:var(--other-bg);color:var(--other);}
+
+  .summary-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+               gap:12px;margin-bottom:16px;}
+  .summary-stat{background:var(--surface2);padding:12px 14px;border-radius:8px;border:1px solid var(--border);}
+  .summary-stat-k{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.04em;font-weight:700;}
+  .summary-stat-v{font-size:22px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text);margin-top:4px;}
+  .summary-stat-u{font-size:11px;color:var(--text-soft);margin-left:3px;font-weight:500;}
+
+  .nav-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+  .nav-pill{padding:6px 12px;background:var(--surface2);border:1px solid var(--border);
+            border-radius:6px;font-size:12px;color:var(--text-soft);transition:all .15s;}
+  .nav-pill:hover{border-color:var(--blue);color:var(--blue);}
+  .nav-pill.current{background:var(--header);color:#fff;border-color:var(--header);}
+
+  .chart-wrap{position:relative;height:240px;}
+
+  .lateral-nav{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;
+               padding:14px 22px;background:var(--surface2);border:1px solid var(--border);
+               border-radius:10px;margin-top:24px;}
+  .lateral-nav a{font-size:12px;color:var(--blue);padding:6px 12px;
+                 border-radius:6px;background:var(--surface);
+                 border:1px solid var(--border);transition:all .15s;}
+  .lateral-nav a:hover{border-color:var(--blue);background:var(--blue-light);}
+  .lateral-nav .group{display:flex;gap:6px;flex-wrap:wrap;}
+
+  .empty{color:var(--dim);font-size:13px;padding:16px;background:var(--surface3);
+         border-radius:6px;text-align:center;}
+
+  .score-badge{display:inline-block;min-width:36px;padding:2px 8px;
+               border-radius:4px;font-weight:700;text-align:center;
+               font-family:'DM Mono',monospace;font-size:12px;}
+  .score-high{background:var(--down);color:#fff;}
+  .score-mid{background:#E0A344;color:#fff;}
+  .score-low{background:var(--surface3);color:var(--text-soft);}
+
+  footer.site{padding:18px 28px;text-align:center;color:var(--dim);font-size:11px;
+              border-top:1px solid var(--border);margin-top:20px;}
+  footer.site .feedback-link{color:var(--blue);}
+</style>
+
+</head>
+<body>
+
+<header class="site">
+  <div class="logo">OR</div>
+  <div>
+    <h1>外来再編分析</h1>
+    <div class="sub">Outpatient Restructuring</div>
+  </div>
+  <nav>
+    <a href="index.html" class="active">ホーム</a>
+    <a href="monthly/2026-04.html">月次</a>
+    <a href="dept/2026-04/index.html">診療科</a>
+  </nav>
+</header>
+
+
+<div class="breadcrumb">
+  
+    
+    <span class="current">ホーム</span>
+    
+    
+  
+</div>
+
+
+<main class="container">
+
+
+
+<section class="card" style="display:grid;grid-template-columns:1.3fr 2.7fr;gap:16px;padding:0;border:none;background:transparent;box-shadow:none;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px;display:flex;flex-direction:column;gap:14px;">
+    <div style="font-size:11px;color:var(--dim);font-family:'DM Mono',monospace;letter-spacing:.08em;text-transform:uppercase;font-weight:700;">最新月</div>
+    <div style="font-size:36px;font-weight:700;font-family:'DM Mono',monospace;line-height:1;">2026-04</div>
+    
+    <a href="monthly/2026-04.html" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:6px;background:var(--header);color:#fff;font-size:12px;font-weight:600;align-self:flex-start;">月次経営サマリを開く →</a>
+    
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+    <div class="summary-stat" style="background:var(--surface);">
+      <div class="summary-stat-k">総外来件数</div>
+      <div class="summary-stat-v">25,710<span class="summary-stat-u">件</span></div>
+      <div style="font-size:11px;font-family:'DM Mono',monospace;font-weight:700;margin-top:4px;
+                  color:var(--down);">
+        -28.4% MoM
+      </div>
+    </div>
+    <div class="summary-stat" style="background:var(--surface);">
+      <div class="summary-stat-k">初診件数</div>
+      <div class="summary-stat-v">2,025<span class="summary-stat-u">件</span></div>
+      <div style="font-size:11px;font-family:'DM Mono',monospace;font-weight:700;margin-top:4px;
+                  color:var(--down);">
+        -25.4% MoM
+      </div>
+    </div>
+    <div class="summary-stat" style="background:var(--surface);">
+      <div class="summary-stat-k">紹介率</div>
+      <div class="summary-stat-v">71.2<span class="summary-stat-u">%</span></div>
+      <div style="font-size:11px;color:var(--dim);margin-top:4px;">紹介状あり / 初診</div>
+    </div>
+    <div class="summary-stat" style="background:var(--surface);">
+      <div class="summary-stat-k">未来院率</div>
+      <div class="summary-stat-v">6.0<span class="summary-stat-u">%</span></div>
+      <div style="font-size:11px;font-family:'DM Mono',monospace;font-weight:700;margin-top:4px;
+                  color:var(--flat);">
+        +1.7% MoM
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">●</span>
+    <h2>月次トレンド（全評価対象科 合計）</h2>
+    <span class="card-sub">総件数と初診件数</span>
+  </div>
+  <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+</div>
+
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">01</span>
+    <h2>月次経営サマリ</h2>
+    <span class="card-sub">直近6ヶ月のKPIトレンド・診療科スコアカード</span>
+  </div>
+  
+  <div class="nav-pills">
+    
+    <a class="nav-pill current" href="monthly/2026-04.html">
+      2026-04 ● 最新
+    </a>
+    
+    <a class="nav-pill " href="monthly/2026-03.html">
+      2026-03
+    </a>
+    
+    <a class="nav-pill " href="monthly/2026-02.html">
+      2026-02
+    </a>
+    
+    <a class="nav-pill " href="monthly/2026-01.html">
+      2026-01
+    </a>
+    
+    <a class="nav-pill " href="monthly/2025-12.html">
+      2025-12
+    </a>
+    
+    <a class="nav-pill " href="monthly/2025-11.html">
+      2025-11
+    </a>
+    
+  </div>
+  
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">02</span>
+    <h2>診療科 再編診断</h2>
+    <span class="card-sub">時間帯・逆紹介・薬再診・枠ミックスの診断</span>
+  </div>
+  
+    
+    <div style="margin-bottom:12px;">
+      <h3>2026-04 <span class="type-badge geka">最新</span></h3>
+      <div class="nav-pills">
+        <a class="nav-pill" href="dept/2026-04/index.html">この月の科一覧 (29 科)</a>
+      </div>
+    </div>
+    
+    <div style="margin-bottom:12px;">
+      <h3>2026-03</h3>
+      <div class="nav-pills">
+        <a class="nav-pill" href="dept/2026-03/index.html">この月の科一覧 (28 科)</a>
+      </div>
+    </div>
+    
+    <div style="margin-bottom:12px;">
+      <h3>2026-02</h3>
+      <div class="nav-pills">
+        <a class="nav-pill" href="dept/2026-02/index.html">この月の科一覧 (28 科)</a>
+      </div>
+    </div>
+    
+    <div style="margin-bottom:12px;">
+      <h3>2026-01</h3>
+      <div class="nav-pills">
+        <a class="nav-pill" href="dept/2026-01/index.html">この月の科一覧 (28 科)</a>
+      </div>
+    </div>
+    
+    <div style="margin-bottom:12px;">
+      <h3>2025-12</h3>
+      <div class="nav-pills">
+        <a class="nav-pill" href="dept/2025-12/index.html">この月の科一覧 (28 科)</a>
+      </div>
+    </div>
+    
+    <div style="margin-bottom:12px;">
+      <h3>2025-11</h3>
+      <div class="nav-pills">
+        <a class="nav-pill" href="dept/2025-11/index.html">この月の科一覧 (28 科)</a>
+      </div>
+    </div>
+    
+  
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">03</span>
+    <h2>分析テーマ</h2>
+    <span class="card-sub">横断的な再編分析（Phase 3 以降で順次追加）</span>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;">
+    
+    <div style="padding:14px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;opacity:.55;">
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">紹介・逆紹介</div>
+      <div style="font-size:12px;color:var(--text-soft);">薬再診スコア／逆紹介候補リスト／紹介率推移</div>
+      
+      <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--dim);margin-top:6px;letter-spacing:.06em;">PHASE 3 PREDICTED</div>
+      
+    </div>
+    
+    <div style="padding:14px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;opacity:.55;">
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">予約枠の再編</div>
+      <div style="font-size:12px;color:var(--text-soft);">枠×時間帯ヒートマップ／命名乖離・稀用枠の検出</div>
+      
+      <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--dim);margin-top:6px;letter-spacing:.06em;">PHASE 3 PREDICTED</div>
+      
+    </div>
+    
+    <div style="padding:14px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;opacity:.55;">
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">時間帯と看護師配置</div>
+      <div style="font-size:12px;color:var(--text-soft);">曜日×時間帯ヒートマップ／15時前後の負荷分布</div>
+      
+      <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--dim);margin-top:6px;letter-spacing:.06em;">PHASE 3 PREDICTED</div>
+      
+    </div>
+    
+    <div style="padding:14px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;opacity:.55;">
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">医師の負荷分布</div>
+      <div style="font-size:12px;color:var(--text-soft);">医師×時間帯ヒートマップ（匿名）</div>
+      
+      <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--dim);margin-top:6px;letter-spacing:.06em;">PHASE 3 PREDICTED</div>
+      
+    </div>
+    
+  </div>
+</div>
+
+
+</main>
+
+<footer class="site">
+  外来再編分析ダッシュボード
+  
+</footer>
+
+
+<script>
+const TREND_DATA = [{"month": "2025-11", "total": 31821, "sho": 2632, "sai": 29189, "ref_rate": 67.4, "miraiin": 2989, "miraiin_rate": 9.4}, {"month": "2025-12", "total": 35415, "sho": 2829, "sai": 32586, "ref_rate": 71.1, "miraiin": 2027, "miraiin_rate": 5.7}, {"month": "2026-01", "total": 32935, "sho": 2728, "sai": 30207, "ref_rate": 68.3, "miraiin": 1901, "miraiin_rate": 5.8}, {"month": "2026-02", "total": 30538, "sho": 2414, "sai": 28124, "ref_rate": 66.3, "miraiin": 1755, "miraiin_rate": 5.7}, {"month": "2026-03", "total": 35895, "sho": 2716, "sai": 33179, "ref_rate": 70.8, "miraiin": 2114, "miraiin_rate": 5.9}, {"month": "2026-04", "total": 25710, "sho": 2025, "sai": 23685, "ref_rate": 71.2, "miraiin": 1545, "miraiin_rate": 6.0}];
+if (TREND_DATA && TREND_DATA.length > 0 && document.getElementById('trendChart')) {
+  new Chart(document.getElementById('trendChart').getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: TREND_DATA.map(d => d.month),
+      datasets: [
+        { label: '総件数', data: TREND_DATA.map(d => d.total),
+          borderColor: '#3D3A35', backgroundColor: 'rgba(61,58,53,.08)',
+          borderWidth: 2.5, tension: 0.25, fill: true, yAxisID: 'y' },
+        { label: '初診件数', data: TREND_DATA.map(d => d.sho),
+          borderColor: '#D08620', backgroundColor: 'rgba(208,134,32,.08)',
+          borderWidth: 2, tension: 0.25, fill: false, yAxisID: 'y1' },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { position: 'bottom' } },
+      scales: {
+        x: { grid: { display: false } },
+        y: { position: 'left', title: { display: true, text: '総件数' } },
+        y1: { position: 'right', title: { display: true, text: '初診件数' }, grid: { display: false } },
+      },
+    },
+  });
+}
+</script>
+
+</body>
+</html>
