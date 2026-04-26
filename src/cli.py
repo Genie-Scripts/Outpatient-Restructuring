@@ -35,14 +35,14 @@ def _setup_logging(verbose: bool) -> None:
     )
 
 
-def _build_one_month(month: str, docs_root: Path) -> None:
+def _build_one_month(month: str, docs_root: Path, aggregated_root: Path) -> None:
     """指定月の monthly + dept_planning + テーマページを生成する。"""
     logger.info("=== %s のビルド開始 ===", month)
 
     build_monthly_dashboard(
         month=month,
         output_path=docs_root / "monthly" / f"{month}.html",
-        aggregated_root=paths.aggregated_root(),
+        aggregated_root=aggregated_root,
         templates_dir=paths.templates_dir(),
         classification_path=paths.classification_path(),
         targets_path=paths.targets_path(),
@@ -50,7 +50,7 @@ def _build_one_month(month: str, docs_root: Path) -> None:
 
     build_dept_planning(
         month=month,
-        aggregated_root=paths.aggregated_root(),
+        aggregated_root=aggregated_root,
         templates_dir=paths.templates_dir(),
         output_dir=docs_root / "dept" / month,
         classification_path=paths.classification_path(),
@@ -58,7 +58,7 @@ def _build_one_month(month: str, docs_root: Path) -> None:
 
     build_all_themes(
         month=month,
-        aggregated_root=paths.aggregated_root(),
+        aggregated_root=aggregated_root,
         templates_dir=paths.templates_dir(),
         output_dir=docs_root / "themes" / month,
         classification_path=paths.classification_path(),
@@ -96,9 +96,9 @@ def cmd_build(args: argparse.Namespace) -> int:
             logger.error("利用可能な月がありません")
             return 2
         for m in months:
-            _build_one_month(m, docs_root)
+            _build_one_month(m, docs_root, aggregated_root)
     elif args.month:
-        _build_one_month(args.month, docs_root)
+        _build_one_month(args.month, docs_root, aggregated_root)
     else:
         # デフォルト: 最新月
         months = list_available_months(aggregated_root)
@@ -106,7 +106,7 @@ def cmd_build(args: argparse.Namespace) -> int:
             logger.error("利用可能な月がありません")
             return 2
         logger.info("月指定なし → 最新月 (%s) を生成", months[-1])
-        _build_one_month(months[-1], docs_root)
+        _build_one_month(months[-1], docs_root, aggregated_root)
 
     # ハブを最後に生成（生成済みのファイルを走査するため）
     build_hub(
