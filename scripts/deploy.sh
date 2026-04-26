@@ -53,8 +53,18 @@ if [ -f ".venv/bin/activate" ]; then
   # shellcheck disable=SC1091
   source .venv/bin/activate
   log "✅ 仮想環境を有効化"
+  PY="python"
 else
   log "ℹ️  .venv/ が無い。システム Python を使用。"
+  if command -v python3 > /dev/null 2>&1; then
+    PY="python3"
+  elif command -v python > /dev/null 2>&1; then
+    PY="python"
+  else
+    error_dialog "python / python3 が見つかりません。Python 3.11+ をインストールしてください。"
+    exit 1
+  fi
+  log "  → $PY ($(${PY} --version 2>&1))"
 fi
 
 # ── 1. 上流リポから集計CSV / 分類CSVを取得 ──
@@ -77,12 +87,12 @@ notify "ビルド中..." "build"
 FEEDBACK_URL="${FEEDBACK_URL:-https://genie-scripts.github.io/Outpatient-Dashboard/}"
 
 if [ -n "$MONTH_ARG" ]; then
-  if ! python -m src.cli build --month "$MONTH_ARG" --feedback-url "$FEEDBACK_URL" 2>&1 | tee -a "$LOG"; then
+  if ! $PY -m src.cli build --month "$MONTH_ARG" --feedback-url "$FEEDBACK_URL" 2>&1 | tee -a "$LOG"; then
     error_dialog "build --month $MONTH_ARG に失敗しました。$LOG を確認してください。"
     exit 1
   fi
 else
-  if ! python -m src.cli build --all --feedback-url "$FEEDBACK_URL" 2>&1 | tee -a "$LOG"; then
+  if ! $PY -m src.cli build --all --feedback-url "$FEEDBACK_URL" 2>&1 | tee -a "$LOG"; then
     error_dialog "build --all に失敗しました。$LOG を確認してください。"
     exit 1
   fi
