@@ -3,19 +3,28 @@
 <style>
 .hm-controls{
   display:flex;gap:14px;align-items:center;flex-wrap:wrap;
-  margin-bottom:16px;padding:12px 16px;
+  margin-bottom:12px;padding:12px 16px;
   background:var(--surface2);border:1px solid var(--border);border-radius:8px;
 }
-.hm-ctrl-group{display:flex;align-items:center;gap:8px;}
-.hm-ctrl-group label{
+.hm-ctrl-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.hm-ctrl-group > label{
   font-size:11px;color:var(--dim);font-weight:700;
   text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;
 }
 .hm-ctrl-group select{
   background:var(--surface);border:1px solid var(--border);
   color:var(--text);padding:5px 10px;border-radius:6px;
-  font-size:12px;cursor:pointer;min-width:200px;
+  font-size:12px;cursor:pointer;min-width:160px;
 }
+.cat-radio{
+  display:inline-flex;align-items:center;gap:4px;font-size:12px;
+  color:var(--text-soft);cursor:pointer;padding:4px 10px;
+  border:1px solid var(--border);border-radius:5px;background:var(--surface);
+  transition:all .15s;
+}
+.cat-radio:hover{border-color:var(--geka);color:var(--geka);}
+.cat-radio input{margin:0;cursor:pointer;}
+.cat-radio.checked{background:var(--geka-bg);border-color:var(--geka);color:var(--geka);font-weight:600;}
 .wd-tabs{display:flex;gap:4px;}
 .wd-tab{
   padding:5px 14px;background:var(--surface);border:1px solid var(--border);
@@ -48,11 +57,23 @@
   font-size:10px;min-width:120px;white-space:nowrap;
   background:var(--surface2) !important;
 }
-.total-cell{
+.item-label.is-low-volume{
+  background:var(--warn-bg) !important;color:var(--warn);font-weight:700;
+}
+.total-cell, .zero-cell{
   text-align:right !important;padding:3px 8px !important;
   font-family:'DM Mono',monospace;font-size:10px;
-  color:var(--text-soft);white-space:nowrap;min-width:60px;
+  color:var(--text-soft);white-space:nowrap;min-width:50px;
   background:var(--surface2) !important;
+}
+.hm-caption{
+  font-size:11px;color:var(--text-soft);font-family:'DM Mono',monospace;
+  margin:0 0 6px 0;
+}
+.low-badge{
+  display:inline-block;padding:1px 6px;font-size:10px;
+  background:var(--warn-bg);border:1px solid var(--warn-border);border-radius:3px;
+  color:var(--warn);font-weight:700;margin-left:6px;
 }
 </style>
 {% endblock %}
@@ -63,17 +84,35 @@
   <div class="card-head">
     <span class="card-num">00</span>
     <h2>外来枠×時間帯 ヒートマップ</h2>
-    <span class="card-sub">{{ month }} ／ 区分=全体 ／ 実営業日 {{ biz_days }}日{% if excluded_days > 0 %}（祝日・病院休 {{ excluded_days }}日除外）{% endif %}</span>
+    <span class="card-sub">{{ month }} ／ 実営業日 {{ biz_days }}日{% if excluded_days > 0 %}（祝日・病院休 {{ excluded_days }}日除外）{% endif %}</span>
   </div>
   <p style="font-size:13px;color:var(--text-soft);line-height:1.7;margin-bottom:16px;">
-    診療科を選択して、外来枠（予約名称）ごとの稼働頻度・件数を時間帯別に可視化します。
-    枠は月間件数の少ない順（縮小候補が上）に並んでいます。空白が多い枠は廃止・統合の検討対象です。
+    診療科を選択して、外来枠（予約名称）ごとの稼働パターンを時間帯別に可視化します。
+    デフォルトは<strong>低稼働順</strong>（縮小候補が上位）。低稼働枠の集約・廃止判断や、同時間帯並走枠の統合検討に活用します。
   </p>
 
   <div class="hm-controls">
     <div class="hm-ctrl-group">
       <label>診療科：</label>
       <select id="dept-select"></select>
+    </div>
+    <div class="hm-ctrl-group">
+      <label>指標：</label>
+      <div class="metric-tabs">
+        <button class="metric-tab active" data-metric="freq">稼働頻度率</button>
+        <button class="metric-tab" data-metric="cpd">件数（1日平均）</button>
+        <button class="metric-tab" data-metric="dpd">実診察分数（1日平均）</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="hm-controls">
+    <div class="hm-ctrl-group">
+      <label>区分：</label>
+      <label class="cat-radio checked"><input type="radio" name="cat" value="全体" checked> 全体</label>
+      <label class="cat-radio"><input type="radio" name="cat" value="初診"> 初診</label>
+      <label class="cat-radio"><input type="radio" name="cat" value="再診"> 再診</label>
+      <label class="cat-radio"><input type="radio" name="cat" value="薬再診"> 薬再診（再診∧診察≤4分）</label>
     </div>
     <div class="hm-ctrl-group">
       <label>曜日：</label>
@@ -85,21 +124,37 @@
         <button class="wd-tab">金</button>
       </div>
     </div>
+  </div>
+
+  <div class="hm-controls">
     <div class="hm-ctrl-group">
-      <label>指標：</label>
-      <div class="metric-tabs">
-        <button class="metric-tab active" data-metric="cpd">件数/稼働日</button>
-        <button class="metric-tab" data-metric="freq">稼働頻度率</button>
-      </div>
+      <label>並び順：</label>
+      <select id="sort-select">
+        <option value="asc" selected>低稼働順（件数昇順・縮小候補）</option>
+        <option value="desc">高稼働順（件数降順）</option>
+        <option value="zero_cell_rate">0件セル率が高い順</option>
+        <option value="name">予約名称（辞書順）</option>
+      </select>
+    </div>
+    <div class="hm-ctrl-group">
+      <label>縮小候補ハイライト：</label>
+      <select id="threshold-select">
+        <option value="0" selected>なし</option>
+        <option value="10">月10件未満</option>
+        <option value="30">月30件未満</option>
+        <option value="100">月100件未満</option>
+      </select>
     </div>
   </div>
 
+  <p class="hm-caption" id="hm-caption">—</p>
   <div class="heatmap-wrap">
     <div id="hm-container"></div>
   </div>
   <p class="meta" style="margin-top:8px;">
-    件数/稼働日 = 稼働した日の平均担当件数。稼働頻度率 = 当月中その曜日・時間帯に稼働した割合。
-    行は月間件数の少ない順（縮小候補が上位）。
+    稼働頻度率 = その曜日・時間帯に1件以上診察した日数 ÷ 月内のその曜日の日数。
+    件数（1日平均）= 稼働した日の平均件数。実診察分数 = 各診察の時間重なり分（分）の平均。
+    0件セル率 = 区分=全体で件数のなかった (曜日, 時間帯) の割合（120セル中）。
   </p>
 </div>
 
@@ -120,16 +175,44 @@
 const DATASET    = {{ heatmap_dataset_json | safe }};
 const BIN_LABELS = {{ bin_labels_json | safe }};
 const WD_LABELS  = {{ weekdays_json | safe }};
-
-const N_BIN = BIN_LABELS.length;  // 24
+const N_BIN = BIN_LABELS.length;
 
 let currentDept   = null;
 let currentWd     = 0;
-let currentMetric = 'cpd';
+let currentCat    = '全体';
+let currentMetric = 'freq';
+let currentSort   = 'asc';
+let currentThreshold = 0;
 
-function getRows() {
+function getRowsRaw() {
   if (!currentDept) return [];
   return (DATASET.series[currentDept] || {}).rows || [];
+}
+
+function zeroCellRate(row) {
+  const total = row.total_cells || 1;
+  const active = row.active_cells || 0;
+  return 1 - active / total;
+}
+
+function getSortedRows() {
+  const rows = getRowsRaw().slice();
+  if (currentSort === 'desc') {
+    rows.sort((a, b) => b.total - a.total);
+  } else if (currentSort === 'zero_cell_rate') {
+    rows.sort((a, b) => zeroCellRate(b) - zeroCellRate(a) || a.total - b.total);
+  } else if (currentSort === 'name') {
+    rows.sort((a, b) => a.id.localeCompare(b.id, 'ja'));
+  } else {
+    rows.sort((a, b) => a.total - b.total || a.id.localeCompare(b.id, 'ja'));
+  }
+  return rows;
+}
+
+function getMatrix(row) {
+  const cat = row.categories && row.categories[currentCat];
+  if (!cat || !cat[currentMetric]) return null;
+  return cat[currentMetric];
 }
 
 /* ── テーブル構築 ── */
@@ -140,20 +223,16 @@ function buildTable(rows) {
       '<div class="empty" style="margin:12px 0;">この診療科に外来枠データがありません。</div>';
     return;
   }
-
   const tbl = document.createElement('table');
   tbl.className = 'heatmap-tbl';
 
-  /* thead */
   const hRow = tbl.createTHead().insertRow();
-  ['予約枠名', '月間件数'].concat(BIN_LABELS).forEach((label, idx) => {
+  ['予約枠名', '月間件数', '0件セル率'].concat(BIN_LABELS).forEach(label => {
     const th = document.createElement('th');
     th.textContent = label;
-    if (idx >= 2) th.style.minWidth = '34px';
     hRow.appendChild(th);
   });
 
-  /* tbody */
   const tbody = tbl.createTBody();
   rows.forEach((row, i) => {
     const tr = tbody.insertRow();
@@ -161,11 +240,16 @@ function buildTable(rows) {
     const lc = tr.insertCell();
     lc.textContent = row.id;
     lc.className = 'item-label';
-    lc.title = row.id;  /* ツールチップで全文表示 */
+    lc.id = `lbl-${i}`;
+    lc.title = row.id;
 
     const tc = tr.insertCell();
     tc.textContent = row.total.toLocaleString();
     tc.className = 'total-cell';
+
+    const zc = tr.insertCell();
+    zc.textContent = Math.round(zeroCellRate(row) * 100) + '%';
+    zc.className = 'zero-cell';
 
     for (let j = 0; j < N_BIN; j++) {
       const td = tr.insertCell();
@@ -177,42 +261,73 @@ function buildTable(rows) {
   cont.appendChild(tbl);
 }
 
-/* ── 全体最大値（曜日・ビン横断） ── */
-function computeMax(rows, metric) {
+function computeMax(rows) {
+  if (currentMetric === 'freq') return 1.0;
   let max = 0;
   rows.forEach(row => {
-    const mat = row[metric];
+    const mat = getMatrix(row);
     if (!mat) return;
     mat.forEach(wdRow => wdRow.forEach(v => { if (v > max) max = v; }));
   });
-  return max;
+  return max || 1;
 }
 
-/* ── レンダリング ── */
-function renderHeatmap() {
-  const rows = getRows();
-  if (!rows.length) return;
-  const max = computeMax(rows, currentMetric);
+function fmt(v) {
+  if (v <= 0) return '';
+  if (currentMetric === 'freq') return Math.round(v * 100) + '%';
+  if (currentMetric === 'dpd')  return Math.round(v) + 'm';
+  return v.toFixed(1);
+}
+
+/* ── レンダリング（cell の色／値 + ハイライト） ── */
+function renderCells(rows) {
+  if (!rows.length) {
+    document.getElementById('hm-caption').textContent = 'データなし';
+    return;
+  }
+  const max = computeMax(rows);
+  const dept = DATASET.series[currentDept];
+  const lowCount = currentThreshold > 0
+    ? rows.filter(r => r.total < currentThreshold).length : 0;
+  const lowNote = currentThreshold > 0
+    ? ` ／ 縮小候補(<${currentThreshold}件) ${lowCount}枠` : '';
+  document.getElementById('hm-caption').textContent =
+    `${dept.label} ／ ${WD_LABELS[currentWd]}曜日 ／ 区分 ${currentCat} ／ 枠 ${rows.length} 件${lowNote}`;
 
   rows.forEach((row, i) => {
-    const mat = row[currentMetric];
-    if (!mat) return;
-    const wdRow = mat[currentWd] || [];
+    /* 縮小候補ハイライト */
+    const lbl = document.getElementById(`lbl-${i}`);
+    if (lbl) {
+      const isLow = currentThreshold > 0 && row.total < currentThreshold;
+      lbl.classList.toggle('is-low-volume', isLow);
+    }
+
+    /* セル */
+    const mat = getMatrix(row);
+    const wdRow = mat ? (mat[currentWd] || []) : [];
     for (let j = 0; j < N_BIN; j++) {
       const cell = document.getElementById(`hm-${i}-${j}`);
       if (!cell) continue;
       const v = wdRow[j] || 0;
-      const alpha = max > 0 ? Math.min(v / max * 0.78, 0.78) : 0;
+      const ratio = currentMetric === 'freq' ? v : v / max;
+      const alpha = Math.min(ratio * 0.78, 0.78);
       cell.style.background = alpha > 0.015
         ? `rgba(208,134,32,${alpha.toFixed(2)})` : '';
       cell.style.color = alpha > 0.50 ? '#fff' : '';
-      if (currentMetric === 'freq') {
-        cell.textContent = v > 0 ? Math.round(v * 100) + '%' : '';
-      } else {
-        cell.textContent = v > 0 ? v.toFixed(1) : '';
-      }
+      cell.textContent = fmt(v);
     }
   });
+}
+
+function fullRender() {
+  const rows = getSortedRows();
+  buildTable(rows);
+  renderCells(rows);
+}
+
+function reRenderOnly() {
+  /* テーブル構造は変えず、セル値とハイライトだけ更新 */
+  renderCells(getSortedRows());
 }
 
 /* ── dept select 構築 ── */
@@ -226,8 +341,7 @@ const deptSel = document.getElementById('dept-select');
 });
 deptSel.addEventListener('change', () => {
   currentDept = deptSel.value;
-  buildTable(getRows());
-  renderHeatmap();
+  fullRender();
 });
 
 /* ── 曜日タブ ── */
@@ -236,7 +350,7 @@ document.querySelectorAll('.wd-tab').forEach((btn, i) => {
     document.querySelectorAll('.wd-tab').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     currentWd = i;
-    renderHeatmap();
+    reRenderOnly();
   });
 });
 
@@ -246,19 +360,40 @@ document.querySelectorAll('.metric-tab').forEach(btn => {
     document.querySelectorAll('.metric-tab').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     currentMetric = btn.dataset.metric;
-    renderHeatmap();
+    reRenderOnly();
   });
+});
+
+/* ── 区分ラジオ ── */
+document.querySelectorAll('input[name="cat"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    if (!radio.checked) return;
+    currentCat = radio.value;
+    document.querySelectorAll('.cat-radio').forEach(l => l.classList.remove('checked'));
+    radio.parentElement.classList.add('checked');
+    reRenderOnly();
+  });
+});
+
+/* ── 並び順 ── */
+document.getElementById('sort-select').addEventListener('change', e => {
+  currentSort = e.target.value;
+  fullRender();   /* 並び替えのため table 再構築 */
+});
+
+/* ── 縮小候補ハイライト閾値 ── */
+document.getElementById('threshold-select').addEventListener('change', e => {
+  currentThreshold = parseInt(e.target.value, 10) || 0;
+  reRenderOnly();
 });
 
 /* ── 初期化 ── */
 if (currentDept) {
-  buildTable(getRows());
-  renderHeatmap();
+  fullRender();
 } else if (DATASET.filter_opts && DATASET.filter_opts[0]) {
   currentDept = DATASET.filter_opts[0].key;
   deptSel.value = currentDept;
-  buildTable(getRows());
-  renderHeatmap();
+  fullRender();
 }
 </script>
 {% endblock %}

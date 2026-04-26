@@ -52,6 +52,19 @@ _MORNING_PEAK_H = (9, 10)
 DRUG_REVISIT_GLOBAL_TOP = 30
 RARE_SLOT_THRESHOLD = 5
 
+# ヒートマップ：4区分 × 3指標
+_HEATMAP_CATEGORIES = ["全体", "初診", "再診", "薬再診"]
+_DOCTOR_METRIC_COLS = {
+    "freq": "出勤頻度率",
+    "cpd": "件数_日平均",
+    "dpd": "実診察分数_日平均",
+}
+_SLOT_METRIC_COLS = {
+    "freq": "稼働頻度率",
+    "cpd": "件数_日平均",
+    "dpd": "実診察分数_日平均",
+}
+
 
 def _pct(num: float, den: float, ndigits: int = 1) -> float:
     return round(num / den * 100, ndigits) if den else 0.0
@@ -441,15 +454,14 @@ def _doctor_heatmap_dataset(
 ) -> dict[str, Any]:
     """医師×時間帯 ヒートマップデータ（診療科フィルタ対応）。
 
-    区分=全体 のみ対象。指標: 出勤頻度率 + 件数_日平均。
-    医師は月内総件数の降順で並べる。
+    4区分（全体/初診/再診/薬再診）× 3指標（freq/cpd/dpd）の matrices。
+    医師は 区分=全体 の月内総件数の降順で並べる。
     """
     if dh.empty:
         return {"filter_opts": [], "series": {}}
 
     df = dh[
         (dh["診療科名"].isin(eval_names))
-        & (dh["区分"] == "全体")
         & (dh["曜日"].isin(_WEEKDAY_RANGE_5))
     ].copy()
 
@@ -462,25 +474,39 @@ def _doctor_heatmap_dataset(
             continue
         k = f"DEPT_{info.code}"
 
+        # 並び順は 区分=全体 の月内総件数で決定
+        zentai = sub[sub["区分"] == "全体"]
         totals = (
-            sub.groupby("予約担当者匿名ID")["件数合計"]
+            zentai.groupby("予約担当者匿名ID")["件数合計"]
             .sum()
             .sort_values(ascending=False)
         )
+
         rows = []
         for did in totals.index:
             dsub = sub[sub["予約担当者匿名ID"] == did]
-            freq_m = [[0.0] * _HEATMAP_BIN_COUNT for _ in range(5)]
-            cpd_m = [[0.0] * _HEATMAP_BIN_COUNT for _ in range(5)]
-            for _, r in dsub.iterrows():
-                wd = int(r["曜日"])
-                bi = int(r["bin_idx"])
-                if 0 <= wd < 5 and 0 <= bi < _HEATMAP_BIN_COUNT:
-                    freq_m[wd][bi] = round(float(r["出勤頻度率"]), 3)
-                    cpd_m[wd][bi] = round(float(r["件数_日平均"]), 2)
-            rows.append(
-                {"id": str(did), "total": int(totals[did]), "freq": freq_m, "cpd": cpd_m}
-            )
+            categories: dict[str, dict[str, list[list[float]]]] = {}
+            for cat in _HEATMAP_CATEGORIES:
+                cat_sub = dsub[dsub["区分"] == cat]
+                m = {
+                    key: [[0.0] * _HEATMAP_BIN_COUNT for _ in range(5)]
+                    for key in _DOCTOR_METRIC_COLS
+                }
+                for _, r in cat_sub.iterrows():
+                    wd = int(r["曜日"])
+                    bi = int(r["bin_idx"])
+                    if 0 <= wd < 5 and 0 <= bi < _HEATMAP_BIN_COUNT:
+                        for key, col in _DOCTOR_METRIC_COLS.items():
+                            v = r.get(col)
+                            if pd.notna(v):
+                                ndigits = 3 if key == "freq" else 2
+                                m[key][wd][bi] = round(float(v), ndigits)
+                categories[cat] = m
+            rows.append({
+                "id": str(did),
+                "total": int(totals[did]),
+                "categories": categories,
+            })
         series[k] = {"label": info.name, "type": info.type, "rows": rows}
         filter_opts.append({"key": k, "label": f"{info.name}（{info.type}）"})
 
@@ -517,20 +543,21 @@ def _slot_heatmap_dataset(
 ) -> dict[str, Any]:
     """外来枠×時間帯 ヒートマップデータ（診療科フィルタ対応）。
 
-    区分=全体 のみ対象。指標: 稼働頻度率 + 件数_日平均。
-    枠は月内総件数の昇順（低稼働枠=縮小候補を先頭）で並べる。
+    4区分（全体/初診/再診/薬再診）× 3指標（freq/cpd/dpd）の matrices。
+    枠は 区分=全体 の月内総件数の昇順（低稼働枠=縮小候補を先頭）で並べる。
+    `active_cells` は 区分=全体 で件数>0だった (曜日, bin) の数。
     """
     if sh.empty:
         return {"filter_opts": [], "series": {}}
 
     df = sh[
         (sh["診療科名"].isin(eval_names))
-        & (sh["区分"] == "全体")
         & (sh["曜日"].isin(_WEEKDAY_RANGE_5))
     ].copy()
 
     series: dict[str, Any] = {}
     filter_opts: list[dict[str, str]] = []
+    total_cells = 5 * _HEATMAP_BIN_COUNT  # 120
 
     for info in classifier.evaluation_targets():
         sub = df[df["診療科名"] == info.name]
@@ -538,30 +565,46 @@ def _slot_heatmap_dataset(
             continue
         k = f"DEPT_{info.code}"
 
+        zentai = sub[sub["区分"] == "全体"]
         totals = (
-            sub.groupby("予約名称")["件数合計"]
+            zentai.groupby("予約名称")["件数合計"]
             .sum()
-            .sort_values(ascending=True)  # 低稼働順
+            .sort_values(ascending=True)  # 低稼働順（縮小候補が先頭）
         )
+
         rows = []
         for sid in totals.index:
             ssub = sub[sub["予約名称"] == sid]
-            freq_m = [[0.0] * _HEATMAP_BIN_COUNT for _ in range(5)]
-            cpd_m = [[0.0] * _HEATMAP_BIN_COUNT for _ in range(5)]
-            for _, r in ssub.iterrows():
-                wd = int(r["曜日"])
-                bi = int(r["bin_idx"])
-                if 0 <= wd < 5 and 0 <= bi < _HEATMAP_BIN_COUNT:
-                    freq_m[wd][bi] = round(float(r["稼働頻度率"]), 3)
-                    cpd_m[wd][bi] = round(float(r["件数_日平均"]), 2)
-            rows.append(
-                {
-                    "id": str(sid) if pd.notna(sid) else "(未設定)",
-                    "total": int(totals[sid]),
-                    "freq": freq_m,
-                    "cpd": cpd_m,
+            categories: dict[str, dict[str, list[list[float]]]] = {}
+            active_cells = 0
+            for cat in _HEATMAP_CATEGORIES:
+                cat_sub = ssub[ssub["区分"] == cat]
+                m = {
+                    key: [[0.0] * _HEATMAP_BIN_COUNT for _ in range(5)]
+                    for key in _SLOT_METRIC_COLS
                 }
-            )
+                for _, r in cat_sub.iterrows():
+                    wd = int(r["曜日"])
+                    bi = int(r["bin_idx"])
+                    if 0 <= wd < 5 and 0 <= bi < _HEATMAP_BIN_COUNT:
+                        for key, col in _SLOT_METRIC_COLS.items():
+                            v = r.get(col)
+                            if pd.notna(v):
+                                ndigits = 3 if key == "freq" else 2
+                                m[key][wd][bi] = round(float(v), ndigits)
+                if cat == "全体":
+                    for wd_row in m["cpd"]:
+                        for v in wd_row:
+                            if v > 0:
+                                active_cells += 1
+                categories[cat] = m
+            rows.append({
+                "id": str(sid) if pd.notna(sid) else "(未設定)",
+                "total": int(totals[sid]),
+                "active_cells": active_cells,
+                "total_cells": total_cells,
+                "categories": categories,
+            })
         series[k] = {"label": info.name, "type": info.type, "rows": rows}
         filter_opts.append({"key": k, "label": f"{info.name}（{info.type}）"})
 

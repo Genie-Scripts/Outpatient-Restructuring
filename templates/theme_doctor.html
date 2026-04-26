@@ -3,11 +3,11 @@
 <style>
 .hm-controls{
   display:flex;gap:14px;align-items:center;flex-wrap:wrap;
-  margin-bottom:16px;padding:12px 16px;
+  margin-bottom:12px;padding:12px 16px;
   background:var(--surface2);border:1px solid var(--border);border-radius:8px;
 }
-.hm-ctrl-group{display:flex;align-items:center;gap:8px;}
-.hm-ctrl-group label{
+.hm-ctrl-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.hm-ctrl-group > label{
   font-size:11px;color:var(--dim);font-weight:700;
   text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;
 }
@@ -16,6 +16,15 @@
   color:var(--text);padding:5px 10px;border-radius:6px;
   font-size:12px;cursor:pointer;min-width:200px;
 }
+.cat-radio{
+  display:inline-flex;align-items:center;gap:4px;font-size:12px;
+  color:var(--text-soft);cursor:pointer;padding:4px 10px;
+  border:1px solid var(--border);border-radius:5px;background:var(--surface);
+  transition:all .15s;
+}
+.cat-radio:hover{border-color:var(--naika);color:var(--naika);}
+.cat-radio input{margin:0;cursor:pointer;}
+.cat-radio.checked{background:var(--naika-bg);border-color:var(--naika);color:var(--naika);font-weight:600;}
 .wd-tabs{display:flex;gap:4px;}
 .wd-tab{
   padding:5px 14px;background:var(--surface);border:1px solid var(--border);
@@ -54,6 +63,10 @@
   color:var(--text-soft);white-space:nowrap;min-width:60px;
   background:var(--surface2) !important;
 }
+.hm-caption{
+  font-size:11px;color:var(--text-soft);font-family:'DM Mono',monospace;
+  margin:0 0 6px 0;
+}
 </style>
 {% endblock %}
 
@@ -63,17 +76,35 @@
   <div class="card-head">
     <span class="card-num">00</span>
     <h2>医師×時間帯 ヒートマップ</h2>
-    <span class="card-sub">{{ month }} ／ 区分=全体 ／ 実営業日 {{ biz_days }}日{% if excluded_days > 0 %}（祝日・病院休 {{ excluded_days }}日除外）{% endif %}</span>
+    <span class="card-sub">{{ month }} ／ 実営業日 {{ biz_days }}日{% if excluded_days > 0 %}（祝日・病院休 {{ excluded_days }}日除外）{% endif %}</span>
   </div>
   <p style="font-size:13px;color:var(--text-soft);line-height:1.7;margin-bottom:16px;">
-    診療科を選択して、医師（匿名ID）ごとの出勤頻度・件数を時間帯別に可視化します。
-    特定時間帯への集中や、低稼働帯の解消・再配置の判断材料として使用します。
+    診療科を選択して、医師（匿名ID）ごとの出勤頻度・件数・実診察時間を時間帯別に可視化します。
+    区分（全体／初診／再診／薬再診）と指標を切り替えて偏りを把握し、外来枠の再配置・縮小判断に活用します。
   </p>
 
   <div class="hm-controls">
     <div class="hm-ctrl-group">
       <label>診療科：</label>
       <select id="dept-select"></select>
+    </div>
+    <div class="hm-ctrl-group">
+      <label>指標：</label>
+      <div class="metric-tabs">
+        <button class="metric-tab active" data-metric="freq">出勤頻度率</button>
+        <button class="metric-tab" data-metric="cpd">件数（1日平均）</button>
+        <button class="metric-tab" data-metric="dpd">実診察分数（1日平均）</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="hm-controls">
+    <div class="hm-ctrl-group">
+      <label>区分：</label>
+      <label class="cat-radio checked"><input type="radio" name="cat" value="全体" checked> 全体</label>
+      <label class="cat-radio"><input type="radio" name="cat" value="初診"> 初診</label>
+      <label class="cat-radio"><input type="radio" name="cat" value="再診"> 再診</label>
+      <label class="cat-radio"><input type="radio" name="cat" value="薬再診"> 薬再診（再診∧診察≤4分）</label>
     </div>
     <div class="hm-ctrl-group">
       <label>曜日：</label>
@@ -85,21 +116,16 @@
         <button class="wd-tab">金</button>
       </div>
     </div>
-    <div class="hm-ctrl-group">
-      <label>指標：</label>
-      <div class="metric-tabs">
-        <button class="metric-tab active" data-metric="cpd">件数/出勤日</button>
-        <button class="metric-tab" data-metric="freq">出勤頻度率</button>
-      </div>
-    </div>
   </div>
 
+  <p class="hm-caption" id="hm-caption">—</p>
   <div class="heatmap-wrap">
     <div id="hm-container"></div>
   </div>
   <p class="meta" style="margin-top:8px;">
-    件数/出勤日 = 出勤した日の平均担当件数。出勤頻度率 = 当月中その曜日・時間帯に出勤した割合。
-    行は担当件数の多い順。医師IDは匿名化済み。
+    出勤頻度率 = その曜日・時間帯に出勤した日数 ÷ 月内のその曜日の日数。
+    件数（1日平均）= 出勤した日の平均担当件数。実診察分数 = 各診察の時間重なり分（分）の平均。
+    行は 区分=全体 の月内総件数の多い順。
   </p>
 </div>
 
@@ -120,16 +146,22 @@
 const DATASET    = {{ heatmap_dataset_json | safe }};
 const BIN_LABELS = {{ bin_labels_json | safe }};
 const WD_LABELS  = {{ weekdays_json | safe }};
-
-const N_BIN = BIN_LABELS.length;  // 24
+const N_BIN = BIN_LABELS.length;
 
 let currentDept   = null;
 let currentWd     = 0;
-let currentMetric = 'cpd';
+let currentCat    = '全体';
+let currentMetric = 'freq';
 
 function getRows() {
   if (!currentDept) return [];
   return (DATASET.series[currentDept] || {}).rows || [];
+}
+
+function getMatrix(row) {
+  const cat = row.categories && row.categories[currentCat];
+  if (!cat || !cat[currentMetric]) return null;
+  return cat[currentMetric];
 }
 
 /* ── テーブル構築 ── */
@@ -140,24 +172,19 @@ function buildTable(rows) {
       '<div class="empty" style="margin:12px 0;">この診療科に医師データがありません。</div>';
     return;
   }
-
   const tbl = document.createElement('table');
   tbl.className = 'heatmap-tbl';
 
-  /* thead */
   const hRow = tbl.createTHead().insertRow();
-  ['医師ID', '月間件数'].concat(BIN_LABELS).forEach((label, idx) => {
+  ['医師ID', '月間件数'].concat(BIN_LABELS).forEach(label => {
     const th = document.createElement('th');
     th.textContent = label;
-    if (idx >= 2) th.style.minWidth = '34px';
     hRow.appendChild(th);
   });
 
-  /* tbody */
   const tbody = tbl.createTBody();
   rows.forEach((dr, i) => {
     const tr = tbody.insertRow();
-
     const lc = tr.insertCell();
     lc.textContent = dr.id;
     lc.className = 'item-label';
@@ -176,42 +203,59 @@ function buildTable(rows) {
   cont.appendChild(tbl);
 }
 
-/* ── 全体最大値（曜日・ビン横断） ── */
-function computeMax(rows, metric) {
+/* ── 全体最大値（曜日横断） ── */
+function computeMax(rows) {
+  if (currentMetric === 'freq') return 1.0;
   let max = 0;
   rows.forEach(dr => {
-    const mat = dr[metric];
+    const mat = getMatrix(dr);
     if (!mat) return;
     mat.forEach(wdRow => wdRow.forEach(v => { if (v > max) max = v; }));
   });
-  return max;
+  return max || 1;
+}
+
+/* ── 値フォーマット ── */
+function fmt(v) {
+  if (v <= 0) return '';
+  if (currentMetric === 'freq') return Math.round(v * 100) + '%';
+  if (currentMetric === 'dpd')  return Math.round(v) + 'm';
+  return v.toFixed(1);
 }
 
 /* ── レンダリング ── */
 function renderHeatmap() {
   const rows = getRows();
-  if (!rows.length) return;
-  const max = computeMax(rows, currentMetric);
+  if (!rows.length) {
+    document.getElementById('hm-caption').textContent = 'データなし';
+    return;
+  }
+  const max = computeMax(rows);
+  const dept = DATASET.series[currentDept];
+
+  document.getElementById('hm-caption').textContent =
+    `${dept.label} ／ ${WD_LABELS[currentWd]}曜日 ／ 区分 ${currentCat} ／ 医師 ${rows.length} 名`;
 
   rows.forEach((dr, i) => {
-    const mat = dr[currentMetric];
-    if (!mat) return;
-    const wdRow = mat[currentWd] || [];
+    const mat = getMatrix(dr);
+    const wdRow = mat ? (mat[currentWd] || []) : [];
     for (let j = 0; j < N_BIN; j++) {
       const cell = document.getElementById(`hm-${i}-${j}`);
       if (!cell) continue;
       const v = wdRow[j] || 0;
-      const alpha = max > 0 ? Math.min(v / max * 0.78, 0.78) : 0;
+      const ratio = currentMetric === 'freq' ? v : v / max;
+      const alpha = Math.min(ratio * 0.78, 0.78);
       cell.style.background = alpha > 0.015
         ? `rgba(43,157,184,${alpha.toFixed(2)})` : '';
       cell.style.color = alpha > 0.50 ? '#fff' : '';
-      if (currentMetric === 'freq') {
-        cell.textContent = v > 0 ? Math.round(v * 100) + '%' : '';
-      } else {
-        cell.textContent = v > 0 ? v.toFixed(1) : '';
-      }
+      cell.textContent = fmt(v);
     }
   });
+}
+
+function fullRender() {
+  buildTable(getRows());
+  renderHeatmap();
 }
 
 /* ── dept select 構築 ── */
@@ -225,8 +269,7 @@ const deptSel = document.getElementById('dept-select');
 });
 deptSel.addEventListener('change', () => {
   currentDept = deptSel.value;
-  buildTable(getRows());
-  renderHeatmap();
+  fullRender();
 });
 
 /* ── 曜日タブ ── */
@@ -249,15 +292,24 @@ document.querySelectorAll('.metric-tab').forEach(btn => {
   });
 });
 
+/* ── 区分ラジオ ── */
+document.querySelectorAll('input[name="cat"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    if (!radio.checked) return;
+    currentCat = radio.value;
+    document.querySelectorAll('.cat-radio').forEach(l => l.classList.remove('checked'));
+    radio.parentElement.classList.add('checked');
+    renderHeatmap();
+  });
+});
+
 /* ── 初期化 ── */
 if (currentDept) {
-  buildTable(getRows());
-  renderHeatmap();
+  fullRender();
 } else if (DATASET.filter_opts && DATASET.filter_opts[0]) {
   currentDept = DATASET.filter_opts[0].key;
   deptSel.value = currentDept;
-  buildTable(getRows());
-  renderHeatmap();
+  fullRender();
 }
 </script>
 {% endblock %}
