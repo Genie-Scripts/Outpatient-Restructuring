@@ -199,7 +199,7 @@
       <div class="sub">Outpatient Restructuring</div>
     </div>
     <div class="gh-meta">
-      <div>更新 2026-04-26 05:33</div>
+      <div>更新 2026-04-26 09:41</div>
       <div>※ 件数は 22営業日換算</div>
     </div>
   </div>
@@ -220,11 +220,13 @@
           <a href="themes/2026-04/referral.html"
              >紹介・逆紹介</a>
           <a href="themes/2026-04/slot.html"
-             >予約枠の再編</a>
+             >予約枠サマリ</a>
           <a href="themes/2026-04/nursing.html"
-             >時間帯と看護師配置</a>
+             >曜日×時間帯 分析</a>
           <a href="themes/2026-04/doctor.html"
-             >医師の負荷分布</a>
+             >医師×時間帯 分析</a>
+          <a href="themes/2026-04/slot-heatmap.html"
+             >外来枠×時間帯 分析</a>
         </div>
       </div>
     </div>
@@ -345,7 +347,7 @@
        border:1px solid var(--border);border-radius:8px;transition:border-color .15s, box-shadow .15s;
        text-decoration:none;">
       <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">紹介・逆紹介</div>
-      <div style="font-size:12px;color:var(--text-soft);line-height:1.5;">薬再診スコア全科横断 / 逆紹介候補件数ランキング / 紹介率・未来院率トレンド</div>
+      <div style="font-size:12px;color:var(--text-soft);line-height:1.5;">紹介率・初診率 12か月トレンド（科別切替） / 逆紹介候補ランキング / 薬再診スコア</div>
       <div style="font-size:11px;color:var(--blue);margin-top:8px;font-weight:600;">開く →</div>
     </a>
     
@@ -354,8 +356,8 @@
     <a href="themes/2026-04/slot.html" style="display:block;padding:14px 16px;background:var(--surface2);
        border:1px solid var(--border);border-radius:8px;transition:border-color .15s, box-shadow .15s;
        text-decoration:none;">
-      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">予約枠の再編</div>
-      <div style="font-size:12px;color:var(--text-soft);line-height:1.5;">命名乖離枠 / 稀用枠（月5件未満）/ 科別枠ミックスサマリ</div>
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">予約枠サマリ</div>
+      <div style="font-size:12px;color:var(--text-soft);line-height:1.5;">時間帯ゾーン × 曜日 / 稀用枠（月5件未満）/ 科別枠サマリ</div>
       <div style="font-size:11px;color:var(--blue);margin-top:8px;font-weight:600;">開く →</div>
     </a>
     
@@ -364,8 +366,8 @@
     <a href="themes/2026-04/nursing.html" style="display:block;padding:14px 16px;background:var(--surface2);
        border:1px solid var(--border);border-radius:8px;transition:border-color .15s, box-shadow .15s;
        text-decoration:none;">
-      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">時間帯と看護師配置</div>
-      <div style="font-size:12px;color:var(--text-soft);line-height:1.5;">曜日×時間帯ヒートマップ / 15時以降比率ランキング / 30分bin来院分布</div>
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">曜日×時間帯 分析</div>
+      <div style="font-size:12px;color:var(--text-soft);line-height:1.5;">来院・同時並行 ヒートマップ（評価科全体／科別切替）/ 看護師配置計画用</div>
       <div style="font-size:11px;color:var(--blue);margin-top:8px;font-weight:600;">開く →</div>
     </a>
     
@@ -374,8 +376,18 @@
     <a href="themes/2026-04/doctor.html" style="display:block;padding:14px 16px;background:var(--surface2);
        border:1px solid var(--border);border-radius:8px;transition:border-color .15s, box-shadow .15s;
        text-decoration:none;">
-      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">医師の負荷分布</div>
-      <div style="font-size:12px;color:var(--text-soft);line-height:1.5;">日平均担当件数 TOP / 曜日×時間帯 医師件数ヒートマップ（匿名）</div>
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">医師×時間帯 分析</div>
+      <div style="font-size:12px;color:var(--text-soft);line-height:1.5;">医師（匿名ID）別 件数・出勤頻度 ヒートマップ（科別・曜日タブ）</div>
+      <div style="font-size:11px;color:var(--blue);margin-top:8px;font-weight:600;">開く →</div>
+    </a>
+    
+    
+    
+    <a href="themes/2026-04/slot-heatmap.html" style="display:block;padding:14px 16px;background:var(--surface2);
+       border:1px solid var(--border);border-radius:8px;transition:border-color .15s, box-shadow .15s;
+       text-decoration:none;">
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">外来枠×時間帯 分析</div>
+      <div style="font-size:12px;color:var(--text-soft);line-height:1.5;">外来枠（予約名称）別 件数・稼働頻度 ヒートマップ（科別・縮小候補順）</div>
       <div style="font-size:11px;color:var(--blue);margin-top:8px;font-weight:600;">開く →</div>
     </a>
     

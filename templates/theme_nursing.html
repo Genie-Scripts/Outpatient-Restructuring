@@ -1,15 +1,44 @@
 {% extends "_layout.html" %}
 {% block extra_head %}
 <style>
-/* ヒートマップテーブル */
+.hm-controls{
+  display:flex;gap:14px;align-items:center;flex-wrap:wrap;
+  margin-bottom:16px;padding:12px 16px;
+  background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+}
+.hm-ctrl-group{display:flex;align-items:center;gap:8px;}
+.hm-ctrl-group label{
+  font-size:11px;color:var(--dim);font-weight:700;
+  text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;
+}
+.hm-ctrl-group select{
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--text);padding:5px 10px;border-radius:6px;
+  font-size:12px;cursor:pointer;min-width:180px;
+}
+.metric-tabs{display:flex;gap:4px;flex-wrap:wrap;}
+.metric-tab{
+  padding:5px 12px;background:var(--surface);border:1px solid var(--border);
+  border-radius:5px;font-size:12px;color:var(--text-soft);cursor:pointer;
+  transition:all .15s;
+}
+.metric-tab:hover{border-color:var(--blue);color:var(--blue);}
+.metric-tab.active{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:600;}
 .heatmap-wrap{overflow-x:auto;margin-top:8px;}
 .heatmap-tbl{border-collapse:collapse;font-size:11px;white-space:nowrap;}
-.heatmap-tbl th{padding:4px 6px;background:var(--surface2);font-weight:700;
-                color:var(--text-soft);font-size:10px;border:1px solid var(--border);}
-.heatmap-tbl td{padding:4px 5px;text-align:center;border:1px solid var(--border);
-                font-family:'DM Mono',monospace;font-size:10px;min-width:36px;}
-.heatmap-tbl .row-label{font-weight:700;color:var(--text);background:var(--surface2);
-                         text-align:left;padding-left:8px;min-width:32px;}
+.heatmap-tbl th{
+  padding:4px 6px;background:var(--surface2);font-weight:700;
+  color:var(--text-soft);font-size:10px;border:1px solid var(--border);
+}
+.heatmap-tbl td{
+  padding:3px 5px;text-align:center;border:1px solid var(--border);
+  font-family:'DM Mono',monospace;font-size:10px;min-width:34px;
+  transition:background .12s;
+}
+.heatmap-tbl .row-label{
+  font-weight:700;color:var(--text);background:var(--surface2) !important;
+  text-align:left;padding-left:8px !important;min-width:32px;
+}
 </style>
 {% endblock %}
 
@@ -18,102 +47,36 @@
 <div class="card">
   <div class="card-head">
     <span class="card-num">00</span>
-    <h2>時間帯と看護師配置 — 当月サマリ</h2>
-    <span class="card-sub">{{ month }} ／ 評価対象科合計 ／ 実営業日 {{ biz_days }}日{% if excluded_days > 0 %}（祝日・病院休 {{ excluded_days }}日除外）{% endif %}</span>
+    <h2>曜日×時間帯 来院ヒートマップ</h2>
+    <span class="card-sub">{{ month }} ／ 評価対象科 ／ 実営業日 {{ biz_days }}日{% if excluded_days > 0 %}（祝日・病院休 {{ excluded_days }}日除外）{% endif %}</span>
   </div>
-  <p style="font-size:13px;color:var(--text-soft);line-height:1.7;">
-    時間帯ゾーン別・曜日別の患者数を評価対象科全体で集計し、看護師の人員配置計画に活用します。
+  <p style="font-size:13px;color:var(--text-soft);line-height:1.7;margin-bottom:16px;">
+    時間帯ゾーン別・曜日別の患者数を集計し、看護師の人員配置計画に活用します。
     15時以降のピークが高い場合、日勤帯シフトとの乖離が生じリスクとなります。
   </p>
-</div>
 
-<div class="card">
-  <div class="card-head">
-    <span class="card-num">01</span>
-    <h2>時間帯ゾーン × 曜日（評価対象科 合計）</h2>
-    <span class="card-sub">全評価科の延べ来院件数（月間累計）</span>
+  <div class="hm-controls">
+    <div class="hm-ctrl-group">
+      <label>対象：</label>
+      <select id="filter-select"></select>
+    </div>
+    <div class="hm-ctrl-group">
+      <label>指標：</label>
+      <div class="metric-tabs">
+        <button class="metric-tab active" data-metric="arrivals">到着件数（日平均）</button>
+        <button class="metric-tab" data-metric="conc_med">同時並行（中央値）</button>
+        <button class="metric-tab" data-metric="conc_max">同時並行（最大）</button>
+      </div>
+    </div>
   </div>
-  <div class="chart-wrap" style="height:280px;"><canvas id="chartTimezone"></canvas></div>
-  <p class="meta">各棒は1か月分の件数合計。15時前後で稼働がどう分布しているかを確認します。</p>
-</div>
 
-<div class="card">
-  <div class="card-head">
-    <span class="card-num">02</span>
-    <h2>30分bin × 曜日 来院ヒートマップ</h2>
-    <span class="card-sub">評価対象科合計の 到着件数_日平均（{{ heatmap.max_val }} が最大値）</span>
-  </div>
-  {% if heatmap.rows %}
   <div class="heatmap-wrap">
-    <table class="heatmap-tbl">
-      <thead>
-        <tr>
-          <th>曜日</th>
-          {% for b in heatmap.bins %}
-          <th>{{ b }}</th>
-          {% endfor %}
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in heatmap.rows %}
-        <tr>
-          <td class="row-label">{{ row.label }}</td>
-          {% for i in range(heatmap.bins | length) %}
-          {% set v = row.counts[i] %}
-          {% set intensity = row.intens[i] %}
-          <td style="background:rgba(63,127,193,{{ '%.2f' | format(intensity * 0.85) }});
-                     color:{% if intensity > 0.6 %}#fff{% else %}var(--text){% endif %};">
-            {% if v > 0 %}{{ v }}{% endif %}
-          </td>
-          {% endfor %}
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div id="hm-container"></div>
   </div>
-  {% else %}
-  <div class="empty">時間帯データがありません。</div>
-  {% endif %}
-  <p class="meta">値は評価対象科合計の到着件数_日平均（平日当たり）。色が濃いほど来院が集中している時間帯。</p>
-</div>
-
-<div class="card">
-  <div class="card-head">
-    <span class="card-num">03</span>
-    <h2>15時以降 来院比率 — 科別ランキング</h2>
-    <span class="card-sub">「午後後半(15-17時)」＋「夕方以降(17時〜)」の件数 ÷ 総件数</span>
-  </div>
-  {% if late_ratio_rows %}
-  <table>
-    <thead>
-      <tr>
-        <th>診療科</th>
-        <th class="num">総件数</th>
-        <th class="num">15時以降件数</th>
-        <th class="num">15時以降比率</th>
-        <th style="min-width:160px;">比率（棒）</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for r in late_ratio_rows %}
-      <tr>
-        <td>{{ r.dept }}</td>
-        <td class="num">{{ "{:,}".format(r.total) }}</td>
-        <td class="num">{{ "{:,}".format(r.late) }}</td>
-        <td class="num{% if r.late_rate >= 30 %} warn{% endif %}">{{ r.late_rate }}%</td>
-        <td>
-          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
-            <div style="height:100%;width:{{ r.late_rate }}%;background:{% if r.late_rate >= 30 %}var(--down){% elif r.late_rate >= 20 %}var(--geka){% else %}var(--blue){% endif %};border-radius:3px;"></div>
-          </div>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% else %}
-  <div class="empty">時間帯データがありません。</div>
-  {% endif %}
-  <p class="meta">15時以降比率が30%超（赤）の科はシフト延長の要検討候補。日勤帯（16時まで）との乖離に注意。</p>
+  <p class="meta" style="margin-top:8px;">
+    値は平日当たり日平均。色が濃いほど来院が集中している時間帯。
+    15時以降も高い診療科はシフト延長の要検討候補。
+  </p>
 </div>
 
 <div class="lateral-nav">
@@ -130,29 +93,101 @@
 
 {% block scripts %}
 <script>
-const TZ_DATA = {{ timezone_chart_json | safe }};
-if (TZ_DATA && TZ_DATA.labels && document.getElementById('chartTimezone')) {
-  const palette = ['#3F7FC1', '#D08620', '#2B9DB8', '#8B6FB6'];
-  new Chart(document.getElementById('chartTimezone'), {
-    type: 'bar',
-    data: {
-      labels: TZ_DATA.labels,
-      datasets: TZ_DATA.datasets.map((ds, i) => ({
-        label: ds.label,
-        data: ds.data,
-        backgroundColor: palette[i % palette.length],
-      })),
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom' } },
-      scales: {
-        x: { stacked: true, grid: { display: false } },
-        y: { stacked: true, beginAtZero: true, grid: { color: '#EBE8E3' } },
-      },
-    },
+const DATASET    = {{ heatmap_dataset_json | safe }};
+const BIN_LABELS = {{ bin_labels_json | safe }};
+const WD_LABELS  = {{ weekdays_json | safe }};
+
+const N_WD  = WD_LABELS.length;   // 5 (月〜金)
+const N_BIN = BIN_LABELS.length;  // 24 bins
+
+let currentFilter = 'all';
+let currentMetric = 'arrivals';
+
+/* ── テーブル構築（DOM 作成） ── */
+function buildTable() {
+  const tbl = document.createElement('table');
+  tbl.className = 'heatmap-tbl';
+
+  /* thead */
+  const hRow = tbl.createTHead().insertRow();
+  const thWd = document.createElement('th');
+  thWd.textContent = '曜日';
+  hRow.appendChild(thWd);
+  BIN_LABELS.forEach(b => {
+    const th = document.createElement('th');
+    th.textContent = b;
+    hRow.appendChild(th);
   });
+
+  /* tbody */
+  const tbody = tbl.createTBody();
+  WD_LABELS.forEach((wd, i) => {
+    const tr = tbody.insertRow();
+    const lc = tr.insertCell();
+    lc.textContent = wd;
+    lc.className = 'row-label';
+    for (let j = 0; j < N_BIN; j++) {
+      const td = tr.insertCell();
+      td.id = `hm-${i}-${j}`;
+    }
+  });
+
+  const cont = document.getElementById('hm-container');
+  cont.innerHTML = '';
+  cont.appendChild(tbl);
 }
+
+/* ── レンダリング ── */
+function renderHeatmap() {
+  const series = DATASET.series[currentFilter];
+  if (!series) return;
+  const matrix = series[currentMetric];
+  if (!matrix) return;
+
+  /* 最大値（全曜日・全ビン） */
+  let max = 0;
+  for (let i = 0; i < N_WD; i++)
+    for (let j = 0; j < N_BIN; j++)
+      if (matrix[i] && matrix[i][j] > max) max = matrix[i][j];
+
+  for (let i = 0; i < N_WD; i++) {
+    for (let j = 0; j < N_BIN; j++) {
+      const cell = document.getElementById(`hm-${i}-${j}`);
+      if (!cell) continue;
+      const v = (matrix[i] && matrix[i][j]) || 0;
+      const alpha = max > 0 ? Math.min(v / max * 0.78, 0.78) : 0;
+      cell.style.background = alpha > 0.015
+        ? `rgba(63,127,193,${alpha.toFixed(2)})` : '';
+      cell.style.color = alpha > 0.50 ? '#fff' : '';
+      cell.textContent = v > 0 ? v.toFixed(1) : '';
+    }
+  }
+}
+
+/* ── フィルタ select 構築 ── */
+const filterSel = document.getElementById('filter-select');
+(DATASET.filter_opts || []).forEach(opt => {
+  const el = document.createElement('option');
+  el.value   = opt.key;
+  el.textContent = opt.label;
+  filterSel.appendChild(el);
+});
+filterSel.addEventListener('change', () => {
+  currentFilter = filterSel.value;
+  renderHeatmap();
+});
+
+/* ── メトリクスタブ ── */
+document.querySelectorAll('.metric-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.metric-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentMetric = btn.dataset.metric;
+    renderHeatmap();
+  });
+});
+
+buildTable();
+renderHeatmap();
 </script>
 {% endblock %}

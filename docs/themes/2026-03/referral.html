@@ -182,6 +182,15 @@
   .gh-dropdown-menu a.active{background:rgba(255,255,255,.15);color:#fff;font-weight:700;}
 </style>
 
+<style>
+.dept-sel-wrap{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.dept-sel-wrap label{font-size:12px;color:var(--dim);font-weight:700;
+                     text-transform:uppercase;letter-spacing:.04em;}
+#dept-select{background:var(--surface2);border:1px solid var(--border);
+             color:var(--text);padding:6px 10px;border-radius:6px;
+             font-size:13px;cursor:pointer;min-width:200px;}
+</style>
+
 </head>
 <body data-view="theme-referral" data-month="2026-03">
 
@@ -193,7 +202,7 @@
       <div class="sub">Outpatient Restructuring</div>
     </div>
     <div class="gh-meta">
-      <div>更新 2026-04-26 05:33</div>
+      <div>更新 2026-04-26 09:41</div>
       
     </div>
   </div>
@@ -214,11 +223,13 @@
           <a href="../../themes/2026-03/referral.html"
              class="active">紹介・逆紹介</a>
           <a href="../../themes/2026-03/slot.html"
-             >予約枠の再編</a>
+             >予約枠サマリ</a>
           <a href="../../themes/2026-03/nursing.html"
-             >時間帯と看護師配置</a>
+             >曜日×時間帯 分析</a>
           <a href="../../themes/2026-03/doctor.html"
-             >医師の負荷分布</a>
+             >医師×時間帯 分析</a>
+          <a href="../../themes/2026-03/slot-heatmap.html"
+             >外来枠×時間帯 分析</a>
         </div>
       </div>
     </div>
@@ -269,27 +280,15 @@
 <div class="card">
   <div class="card-head">
     <span class="card-num">00</span>
-    <h2>紹介・逆紹介 当月サマリ</h2>
-    <span class="card-sub">2026-03 ／ 評価対象科合計 ／ 実営業日 21日（祝日・病院休 1日除外）</span>
+    <h2>紹介率・初診率 トレンド</h2>
+    <span class="card-sub">2026-03 ／ 直近12か月 ／ 実営業日 21日（祝日・病院休 1日除外）</span>
   </div>
-  <div class="summary-row">
-    <div class="summary-stat">
-      <div class="summary-stat-k">総件数</div>
-      <div class="summary-stat-v">32,861<span class="summary-stat-u">件</span></div>
-    </div>
-    <div class="summary-stat">
-      <div class="summary-stat-k">初診件数</div>
-      <div class="summary-stat-v">2,714<span class="summary-stat-u">件</span></div>
-    </div>
-    <div class="summary-stat">
-      <div class="summary-stat-k">紹介率（初診）</div>
-      <div class="summary-stat-v">68.9<span class="summary-stat-u">%</span></div>
-    </div>
-    <div class="summary-stat">
-      <div class="summary-stat-k">未来院率</div>
-      <div class="summary-stat-v">5.0<span class="summary-stat-u">%</span></div>
-    </div>
+  <div class="dept-sel-wrap">
+    <label>診療科：</label>
+    <select id="dept-select"></select>
   </div>
+  <div class="chart-wrap" style="height:280px;"><canvas id="chartTrend"></canvas></div>
+  <p class="meta">紹介率 = 紹介状あり初診 ÷ 初診件数（左軸・青）。初診率 = 初診件数 ÷ 総件数（右軸・緑）。直近12か月分。</p>
 </div>
 
 <div class="card">
@@ -315,7 +314,8 @@
         <td class="num">518</td>
         <td>
           <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
-            <div style="height:100%;width:100.0%;background:var(--down);border-radius:3px;"></div>
+            <div style="height:100%;width:100.0%;
+                        background:var(--down);border-radius:3px;"></div>
           </div>
         </td>
       </tr>
@@ -325,7 +325,8 @@
         <td class="num">227</td>
         <td>
           <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
-            <div style="height:100%;width:43.8%;background:var(--down);border-radius:3px;"></div>
+            <div style="height:100%;width:43.8%;
+                        background:var(--down);border-radius:3px;"></div>
           </div>
         </td>
       </tr>
@@ -335,7 +336,8 @@
         <td class="num">138</td>
         <td>
           <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
-            <div style="height:100%;width:26.6%;background:var(--down);border-radius:3px;"></div>
+            <div style="height:100%;width:26.6%;
+                        background:var(--down);border-radius:3px;"></div>
           </div>
         </td>
       </tr>
@@ -345,7 +347,8 @@
         <td class="num">115</td>
         <td>
           <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
-            <div style="height:100%;width:22.2%;background:var(--down);border-radius:3px;"></div>
+            <div style="height:100%;width:22.2%;
+                        background:var(--down);border-radius:3px;"></div>
           </div>
         </td>
       </tr>
@@ -355,7 +358,8 @@
         <td class="num">110</td>
         <td>
           <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
-            <div style="height:100%;width:21.2%;background:var(--down);border-radius:3px;"></div>
+            <div style="height:100%;width:21.2%;
+                        background:var(--down);border-radius:3px;"></div>
           </div>
         </td>
       </tr>
@@ -365,7 +369,8 @@
         <td class="num">107</td>
         <td>
           <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
-            <div style="height:100%;width:20.7%;background:var(--down);border-radius:3px;"></div>
+            <div style="height:100%;width:20.7%;
+                        background:var(--down);border-radius:3px;"></div>
           </div>
         </td>
       </tr>
@@ -375,7 +380,8 @@
         <td class="num">103</td>
         <td>
           <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
-            <div style="height:100%;width:19.9%;background:var(--down);border-radius:3px;"></div>
+            <div style="height:100%;width:19.9%;
+                        background:var(--down);border-radius:3px;"></div>
           </div>
         </td>
       </tr>
@@ -385,7 +391,8 @@
         <td class="num">96</td>
         <td>
           <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
-            <div style="height:100%;width:18.5%;background:var(--down);border-radius:3px;"></div>
+            <div style="height:100%;width:18.5%;
+                        background:var(--down);border-radius:3px;"></div>
           </div>
         </td>
       </tr>
@@ -395,7 +402,8 @@
         <td class="num">91</td>
         <td>
           <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
-            <div style="height:100%;width:17.6%;background:var(--down);border-radius:3px;"></div>
+            <div style="height:100%;width:17.6%;
+                        background:var(--down);border-radius:3px;"></div>
           </div>
         </td>
       </tr>
@@ -405,7 +413,8 @@
         <td class="num">81</td>
         <td>
           <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
-            <div style="height:100%;width:15.6%;background:var(--down);border-radius:3px;"></div>
+            <div style="height:100%;width:15.6%;
+                        background:var(--down);border-radius:3px;"></div>
           </div>
         </td>
       </tr>
@@ -415,7 +424,8 @@
         <td class="num">70</td>
         <td>
           <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
-            <div style="height:100%;width:13.5%;background:var(--down);border-radius:3px;"></div>
+            <div style="height:100%;width:13.5%;
+                        background:var(--down);border-radius:3px;"></div>
           </div>
         </td>
       </tr>
@@ -425,7 +435,8 @@
         <td class="num">68</td>
         <td>
           <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
-            <div style="height:100%;width:13.1%;background:var(--down);border-radius:3px;"></div>
+            <div style="height:100%;width:13.1%;
+                        background:var(--down);border-radius:3px;"></div>
           </div>
         </td>
       </tr>
@@ -435,7 +446,8 @@
         <td class="num">58</td>
         <td>
           <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
-            <div style="height:100%;width:11.2%;background:var(--down);border-radius:3px;"></div>
+            <div style="height:100%;width:11.2%;
+                        background:var(--down);border-radius:3px;"></div>
           </div>
         </td>
       </tr>
@@ -445,7 +457,8 @@
         <td class="num">57</td>
         <td>
           <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
-            <div style="height:100%;width:11.0%;background:var(--down);border-radius:3px;"></div>
+            <div style="height:100%;width:11.0%;
+                        background:var(--down);border-radius:3px;"></div>
           </div>
         </td>
       </tr>
@@ -455,7 +468,8 @@
         <td class="num">49</td>
         <td>
           <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
-            <div style="height:100%;width:9.5%;background:var(--down);border-radius:3px;"></div>
+            <div style="height:100%;width:9.5%;
+                        background:var(--down);border-radius:3px;"></div>
           </div>
         </td>
       </tr>
@@ -465,7 +479,8 @@
         <td class="num">49</td>
         <td>
           <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
-            <div style="height:100%;width:9.5%;background:var(--down);border-radius:3px;"></div>
+            <div style="height:100%;width:9.5%;
+                        background:var(--down);border-radius:3px;"></div>
           </div>
         </td>
       </tr>
@@ -475,7 +490,8 @@
         <td class="num">34</td>
         <td>
           <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
-            <div style="height:100%;width:6.6%;background:var(--down);border-radius:3px;"></div>
+            <div style="height:100%;width:6.6%;
+                        background:var(--down);border-radius:3px;"></div>
           </div>
         </td>
       </tr>
@@ -485,7 +501,8 @@
         <td class="num">33</td>
         <td>
           <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
-            <div style="height:100%;width:6.4%;background:var(--down);border-radius:3px;"></div>
+            <div style="height:100%;width:6.4%;
+                        background:var(--down);border-radius:3px;"></div>
           </div>
         </td>
       </tr>
@@ -495,7 +512,8 @@
         <td class="num">29</td>
         <td>
           <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
-            <div style="height:100%;width:5.6%;background:var(--down);border-radius:3px;"></div>
+            <div style="height:100%;width:5.6%;
+                        background:var(--down);border-radius:3px;"></div>
           </div>
         </td>
       </tr>
@@ -505,7 +523,8 @@
         <td class="num">25</td>
         <td>
           <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
-            <div style="height:100%;width:4.8%;background:var(--down);border-radius:3px;"></div>
+            <div style="height:100%;width:4.8%;
+                        background:var(--down);border-radius:3px;"></div>
           </div>
         </td>
       </tr>
@@ -515,7 +534,8 @@
         <td class="num">25</td>
         <td>
           <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
-            <div style="height:100%;width:4.8%;background:var(--down);border-radius:3px;"></div>
+            <div style="height:100%;width:4.8%;
+                        background:var(--down);border-radius:3px;"></div>
           </div>
         </td>
       </tr>
@@ -525,7 +545,8 @@
         <td class="num">15</td>
         <td>
           <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
-            <div style="height:100%;width:2.9%;background:var(--down);border-radius:3px;"></div>
+            <div style="height:100%;width:2.9%;
+                        background:var(--down);border-radius:3px;"></div>
           </div>
         </td>
       </tr>
@@ -535,7 +556,8 @@
         <td class="num">10</td>
         <td>
           <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
-            <div style="height:100%;width:1.9%;background:var(--down);border-radius:3px;"></div>
+            <div style="height:100%;width:1.9%;
+                        background:var(--down);border-radius:3px;"></div>
           </div>
         </td>
       </tr>
@@ -545,7 +567,8 @@
         <td class="num">6</td>
         <td>
           <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
-            <div style="height:100%;width:1.2%;background:var(--down);border-radius:3px;"></div>
+            <div style="height:100%;width:1.2%;
+                        background:var(--down);border-radius:3px;"></div>
           </div>
         </td>
       </tr>
@@ -555,7 +578,8 @@
         <td class="num">5</td>
         <td>
           <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
-            <div style="height:100%;width:1.0%;background:var(--down);border-radius:3px;"></div>
+            <div style="height:100%;width:1.0%;
+                        background:var(--down);border-radius:3px;"></div>
           </div>
         </td>
       </tr>
@@ -565,7 +589,8 @@
         <td class="num">2</td>
         <td>
           <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
-            <div style="height:100%;width:0.4%;background:var(--down);border-radius:3px;"></div>
+            <div style="height:100%;width:0.4%;
+                        background:var(--down);border-radius:3px;"></div>
           </div>
         </td>
       </tr>
@@ -996,16 +1021,6 @@
   <p class="meta">スコア70以上（赤）は逆紹介・運用見直しの優先候補。科ごとの詳細は診療科 再編診断ページを参照。</p>
 </div>
 
-<div class="card">
-  <div class="card-head">
-    <span class="card-num">03</span>
-    <h2>紹介率・未来院率 トレンド（直近6か月）</h2>
-    <span class="card-sub">評価対象科合計</span>
-  </div>
-  <div class="chart-wrap" style="height:260px;"><canvas id="chartTrend"></canvas></div>
-  <p class="meta">紹介率 = 紹介状あり初診 ÷ 初診件数。未来院率 = 未来院件数 ÷ 総件数。</p>
-</div>
-
 <div class="lateral-nav">
   <div class="group">
     <a href="../2026-02/referral.html">← 前月</a>
@@ -1115,49 +1130,69 @@
 
 
 <script>
-const TREND_DATA = [{"month": "2025-11", "ref_rate": 65.3, "mirain_rate": 4.8, "sho": 2616, "ref": 1709}, {"month": "2025-12", "ref_rate": 69.0, "mirain_rate": 4.8, "sho": 2809, "ref": 1938}, {"month": "2026-01", "ref_rate": 66.0, "mirain_rate": 5.0, "sho": 2722, "ref": 1796}, {"month": "2026-02", "ref_rate": 64.0, "mirain_rate": 4.9, "sho": 2410, "ref": 1543}, {"month": "2026-03", "ref_rate": 68.9, "mirain_rate": 5.0, "sho": 2714, "ref": 1869}];
-if (TREND_DATA && TREND_DATA.length > 0 && document.getElementById('chartTrend')) {
-  new Chart(document.getElementById('chartTrend'), {
+const TREND_ALL  = {"全評価科合計": [{"month": "2025-11", "sho_rate": 9.4, "ref_rate": 65.3}, {"month": "2025-12", "sho_rate": 8.7, "ref_rate": 69.0}, {"month": "2026-01", "sho_rate": 9.1, "ref_rate": 66.0}, {"month": "2026-02", "sho_rate": 8.7, "ref_rate": 64.0}, {"month": "2026-03", "sho_rate": 8.3, "ref_rate": 68.9}], "救急科": [{"month": "2025-11", "sho_rate": 69.2, "ref_rate": 1.2}, {"month": "2025-12", "sho_rate": 63.5, "ref_rate": 2.7}, {"month": "2026-01", "sho_rate": 65.0, "ref_rate": 3.4}, {"month": "2026-02", "sho_rate": 67.5, "ref_rate": 3.6}, {"month": "2026-03", "sho_rate": 63.0, "ref_rate": 3.3}], "放射線治療科": [{"month": "2025-11", "sho_rate": 0.9, "ref_rate": 71.4}, {"month": "2025-12", "sho_rate": 0.4, "ref_rate": 100.0}, {"month": "2026-01", "sho_rate": 0.9, "ref_rate": 100.0}, {"month": "2026-02", "sho_rate": 0.6, "ref_rate": 100.0}, {"month": "2026-03", "sho_rate": 1.0, "ref_rate": 90.0}], "リウマチ膠原病内科": [{"month": "2025-11", "sho_rate": 1.8, "ref_rate": 88.9}, {"month": "2025-12", "sho_rate": 2.7, "ref_rate": 93.5}, {"month": "2026-01", "sho_rate": 2.4, "ref_rate": 84.6}, {"month": "2026-02", "sho_rate": 1.6, "ref_rate": 88.2}, {"month": "2026-03", "sho_rate": 2.9, "ref_rate": 91.2}], "眼科": [{"month": "2025-11", "sho_rate": 6.2, "ref_rate": 91.8}, {"month": "2025-12", "sho_rate": 6.8, "ref_rate": 91.8}, {"month": "2026-01", "sho_rate": 6.7, "ref_rate": 93.7}, {"month": "2026-02", "sho_rate": 6.0, "ref_rate": 86.0}, {"month": "2026-03", "sho_rate": 6.5, "ref_rate": 90.0}], "呼吸器内科": [{"month": "2025-11", "sho_rate": 6.6, "ref_rate": 89.7}, {"month": "2025-12", "sho_rate": 7.1, "ref_rate": 90.9}, {"month": "2026-01", "sho_rate": 6.9, "ref_rate": 82.8}, {"month": "2026-02", "sho_rate": 5.4, "ref_rate": 85.5}, {"month": "2026-03", "sho_rate": 5.6, "ref_rate": 86.4}], "循環器内科": [{"month": "2025-11", "sho_rate": 8.5, "ref_rate": 83.1}, {"month": "2025-12", "sho_rate": 8.1, "ref_rate": 81.1}, {"month": "2026-01", "sho_rate": 9.0, "ref_rate": 80.1}, {"month": "2026-02", "sho_rate": 8.3, "ref_rate": 83.6}, {"month": "2026-03", "sho_rate": 9.3, "ref_rate": 84.1}], "内科": [{"month": "2025-11", "sho_rate": 54.7, "ref_rate": 14.4}, {"month": "2025-12", "sho_rate": 58.0, "ref_rate": 12.5}, {"month": "2026-01", "sho_rate": 61.9, "ref_rate": 11.5}, {"month": "2026-02", "sho_rate": 62.1, "ref_rate": 8.6}, {"month": "2026-03", "sho_rate": 59.3, "ref_rate": 16.8}], "臨床腫瘍科": [{"month": "2025-11", "sho_rate": 0.0, "ref_rate": 0.0}, {"month": "2025-12", "sho_rate": 0.0, "ref_rate": 0.0}, {"month": "2026-01", "sho_rate": 0.5, "ref_rate": 0.0}, {"month": "2026-02", "sho_rate": 0.0, "ref_rate": 0.0}, {"month": "2026-03", "sho_rate": 0.0, "ref_rate": 0.0}], "産婦人科": [{"month": "2025-11", "sho_rate": 8.1, "ref_rate": 80.0}, {"month": "2025-12", "sho_rate": 7.9, "ref_rate": 86.8}, {"month": "2026-01", "sho_rate": 8.0, "ref_rate": 76.5}, {"month": "2026-02", "sho_rate": 7.9, "ref_rate": 71.4}, {"month": "2026-03", "sho_rate": 6.5, "ref_rate": 85.3}], "皮膚科": [{"month": "2025-11", "sho_rate": 8.1, "ref_rate": 82.8}, {"month": "2025-12", "sho_rate": 8.6, "ref_rate": 77.4}, {"month": "2026-01", "sho_rate": 7.3, "ref_rate": 73.6}, {"month": "2026-02", "sho_rate": 9.6, "ref_rate": 79.1}, {"month": "2026-03", "sho_rate": 8.3, "ref_rate": 81.8}], "腎内科": [{"month": "2025-11", "sho_rate": 4.0, "ref_rate": 92.9}, {"month": "2025-12", "sho_rate": 3.6, "ref_rate": 93.1}, {"month": "2026-01", "sho_rate": 2.8, "ref_rate": 95.5}, {"month": "2026-02", "sho_rate": 2.4, "ref_rate": 100.0}, {"month": "2026-03", "sho_rate": 2.8, "ref_rate": 91.3}], "乳腺外科": [{"month": "2025-11", "sho_rate": 3.7, "ref_rate": 84.9}, {"month": "2025-12", "sho_rate": 4.0, "ref_rate": 88.2}, {"month": "2026-01", "sho_rate": 3.8, "ref_rate": 88.1}, {"month": "2026-02", "sho_rate": 3.2, "ref_rate": 78.3}, {"month": "2026-03", "sho_rate": 3.0, "ref_rate": 81.8}], "泌尿器科": [{"month": "2025-11", "sho_rate": 3.1, "ref_rate": 83.5}, {"month": "2025-12", "sho_rate": 2.8, "ref_rate": 83.8}, {"month": "2026-01", "sho_rate": 3.1, "ref_rate": 83.3}, {"month": "2026-02", "sho_rate": 3.2, "ref_rate": 81.6}, {"month": "2026-03", "sho_rate": 3.3, "ref_rate": 81.3}], "心臓血管外科": [{"month": "2025-11", "sho_rate": 1.5, "ref_rate": 100.0}, {"month": "2025-12", "sho_rate": 1.9, "ref_rate": 100.0}, {"month": "2026-01", "sho_rate": 2.4, "ref_rate": 60.0}, {"month": "2026-02", "sho_rate": 0.9, "ref_rate": 50.0}, {"month": "2026-03", "sho_rate": 1.8, "ref_rate": 66.7}], "消化器内科": [{"month": "2025-11", "sho_rate": 11.5, "ref_rate": 94.9}, {"month": "2025-12", "sho_rate": 11.2, "ref_rate": 93.1}, {"month": "2026-01", "sho_rate": 10.6, "ref_rate": 95.3}, {"month": "2026-02", "sho_rate": 9.7, "ref_rate": 92.1}, {"month": "2026-03", "sho_rate": 9.7, "ref_rate": 88.4}], "形成外科": [{"month": "2025-11", "sho_rate": 8.5, "ref_rate": 75.7}, {"month": "2025-12", "sho_rate": 6.1, "ref_rate": 88.9}, {"month": "2026-01", "sho_rate": 6.7, "ref_rate": 96.9}, {"month": "2026-02", "sho_rate": 7.7, "ref_rate": 83.3}, {"month": "2026-03", "sho_rate": 6.9, "ref_rate": 86.0}], "呼吸器外科": [{"month": "2025-11", "sho_rate": 2.3, "ref_rate": 75.0}, {"month": "2025-12", "sho_rate": 3.2, "ref_rate": 85.7}, {"month": "2026-01", "sho_rate": 3.4, "ref_rate": 100.0}, {"month": "2026-02", "sho_rate": 3.6, "ref_rate": 83.3}, {"month": "2026-03", "sho_rate": 4.0, "ref_rate": 100.0}], "整形外科": [{"month": "2025-11", "sho_rate": 12.5, "ref_rate": 90.2}, {"month": "2025-12", "sho_rate": 11.5, "ref_rate": 93.3}, {"month": "2026-01", "sho_rate": 12.3, "ref_rate": 92.9}, {"month": "2026-02", "sho_rate": 12.0, "ref_rate": 86.2}, {"month": "2026-03", "sho_rate": 11.7, "ref_rate": 86.4}], "血液内科": [{"month": "2025-11", "sho_rate": 2.5, "ref_rate": 94.4}, {"month": "2025-12", "sho_rate": 2.9, "ref_rate": 96.2}, {"month": "2026-01", "sho_rate": 2.1, "ref_rate": 87.5}, {"month": "2026-02", "sho_rate": 2.7, "ref_rate": 90.9}, {"month": "2026-03", "sho_rate": 2.9, "ref_rate": 88.5}], "歯科口腔外科": [{"month": "2025-11", "sho_rate": 21.4, "ref_rate": 69.8}, {"month": "2025-12", "sho_rate": 18.7, "ref_rate": 69.4}, {"month": "2026-01", "sho_rate": 20.8, "ref_rate": 67.3}, {"month": "2026-02", "sho_rate": 19.3, "ref_rate": 66.2}, {"month": "2026-03", "sho_rate": 19.0, "ref_rate": 58.6}], "小児科": [{"month": "2025-11", "sho_rate": 25.0, "ref_rate": 41.5}, {"month": "2025-12", "sho_rate": 17.9, "ref_rate": 43.4}, {"month": "2026-01", "sho_rate": 22.5, "ref_rate": 46.9}, {"month": "2026-02", "sho_rate": 18.1, "ref_rate": 59.3}, {"month": "2026-03", "sho_rate": 15.6, "ref_rate": 57.9}], "脳神経内科": [{"month": "2025-11", "sho_rate": 8.4, "ref_rate": 100.0}, {"month": "2025-12", "sho_rate": 9.1, "ref_rate": 94.5}, {"month": "2026-01", "sho_rate": 9.7, "ref_rate": 94.3}, {"month": "2026-02", "sho_rate": 9.4, "ref_rate": 90.9}, {"month": "2026-03", "sho_rate": 9.5, "ref_rate": 91.2}], "脳神経外科": [{"month": "2025-11", "sho_rate": 13.6, "ref_rate": 65.5}, {"month": "2025-12", "sho_rate": 12.8, "ref_rate": 74.2}, {"month": "2026-01", "sho_rate": 13.6, "ref_rate": 65.5}, {"month": "2026-02", "sho_rate": 13.1, "ref_rate": 56.0}, {"month": "2026-03", "sho_rate": 11.3, "ref_rate": 75.0}], "アレルギー科": [{"month": "2025-11", "sho_rate": 1.4, "ref_rate": 100.0}, {"month": "2025-12", "sho_rate": 1.1, "ref_rate": 100.0}, {"month": "2026-01", "sho_rate": 0.7, "ref_rate": 100.0}, {"month": "2026-02", "sho_rate": 0.7, "ref_rate": 100.0}, {"month": "2026-03", "sho_rate": 1.1, "ref_rate": 50.0}], "耳鼻咽喉科": [{"month": "2025-11", "sho_rate": 8.6, "ref_rate": 80.1}, {"month": "2025-12", "sho_rate": 9.5, "ref_rate": 78.8}, {"month": "2026-01", "sho_rate": 8.3, "ref_rate": 83.7}, {"month": "2026-02", "sho_rate": 9.8, "ref_rate": 76.1}, {"month": "2026-03", "sho_rate": 8.9, "ref_rate": 80.6}], "総合内科": [{"month": "2025-11", "sho_rate": 22.0, "ref_rate": 47.6}, {"month": "2025-12", "sho_rate": 15.4, "ref_rate": 63.5}, {"month": "2026-01", "sho_rate": 15.6, "ref_rate": 55.0}, {"month": "2026-02", "sho_rate": 16.0, "ref_rate": 53.8}, {"month": "2026-03", "sho_rate": 14.2, "ref_rate": 64.8}], "一般消化器外科": [{"month": "2025-11", "sho_rate": 6.2, "ref_rate": 85.9}, {"month": "2025-12", "sho_rate": 5.2, "ref_rate": 86.2}, {"month": "2026-01", "sho_rate": 7.7, "ref_rate": 85.7}, {"month": "2026-02", "sho_rate": 5.6, "ref_rate": 88.3}, {"month": "2026-03", "sho_rate": 5.2, "ref_rate": 83.3}], "メンタルケア科": [{"month": "2025-11", "sho_rate": 0.3, "ref_rate": 0.0}, {"month": "2025-12", "sho_rate": 0.5, "ref_rate": 50.0}, {"month": "2026-01", "sho_rate": 0.0, "ref_rate": 0.0}, {"month": "2026-02", "sho_rate": 0.0, "ref_rate": 0.0}, {"month": "2026-03", "sho_rate": 0.0, "ref_rate": 0.0}]};
+const DEPT_NAMES = ["アレルギー科", "メンタルケア科", "リウマチ膠原病内科", "一般消化器外科", "乳腺外科", "全評価科合計", "内科", "呼吸器内科", "呼吸器外科", "小児科", "形成外科", "循環器内科", "心臓血管外科", "放射線治療科", "救急科", "整形外科", "歯科口腔外科", "泌尿器科", "消化器内科", "産婦人科", "皮膚科", "眼科", "総合内科", "耳鼻咽喉科", "脳神経内科", "脳神経外科", "腎内科", "臨床腫瘍科", "血液内科"];
+
+const sel  = document.getElementById('dept-select');
+const canv = document.getElementById('chartTrend');
+let chart  = null;
+
+/* "全評価科合計" を先頭に固定 */
+const ordered = ['全評価科合計', ...DEPT_NAMES.filter(n => n !== '全評価科合計')];
+ordered.forEach(name => {
+  const opt = document.createElement('option');
+  opt.value = name;
+  opt.textContent = name;
+  sel.appendChild(opt);
+});
+
+function drawChart(dept) {
+  const rows    = TREND_ALL[dept] || [];
+  const labels  = rows.map(r => r.month);
+  const refData = rows.map(r => r.ref_rate);
+  const shoData = rows.map(r => r.sho_rate);
+
+  if (chart) {
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = refData;
+    chart.data.datasets[1].data = shoData;
+    chart.update();
+    return;
+  }
+
+  chart = new Chart(canv, {
     type: 'line',
     data: {
-      labels: TREND_DATA.map(d => d.month),
+      labels,
       datasets: [
-        {
-          label: '紹介率（%）',
-          data: TREND_DATA.map(d => d.ref_rate),
-          borderColor: '#3F7FC1', backgroundColor: 'rgba(63,127,193,.1)',
-          borderWidth: 2.5, tension: 0.25, fill: true, yAxisID: 'y',
-        },
-        {
-          label: '未来院率（%）',
-          data: TREND_DATA.map(d => d.mirain_rate),
-          borderColor: '#D08620', backgroundColor: 'rgba(208,134,32,.1)',
-          borderWidth: 2, tension: 0.25, fill: false, yAxisID: 'y',
-        },
+        { label: '紹介率（%）',
+          data: refData,
+          borderColor: '#3F7FC1', backgroundColor: 'rgba(63,127,193,.10)',
+          borderWidth: 2.5, tension: 0.3, fill: true, yAxisID: 'y' },
+        { label: '初診率（%）',
+          data: shoData,
+          borderColor: '#2B9DB8', backgroundColor: 'rgba(43,157,184,.10)',
+          borderWidth: 2, tension: 0.3, fill: false, yAxisID: 'y1' },
       ],
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { position: 'bottom' },
-        tooltip: {
-          callbacks: {
-            afterBody: function(items) {
-              const i = items[0]?.dataIndex;
-              const d = TREND_DATA[i];
-              return d ? [`初診 ${d.sho.toLocaleString()} 件 ／ 紹介状あり ${d.ref.toLocaleString()} 件`] : [];
-            }
-          }
-        }
-      },
+      plugins: { legend: { position: 'bottom' } },
       scales: {
-        x: { grid: { display: false } },
-        y: { beginAtZero: true, title: { display: true, text: '率（%）' } },
+        x:  { grid: { display: false } },
+        y:  { position: 'left',  beginAtZero: true,
+              title: { display: true, text: '紹介率（%）' } },
+        y1: { position: 'right', beginAtZero: true,
+              title: { display: true, text: '初診率（%）' },
+              grid: { display: false } },
       },
     },
   });
 }
+
+sel.addEventListener('change', () => drawChart(sel.value));
+drawChart('全評価科合計');
 </script>
 
 </body>

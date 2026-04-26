@@ -1,14 +1,59 @@
 {% extends "_layout.html" %}
 {% block extra_head %}
 <style>
+.hm-controls{
+  display:flex;gap:14px;align-items:center;flex-wrap:wrap;
+  margin-bottom:16px;padding:12px 16px;
+  background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+}
+.hm-ctrl-group{display:flex;align-items:center;gap:8px;}
+.hm-ctrl-group label{
+  font-size:11px;color:var(--dim);font-weight:700;
+  text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;
+}
+.hm-ctrl-group select{
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--text);padding:5px 10px;border-radius:6px;
+  font-size:12px;cursor:pointer;min-width:200px;
+}
+.wd-tabs{display:flex;gap:4px;}
+.wd-tab{
+  padding:5px 14px;background:var(--surface);border:1px solid var(--border);
+  border-radius:5px;font-size:12px;color:var(--text-soft);cursor:pointer;
+  transition:all .15s;font-weight:600;
+}
+.wd-tab:hover{border-color:var(--naika);color:var(--naika);}
+.wd-tab.active{background:var(--header);color:#fff;border-color:var(--header);}
+.metric-tabs{display:flex;gap:4px;}
+.metric-tab{
+  padding:5px 12px;background:var(--surface);border:1px solid var(--border);
+  border-radius:5px;font-size:12px;color:var(--text-soft);cursor:pointer;
+  transition:all .15s;
+}
+.metric-tab:hover{border-color:var(--naika);color:var(--naika);}
+.metric-tab.active{background:var(--naika);color:#fff;border-color:var(--naika);font-weight:600;}
 .heatmap-wrap{overflow-x:auto;margin-top:8px;}
 .heatmap-tbl{border-collapse:collapse;font-size:11px;white-space:nowrap;}
-.heatmap-tbl th{padding:4px 6px;background:var(--surface2);font-weight:700;
-                color:var(--text-soft);font-size:10px;border:1px solid var(--border);}
-.heatmap-tbl td{padding:4px 5px;text-align:center;border:1px solid var(--border);
-                font-family:'DM Mono',monospace;font-size:10px;min-width:36px;}
-.heatmap-tbl .row-label{font-weight:700;color:var(--text);background:var(--surface2);
-                         text-align:left;padding-left:8px;min-width:32px;}
+.heatmap-tbl th{
+  padding:4px 6px;background:var(--surface2);font-weight:700;
+  color:var(--text-soft);font-size:10px;border:1px solid var(--border);
+}
+.heatmap-tbl td{
+  padding:3px 5px;text-align:center;border:1px solid var(--border);
+  font-family:'DM Mono',monospace;font-size:10px;min-width:34px;
+  transition:background .12s;
+}
+.item-label{
+  text-align:left !important;padding:3px 8px !important;
+  font-weight:700;min-width:80px;white-space:nowrap;
+  background:var(--surface2) !important;
+}
+.total-cell{
+  text-align:right !important;padding:3px 8px !important;
+  font-family:'DM Mono',monospace;font-size:10px;
+  color:var(--text-soft);white-space:nowrap;min-width:60px;
+  background:var(--surface2) !important;
+}
 </style>
 {% endblock %}
 
@@ -17,98 +62,44 @@
 <div class="card">
   <div class="card-head">
     <span class="card-num">00</span>
-    <h2>医師の負荷分布 — 当月サマリ</h2>
-    <span class="card-sub">{{ month }} ／ 評価対象科（匿名ID） ／ 実営業日 {{ biz_days }}日{% if excluded_days > 0 %}（祝日・病院休 {{ excluded_days }}日除外）{% endif %}</span>
+    <h2>医師×時間帯 ヒートマップ</h2>
+    <span class="card-sub">{{ month }} ／ 区分=全体 ／ 実営業日 {{ biz_days }}日{% if excluded_days > 0 %}（祝日・病院休 {{ excluded_days }}日除外）{% endif %}</span>
   </div>
-  <p style="font-size:13px;color:var(--text-soft);line-height:1.7;">
-    医師ごとの出勤日当たり担当件数を時間帯別に集計し、特定時間帯への偏りや
-    多忙医師を可視化します。外来枠配置の最適化や増枠・縮小の判断材料として使用します。
+  <p style="font-size:13px;color:var(--text-soft);line-height:1.7;margin-bottom:16px;">
+    診療科を選択して、医師（匿名ID）ごとの出勤頻度・件数を時間帯別に可視化します。
+    特定時間帯への集中や、低稼働帯の解消・再配置の判断材料として使用します。
   </p>
-</div>
 
-<div class="card">
-  <div class="card-head">
-    <span class="card-num">01</span>
-    <h2>医師 負荷 TOP{{ doctor_top_rows | length }} — 日平均担当件数</h2>
-    <span class="card-sub">評価対象科・区分=全体・平日（月〜金）の件数合計 ÷ 出勤日数</span>
+  <div class="hm-controls">
+    <div class="hm-ctrl-group">
+      <label>診療科：</label>
+      <select id="dept-select"></select>
+    </div>
+    <div class="hm-ctrl-group">
+      <label>曜日：</label>
+      <div class="wd-tabs">
+        <button class="wd-tab active">月</button>
+        <button class="wd-tab">火</button>
+        <button class="wd-tab">水</button>
+        <button class="wd-tab">木</button>
+        <button class="wd-tab">金</button>
+      </div>
+    </div>
+    <div class="hm-ctrl-group">
+      <label>指標：</label>
+      <div class="metric-tabs">
+        <button class="metric-tab active" data-metric="cpd">件数/出勤日</button>
+        <button class="metric-tab" data-metric="freq">出勤頻度率</button>
+      </div>
+    </div>
   </div>
-  {% if doctor_top_rows %}
-  <table>
-    <thead>
-      <tr>
-        <th>診療科</th>
-        <th>医師匿名ID</th>
-        <th class="num">月間総件数</th>
-        <th class="num">出勤日数</th>
-        <th class="num">日平均件数</th>
-        <th style="min-width:160px;">負荷（棒）</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% set _max = doctor_top_rows[0].daily_avg %}
-      {% for r in doctor_top_rows %}
-      <tr>
-        <td>{{ r.dept }}</td>
-        <td>{{ r.medic }}</td>
-        <td class="num">{{ "{:,}".format(r.total) }}</td>
-        <td class="num">{{ r.days }}</td>
-        <td class="num">{{ r.daily_avg }}</td>
-        <td>
-          <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
-            <div style="height:100%;width:{{ (r.daily_avg / _max * 100)|round(1) if _max > 0 else 0 }}%;
-                        background:var(--blue);border-radius:3px;"></div>
-          </div>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% else %}
-  <div class="empty">医師別データがありません。</div>
-  {% endif %}
-  <p class="meta">日平均 = 月間件数合計 ÷ 出勤日数（区分=全体、月〜金のみ）。</p>
-</div>
 
-<div class="card">
-  <div class="card-head">
-    <span class="card-num">02</span>
-    <h2>30分bin × 曜日 医師件数ヒートマップ（評価科合計）</h2>
-    <span class="card-sub">全評価対象科・全医師の月間延べ件数合計（{{ heatmap.max_val }} が最大値）</span>
-  </div>
-  {% if heatmap.rows %}
   <div class="heatmap-wrap">
-    <table class="heatmap-tbl">
-      <thead>
-        <tr>
-          <th>曜日</th>
-          {% for b in heatmap.bins %}
-          <th>{{ b }}</th>
-          {% endfor %}
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in heatmap.rows %}
-        <tr>
-          <td class="row-label">{{ row.label }}</td>
-          {% for i in range(heatmap.bins | length) %}
-          {% set v = row.counts[i] %}
-          {% set intensity = row.intens[i] %}
-          <td style="background:rgba(139,111,182,{{ '%.2f' | format(intensity * 0.85) }});
-                     color:{% if intensity > 0.6 %}#fff{% else %}var(--text){% endif %};">
-            {% if v > 0 %}{{ v }}{% endif %}
-          </td>
-          {% endfor %}
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div id="hm-container"></div>
   </div>
-  {% else %}
-  <div class="empty">医師時間帯データがありません。</div>
-  {% endif %}
-  <p class="meta">
-    値は月間延べ件数（14_doctor_hourly.csv の件数合計を評価科全体で集約）。
-    色が濃い時間帯は同時並行の外来が多く、対診・緊急対応が重なりやすいタイムゾーン。
+  <p class="meta" style="margin-top:8px;">
+    件数/出勤日 = 出勤した日の平均担当件数。出勤頻度率 = 当月中その曜日・時間帯に出勤した割合。
+    行は担当件数の多い順。医師IDは匿名化済み。
   </p>
 </div>
 
@@ -122,4 +113,151 @@
   </div>
 </div>
 
+{% endblock %}
+
+{% block scripts %}
+<script>
+const DATASET    = {{ heatmap_dataset_json | safe }};
+const BIN_LABELS = {{ bin_labels_json | safe }};
+const WD_LABELS  = {{ weekdays_json | safe }};
+
+const N_BIN = BIN_LABELS.length;  // 24
+
+let currentDept   = null;
+let currentWd     = 0;
+let currentMetric = 'cpd';
+
+function getRows() {
+  if (!currentDept) return [];
+  return (DATASET.series[currentDept] || {}).rows || [];
+}
+
+/* ── テーブル構築 ── */
+function buildTable(rows) {
+  const cont = document.getElementById('hm-container');
+  if (!rows.length) {
+    cont.innerHTML =
+      '<div class="empty" style="margin:12px 0;">この診療科に医師データがありません。</div>';
+    return;
+  }
+
+  const tbl = document.createElement('table');
+  tbl.className = 'heatmap-tbl';
+
+  /* thead */
+  const hRow = tbl.createTHead().insertRow();
+  ['医師ID', '月間件数'].concat(BIN_LABELS).forEach((label, idx) => {
+    const th = document.createElement('th');
+    th.textContent = label;
+    if (idx >= 2) th.style.minWidth = '34px';
+    hRow.appendChild(th);
+  });
+
+  /* tbody */
+  const tbody = tbl.createTBody();
+  rows.forEach((dr, i) => {
+    const tr = tbody.insertRow();
+
+    const lc = tr.insertCell();
+    lc.textContent = dr.id;
+    lc.className = 'item-label';
+
+    const tc = tr.insertCell();
+    tc.textContent = dr.total.toLocaleString();
+    tc.className = 'total-cell';
+
+    for (let j = 0; j < N_BIN; j++) {
+      const td = tr.insertCell();
+      td.id = `hm-${i}-${j}`;
+    }
+  });
+
+  cont.innerHTML = '';
+  cont.appendChild(tbl);
+}
+
+/* ── 全体最大値（曜日・ビン横断） ── */
+function computeMax(rows, metric) {
+  let max = 0;
+  rows.forEach(dr => {
+    const mat = dr[metric];
+    if (!mat) return;
+    mat.forEach(wdRow => wdRow.forEach(v => { if (v > max) max = v; }));
+  });
+  return max;
+}
+
+/* ── レンダリング ── */
+function renderHeatmap() {
+  const rows = getRows();
+  if (!rows.length) return;
+  const max = computeMax(rows, currentMetric);
+
+  rows.forEach((dr, i) => {
+    const mat = dr[currentMetric];
+    if (!mat) return;
+    const wdRow = mat[currentWd] || [];
+    for (let j = 0; j < N_BIN; j++) {
+      const cell = document.getElementById(`hm-${i}-${j}`);
+      if (!cell) continue;
+      const v = wdRow[j] || 0;
+      const alpha = max > 0 ? Math.min(v / max * 0.78, 0.78) : 0;
+      cell.style.background = alpha > 0.015
+        ? `rgba(43,157,184,${alpha.toFixed(2)})` : '';
+      cell.style.color = alpha > 0.50 ? '#fff' : '';
+      if (currentMetric === 'freq') {
+        cell.textContent = v > 0 ? Math.round(v * 100) + '%' : '';
+      } else {
+        cell.textContent = v > 0 ? v.toFixed(1) : '';
+      }
+    }
+  });
+}
+
+/* ── dept select 構築 ── */
+const deptSel = document.getElementById('dept-select');
+(DATASET.filter_opts || []).forEach((opt, idx) => {
+  const el = document.createElement('option');
+  el.value = opt.key;
+  el.textContent = opt.label;
+  deptSel.appendChild(el);
+  if (idx === 0) currentDept = opt.key;
+});
+deptSel.addEventListener('change', () => {
+  currentDept = deptSel.value;
+  buildTable(getRows());
+  renderHeatmap();
+});
+
+/* ── 曜日タブ ── */
+document.querySelectorAll('.wd-tab').forEach((btn, i) => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.wd-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentWd = i;
+    renderHeatmap();
+  });
+});
+
+/* ── 指標タブ ── */
+document.querySelectorAll('.metric-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.metric-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentMetric = btn.dataset.metric;
+    renderHeatmap();
+  });
+});
+
+/* ── 初期化 ── */
+if (currentDept) {
+  buildTable(getRows());
+  renderHeatmap();
+} else if (DATASET.filter_opts && DATASET.filter_opts[0]) {
+  currentDept = DATASET.filter_opts[0].key;
+  deptSel.value = currentDept;
+  buildTable(getRows());
+  renderHeatmap();
+}
+</script>
 {% endblock %}

@@ -214,11 +214,13 @@
           <a href="{{ root_prefix }}themes/{{ current_month or latest_month }}/referral.html"
              {% if active == 'theme-referral' %}class="active"{% endif %}>紹介・逆紹介</a>
           <a href="{{ root_prefix }}themes/{{ current_month or latest_month }}/slot.html"
-             {% if active == 'theme-slot' %}class="active"{% endif %}>予約枠の再編</a>
+             {% if active == 'theme-slot' %}class="active"{% endif %}>予約枠サマリ</a>
           <a href="{{ root_prefix }}themes/{{ current_month or latest_month }}/nursing.html"
-             {% if active == 'theme-nursing' %}class="active"{% endif %}>時間帯と看護師配置</a>
+             {% if active == 'theme-nursing' %}class="active"{% endif %}>曜日×時間帯 分析</a>
           <a href="{{ root_prefix }}themes/{{ current_month or latest_month }}/doctor.html"
-             {% if active == 'theme-doctor' %}class="active"{% endif %}>医師の負荷分布</a>
+             {% if active == 'theme-doctor' %}class="active"{% endif %}>医師×時間帯 分析</a>
+          <a href="{{ root_prefix }}themes/{{ current_month or latest_month }}/slot-heatmap.html"
+             {% if active == 'theme-slot-heatmap' %}class="active"{% endif %}>外来枠×時間帯 分析</a>
         </div>
       </div>
     </div>

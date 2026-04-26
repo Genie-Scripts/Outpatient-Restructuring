@@ -1,12 +1,13 @@
-"""4テーマページのHTML一括生成。
+"""4テーマページ（+ 外来枠×時間帯）の HTML 一括生成。
 
-Phase 3 で実装する分析テーマ:
-    referral  — 紹介・逆紹介 (08/10/13 CSV)
-    slot      — 予約枠の再編  (07 CSV)
-    nursing   — 時間帯と看護師配置 (11/12 CSV)
-    doctor    — 医師の負荷分布 (14 CSV)
+Phase 3 テーマ:
+    referral       — 紹介・逆紹介
+    slot           — 予約枠サマリ（時間帯ゾーン棒 + 稀用枠 + 科別）
+    nursing        — 曜日×時間帯 分析（JS ヒートマップ）
+    doctor         — 医師×時間帯 分析（JS ヒートマップ）
+    slot-heatmap   — 外来枠×時間帯 分析（JS ヒートマップ）
 
-出力先: docs/themes/YYYY-MM/{referral|slot|nursing|doctor}.html
+出力先: docs/themes/YYYY-MM/{referral|slot|nursing|doctor|slot-heatmap}.html
 """
 from __future__ import annotations
 
@@ -29,8 +30,8 @@ from src.core.data_loader import (
 
 logger = logging.getLogger(__name__)
 
-_WEEKDAY_LABELS = ["月", "火", "水", "木", "金"]
-_WEEKDAY_RANGE = range(5)
+_WEEKDAY_LABELS_5 = ["月", "火", "水", "木", "金"]
+_WEEKDAY_RANGE_5 = list(range(5))
 
 _TIMEZONE_ORDER = [
     "午前(〜12時)",
@@ -39,42 +40,25 @@ _TIMEZONE_ORDER = [
     "夕方以降(17時〜)",
 ]
 
-# 表示対象の30分binを業務時間帯に絞る (08:00–18:30)
-_HOUR_BINS = [
-    "08:00", "08:30", "09:00", "09:30",
-    "10:00", "10:30", "11:00", "11:30",
-    "12:00", "12:30", "13:00", "13:30",
-    "14:00", "14:30", "15:00", "15:30",
-    "16:00", "16:30", "17:00", "17:30",
-    "18:00", "18:30",
+# 30分ビン: 08:00(idx=0) → 19:30(idx=23)
+_HEATMAP_BIN_COUNT = 24
+_BIN_LABELS = [
+    f"{(8 * 60 + i * 30) // 60:02d}:{(8 * 60 + i * 30) % 60:02d}"
+    for i in range(_HEATMAP_BIN_COUNT)
 ]
+_NURSE_CUTOFF_H = 15  # 時間帯カットオフ（看護師シフト基準）
+_MORNING_PEAK_H = (9, 10)
 
 DRUG_REVISIT_GLOBAL_TOP = 30
-REVERSE_REFERRAL_TOP = 30
-SLOT_MISMATCH_TOP = 50
-SLOT_RARE_TOP = 50
-DOCTOR_TOP = 25
+RARE_SLOT_THRESHOLD = 5
 
-
-# ─────────────────────────── helpers ────────────────────────────
 
 def _pct(num: float, den: float, ndigits: int = 1) -> float:
     return round(num / den * 100, ndigits) if den else 0.0
 
 
-def _heatmap_intensity(value: float, max_val: float) -> float:
-    """セルの色強度 0.0–1.0 を返す。"""
-    if max_val <= 0:
-        return 0.0
-    return min(1.0, value / max_val)
-
-
 def _nav(month: str, months: list[str], slug: str) -> dict[str, str | None]:
-    """前後月へのリンクを構築する。"""
-    nav: dict[str, str | None] = {
-        "prev_month_href": None,
-        "next_month_href": None,
-    }
+    nav: dict[str, str | None] = {"prev_month_href": None, "next_month_href": None}
     if month in months:
         i = months.index(month)
         if i > 0:
@@ -84,7 +68,7 @@ def _nav(month: str, months: list[str], slug: str) -> dict[str, str | None]:
     return nav
 
 
-# ─────────────────── Theme 1: 紹介・逆紹介 ───────────────────────
+# ─────────────────────── Theme 1: 紹介・逆紹介 ──────────────────────
 
 def _referral_summary(kpi: pd.DataFrame, eval_names: set[str]) -> dict[str, Any]:
     sub = kpi[kpi["診療科名"].isin(eval_names)]
@@ -95,49 +79,62 @@ def _referral_summary(kpi: pd.DataFrame, eval_names: set[str]) -> dict[str, Any]
     return {
         "total": total,
         "sho": sho,
-        "ref": ref,
-        "mirain": mirain,
+        "sho_rate": _pct(sho, total),
         "ref_rate": _pct(ref, sho),
         "mirain_rate": _pct(mirain, total),
     }
 
 
-def _referral_trend(
+def _referral_trend_all_depts(
     aggregated_root: Path,
     month: str,
     eval_names: set[str],
-) -> list[dict[str, Any]]:
-    """直近6か月の評価科合計の紹介率・未来院率トレンド。"""
-    months = load_last_n_months(aggregated_root, month, n=6)
-    rows: list[dict[str, Any]] = []
+    n_months: int = 12,
+) -> dict[str, list[dict[str, Any]]]:
+    """直近 n か月の 紹介率・初診率 トレンド（評価科合計 + 科別）。
+
+    Returns:
+        {"全評価科合計": [...], "泌尿器科": [...], ...}
+        各リストの要素: {"month": "YYYY-MM", "ref_rate": float, "sho_rate": float}
+    """
+    months = load_last_n_months(aggregated_root, month, n=n_months)
+    result: dict[str, list[dict[str, Any]]] = {"全評価科合計": []}
+
     for m in months:
         p = aggregated_root / m / "10_referral_kpi.csv"
         if not p.exists():
             continue
         df = pd.read_csv(p, encoding="utf-8-sig")
-        sub = df[(df["月"].astype(str) == m) & (df["診療科名"].isin(eval_names))]
-        if sub.empty:
-            continue
-        total = int(sub["総件数"].sum())
-        sho = int(sub["初診件数"].sum())
-        ref = int(sub["紹介状あり初診"].sum())
-        mirain = int(sub["未来院件数"].sum())
-        rows.append(
-            {
-                "month": m,
-                "ref_rate": _pct(ref, sho),
-                "mirain_rate": _pct(mirain, total),
-                "sho": sho,
-                "ref": ref,
-            }
-        )
-    return rows
+
+        sub_all = df[(df["月"].astype(str) == m) & (df["診療科名"].isin(eval_names))]
+        if not sub_all.empty:
+            total = int(sub_all["総件数"].sum())
+            sho = int(sub_all["初診件数"].sum())
+            ref = int(sub_all["紹介状あり初診"].sum())
+            result["全評価科合計"].append(
+                {"month": m, "sho_rate": _pct(sho, total), "ref_rate": _pct(ref, sho)}
+            )
+
+        for dept in eval_names:
+            row = df[(df["月"].astype(str) == m) & (df["診療科名"] == dept)]
+            if row.empty:
+                continue
+            r = row.iloc[0]
+            total_v = int(r.get("総件数", 0) or 0)
+            sho_v = int(r.get("初診件数", 0) or 0)
+            ref_v = int(r.get("紹介状あり初診", 0) or 0)
+            if total_v == 0:
+                continue
+            result.setdefault(dept, []).append(
+                {"month": m, "sho_rate": _pct(sho_v, total_v), "ref_rate": _pct(ref_v, sho_v)}
+            )
+
+    return result
 
 
 def _reverse_referral_by_dept(
     rr: pd.DataFrame, eval_names: set[str]
 ) -> list[dict[str, Any]]:
-    """全科横断の逆紹介候補（件数降順）。"""
     if rr.empty:
         return []
     cond = (
@@ -154,7 +151,6 @@ def _reverse_referral_by_dept(
         .sum()
         .reset_index()
         .sort_values("件数", ascending=False)
-        .head(REVERSE_REFERRAL_TOP)
     )
     return [
         {"name": str(r["診療科名"]), "count": int(r["件数"])}
@@ -165,7 +161,6 @@ def _reverse_referral_by_dept(
 def _drug_revisit_global(
     drug: pd.DataFrame, eval_names: set[str]
 ) -> list[dict[str, Any]]:
-    """全科横断の薬再診スコア上位。"""
     if drug.empty:
         return []
     sub = drug[drug["診療科名"].isin(eval_names)]
@@ -204,7 +199,7 @@ def _build_referral_ctx(
     summary = _referral_summary(data.referral_kpi, eval_names)
     rr_rows = _reverse_referral_by_dept(data.reverse_referral, eval_names)
     drug_rows = _drug_revisit_global(data.drug_revisit_score, eval_names)
-    trend = _referral_trend(aggregated_root, month, eval_names)
+    trend_all = _referral_trend_all_depts(aggregated_root, month, eval_names, n_months=12)
     rr_total = sum(r["count"] for r in rr_rows)
     nav = _nav(month, months, "referral")
     return {
@@ -212,54 +207,36 @@ def _build_referral_ctx(
         "reverse_referral_dept_rows": rr_rows,
         "reverse_referral_total": rr_total,
         "drug_revisit_rows": drug_rows,
-        "trend_json": json.dumps(trend, ensure_ascii=False),
+        "trend_all_json": json.dumps(trend_all, ensure_ascii=False),
+        "trend_dept_names": json.dumps(sorted(trend_all.keys()), ensure_ascii=False),
         "biz_days": biz_days,
         "excluded_days": excluded_days,
         **nav,
     }
 
 
-# ─────────────────── Theme 2: 予約枠の再編 ───────────────────────
+# ─────────────────── Theme 2: 予約枠サマリ ───────────────────────────
 
-def _slot_mismatch_rows(
-    slot: pd.DataFrame, eval_names: set[str]
-) -> list[dict[str, Any]]:
-    """「初診」名称で初診率<50% の枠を全科横断で抽出。"""
-    sub = slot[slot["診療科名"].isin(eval_names)]
-    pivot = (
-        sub.groupby(["診療科名", "予約名称", "初再診区分"], dropna=False)["件数"]
-        .sum()
-        .unstack(fill_value=0)
-    )
-    sho_col = pivot.get("初診", pd.Series(0, index=pivot.index))
-    sai_col = pivot.get("再診", pd.Series(0, index=pivot.index))
-    rows: list[dict[str, Any]] = []
-    for (dept, name) in pivot.index:
-        sho = int(sho_col.get((dept, name), 0))
-        sai = int(sai_col.get((dept, name), 0))
-        total = sho + sai
-        if total < 5:
-            continue
-        sho_rate = _pct(sho, total)
-        if "初診" in str(name) and sho_rate < 50:
-            rows.append(
-                {
-                    "dept": str(dept),
-                    "name": str(name) if pd.notna(name) else "(未設定)",
-                    "total": total,
-                    "sho": sho,
-                    "sai": sai,
-                    "sho_rate": sho_rate,
-                }
-            )
-    rows.sort(key=lambda x: x["sho_rate"])
-    return rows[:SLOT_MISMATCH_TOP]
+def _timezone_stacked_chart(
+    tz: pd.DataFrame, eval_names: set[str]
+) -> dict[str, Any]:
+    """全評価科合計の 時間帯ゾーン × 曜日 積み上げ棒グラフデータ。"""
+    sub = tz[tz["診療科名"].isin(eval_names)]
+    if sub.empty:
+        return {"labels": [], "datasets": []}
+    datasets: list[dict[str, Any]] = []
+    for zone in _TIMEZONE_ORDER:
+        counts = [
+            int(sub[(sub["時間帯ゾーン"] == zone) & (sub["曜日"] == wd)]["件数"].sum())
+            for wd in _WEEKDAY_RANGE_5
+        ]
+        datasets.append({"label": zone, "data": counts})
+    return {"labels": _WEEKDAY_LABELS_5, "datasets": datasets}
 
 
 def _slot_rare_rows(
-    slot: pd.DataFrame, eval_names: set[str], threshold: int = 5
+    slot: pd.DataFrame, eval_names: set[str]
 ) -> list[dict[str, Any]]:
-    """月間件数が threshold 未満の稀用枠一覧。"""
     sub = slot[slot["診療科名"].isin(eval_names)]
     pivot = (
         sub.groupby(["診療科名", "予約名称", "初再診区分"], dropna=False)["件数"]
@@ -273,7 +250,7 @@ def _slot_rare_rows(
         sho = int(sho_col.get((dept, name), 0))
         sai = int(sai_col.get((dept, name), 0))
         total = sho + sai
-        if 0 < total < threshold:
+        if 0 < total < RARE_SLOT_THRESHOLD:
             rows.append(
                 {
                     "dept": str(dept),
@@ -285,13 +262,12 @@ def _slot_rare_rows(
                 }
             )
     rows.sort(key=lambda x: x["total"])
-    return rows[:SLOT_RARE_TOP]
+    return rows
 
 
 def _slot_dept_summary(
     slot: pd.DataFrame, eval_names: set[str]
 ) -> list[dict[str, Any]]:
-    """科別の総件数・初診率・枠数・命名乖離枠数サマリ。"""
     sub = slot[slot["診療科名"].isin(eval_names)]
     pivot = (
         sub.groupby(["診療科名", "予約名称", "初再診区分"], dropna=False)["件数"]
@@ -308,20 +284,17 @@ def _slot_dept_summary(
         total = sho + sai
         if total == 0:
             continue
-        d = dept_data.setdefault(dept, {
-            "dept": dept, "total": 0, "sho": 0, "sai": 0,
-            "slot_count": 0, "mismatch_count": 0, "rare_count": 0,
-        })
+        d = dept_data.setdefault(
+            dept,
+            {"dept": dept, "total": 0, "sho": 0, "sai": 0,
+             "slot_count": 0, "rare_count": 0},
+        )
         d["total"] += total
         d["sho"] += sho
         d["sai"] += sai
         d["slot_count"] += 1
-        if total < 5:
+        if total < RARE_SLOT_THRESHOLD:
             d["rare_count"] += 1
-        if "初診" in str(name) and total >= 5:
-            sho_rate = _pct(sho, total)
-            if sho_rate < 50:
-                d["mismatch_count"] += 1
 
     rows = list(dept_data.values())
     for r in rows:
@@ -338,120 +311,99 @@ def _build_slot_ctx(
     biz_days: int,
     excluded_days: int,
 ) -> dict[str, Any]:
-    mismatch_rows = _slot_mismatch_rows(data.slot_analysis, eval_names)
+    tz_chart = _timezone_stacked_chart(data.dept_timezone, eval_names)
     rare_rows = _slot_rare_rows(data.slot_analysis, eval_names)
     dept_rows = _slot_dept_summary(data.slot_analysis, eval_names)
     nav = _nav(month, months, "slot")
     return {
-        "mismatch_rows": mismatch_rows,
+        "timezone_chart_json": json.dumps(tz_chart, ensure_ascii=False),
         "rare_rows": rare_rows,
-        "dept_rows": dept_rows,
-        "mismatch_count": len(mismatch_rows),
         "rare_count": len(rare_rows),
+        "dept_rows": dept_rows,
         "biz_days": biz_days,
         "excluded_days": excluded_days,
         **nav,
     }
 
 
-# ─────────────────── Theme 3: 時間帯と看護師配置 ─────────────────
+# ─────────────────── Theme 3: 曜日×時間帯 分析 ──────────────────────
 
-def _timezone_stacked_chart(
-    tz: pd.DataFrame, eval_names: set[str]
+def _nursing_heatmap_dataset(
+    hl: pd.DataFrame,
+    eval_names: set[str],
+    classifier: DeptClassifier,
 ) -> dict[str, Any]:
-    """全評価科合計の 時間帯ゾーン × 曜日 積み上げ棒グラフデータ。"""
-    sub = tz[tz["診療科名"].isin(eval_names)]
-    if sub.empty:
-        return {"labels": [], "datasets": []}
-    datasets: list[dict[str, Any]] = []
-    for zone in _TIMEZONE_ORDER:
-        counts = []
-        for wd in _WEEKDAY_RANGE:
-            v = int(sub[(sub["時間帯ゾーン"] == zone) & (sub["曜日"] == wd)]["件数"].sum())
-            counts.append(v)
-        datasets.append({"label": zone, "data": counts})
-    return {"labels": _WEEKDAY_LABELS, "datasets": datasets}
-
-
-def _late_ratio_by_dept(
-    tz: pd.DataFrame, eval_names: set[str]
-) -> list[dict[str, Any]]:
-    """科別の15時以降比率（降順）。"""
-    sub = tz[tz["診療科名"].isin(eval_names)]
-    if sub.empty:
-        return []
-    late_zones = {"午後後半(15-17時)", "夕方以降(17時〜)"}
-    agg_total = sub.groupby("診療科名")["件数"].sum()
-    agg_late = (
-        sub[sub["時間帯ゾーン"].isin(late_zones)]
-        .groupby("診療科名")["件数"]
-        .sum()
-    )
-    rows = []
-    for dept in agg_total.index:
-        total = int(agg_total[dept])
-        late = int(agg_late.get(dept, 0))
-        if total < 10:
-            continue
-        rows.append(
-            {
-                "dept": str(dept),
-                "total": total,
-                "late": late,
-                "late_rate": _pct(late, total),
-            }
-        )
-    rows.sort(key=lambda x: -x["late_rate"])
-    return rows[:20]
-
-
-def _hourly_heatmap(
-    hl: pd.DataFrame, eval_names: set[str]
-) -> dict[str, Any]:
-    """曜日 × 時間帯bin のヒートマップデータ。
+    """曜日×時間帯 ヒートマップデータ（診療科フィルタ対応）。
 
     Returns:
         {
-            "bins": list[str],         # 時間帯ラベル
-            "rows": list[{             # 曜日ごとの行
-                "label": "月",
-                "values": list[float], # 各binの到着件数_日平均 (eval科合計)
-                "intensities": list[float], # 0.0-1.0 色強度
-            }],
-            "max_val": float,
+            "filter_opts": [{"key": ..., "label": ...}, ...],
+            "series": {
+                "all": {"label": "全評価科合計",
+                        "arrivals": [[float×24]×6],
+                        "conc_med": [[float×24]×6],
+                        "conc_max": [[float×24]×6]},
+                "naika": {...},
+                "DEPT_U":  {...},
+            }
         }
     """
-    sub = hl[hl["診療科名"].isin(eval_names)]
-    if sub.empty:
-        return {"bins": _HOUR_BINS, "rows": [], "max_val": 0}
+    if hl.empty:
+        return {"filter_opts": [], "series": {}}
 
-    # eval科合計 = bin × 曜日
-    agg = (
-        sub.groupby(["曜日", "bin_label"])["到着件数_日平均"]
-        .sum()
-        .reset_index()
-    )
+    df = hl[hl["診療科名"].isin(eval_names)].copy()
+    df["_type"] = df["診療科名"].map(classifier.get_type)
 
-    matrix: dict[tuple[int, str], float] = {
-        (int(r["曜日"]), str(r["bin_label"])): float(r["到着件数_日平均"])
-        for _, r in agg.iterrows()
-    }
-
-    max_val = max(matrix.values()) if matrix else 0.0
-
-    heatmap_rows = []
-    for wd in _WEEKDAY_RANGE:
-        vals = [round(matrix.get((wd, b), 0.0), 1) for b in _HOUR_BINS]
-        intens = [_heatmap_intensity(v, max_val) for v in vals]
-        heatmap_rows.append(
-            {
-                "label": _WEEKDAY_LABELS[wd],
-                "counts": vals,
-                "intens": [round(x, 3) for x in intens],
-            }
+    def _build_matrix_set(sub: pd.DataFrame) -> dict[str, list[list[float]]]:
+        agg = (
+            sub.groupby(["曜日", "bin_idx"])
+            .agg(
+                a=("到着件数_日平均", "sum"),
+                m=("同時並行_中央値", "sum"),
+                x=("同時並行_最大", "sum"),
+            )
+            .reset_index()
         )
+        arrivals = [[0.0] * _HEATMAP_BIN_COUNT for _ in range(6)]
+        conc_med = [[0.0] * _HEATMAP_BIN_COUNT for _ in range(6)]
+        conc_max = [[0.0] * _HEATMAP_BIN_COUNT for _ in range(6)]
+        for _, r in agg.iterrows():
+            wd = int(r["曜日"])
+            bi = int(r["bin_idx"])
+            if 0 <= wd < 6 and 0 <= bi < _HEATMAP_BIN_COUNT:
+                arrivals[wd][bi] = round(float(r["a"]), 2)
+                conc_med[wd][bi] = round(float(r["m"]), 2)
+                conc_max[wd][bi] = round(float(r["x"]), 2)
+        return {"arrivals": arrivals, "conc_med": conc_med, "conc_max": conc_max}
 
-    return {"bins": _HOUR_BINS, "rows": heatmap_rows, "max_val": round(max_val, 1)}
+    series: dict[str, Any] = {}
+    filter_opts: list[dict[str, str]] = []
+
+    # 全体
+    ms = _build_matrix_set(df)
+    series["all"] = {"label": "全評価科合計", **ms}
+    filter_opts.append({"key": "all", "label": "全評価科合計"})
+
+    # タイプ別
+    for t_key, t_label, t_val in [("naika", "内科系", "内科系"), ("geka", "外科系", "外科系")]:
+        sub = df[df["_type"] == t_val]
+        if sub.empty:
+            continue
+        ms = _build_matrix_set(sub)
+        series[t_key] = {"label": t_label, **ms}
+        filter_opts.append({"key": t_key, "label": t_label})
+
+    # 科別
+    for info in classifier.evaluation_targets():
+        sub = df[df["診療科名"] == info.name]
+        if sub.empty:
+            continue
+        k = f"DEPT_{info.code}"
+        ms = _build_matrix_set(sub)
+        series[k] = {"label": info.name, **ms}
+        filter_opts.append({"key": k, "label": f"{info.name}（{info.type}）"})
+
+    return {"filter_opts": filter_opts, "series": series}
 
 
 def _build_nursing_ctx(
@@ -459,102 +411,80 @@ def _build_nursing_ctx(
     eval_names: set[str],
     month: str,
     months: list[str],
+    classifier: DeptClassifier,
     biz_days: int,
     excluded_days: int,
 ) -> dict[str, Any]:
-    tz_chart = _timezone_stacked_chart(data.dept_timezone, eval_names)
-    late_rows = _late_ratio_by_dept(data.dept_timezone, eval_names)
-    heatmap = _hourly_heatmap(data.hourly_load, eval_names)
+    dataset = _nursing_heatmap_dataset(data.hourly_load, eval_names, classifier)
     nav = _nav(month, months, "nursing")
     return {
-        "timezone_chart_json": json.dumps(tz_chart, ensure_ascii=False),
-        "late_ratio_rows": late_rows,
-        "heatmap": heatmap,
+        "heatmap_dataset_json": json.dumps(dataset, ensure_ascii=False),
+        "bin_labels_json": json.dumps(_BIN_LABELS, ensure_ascii=False),
+        "weekdays_json": json.dumps(_WEEKDAY_LABELS_5, ensure_ascii=False),
+        "nurse_cutoff_h": _NURSE_CUTOFF_H,
+        "morning_peak_bins": [
+            i for i in range(_HEATMAP_BIN_COUNT)
+            if (8 * 60 + i * 30) // 60 in _MORNING_PEAK_H
+        ],
         "biz_days": biz_days,
         "excluded_days": excluded_days,
         **nav,
     }
 
 
-# ─────────────────── Theme 4: 医師の負荷分布 ─────────────────────
+# ─────────────────── Theme 4: 医師×時間帯 分析 ──────────────────────
 
-def _doctor_top(
-    dh: pd.DataFrame, eval_names: set[str]
-) -> list[dict[str, Any]]:
-    """全科横断 医師TOP（日平均件数合計の高い順）。"""
-    if dh.empty:
-        return []
-    sub = dh[
-        (dh["診療科名"].isin(eval_names))
-        & (dh["区分"] == "全体")
-        & (dh["曜日"].isin(list(_WEEKDAY_RANGE)))
-    ]
-    if sub.empty:
-        return []
-    # 医師×科ごとに 件数合計・出勤日数を合算
-    agg = (
-        sub.groupby(["診療科名", "予約担当者匿名ID"])
-        .agg(件数合計=("件数合計", "sum"), 出勤日数=("出勤日数", "max"))
-        .reset_index()
-    )
-    agg["日平均"] = (agg["件数合計"] / agg["出勤日数"].replace(0, 1)).round(1)
-    top = agg.sort_values("日平均", ascending=False).head(DOCTOR_TOP)
-    return [
-        {
-            "dept": str(r["診療科名"]),
-            "medic": str(r["予約担当者匿名ID"]),
-            "total": int(r["件数合計"]),
-            "days": int(r["出勤日数"]),
-            "daily_avg": float(r["日平均"]),
-        }
-        for _, r in top.iterrows()
-    ]
-
-
-def _doctor_dept_heatmap(
-    dh: pd.DataFrame, eval_names: set[str]
+def _doctor_heatmap_dataset(
+    dh: pd.DataFrame,
+    eval_names: set[str],
+    classifier: DeptClassifier,
 ) -> dict[str, Any]:
-    """全評価科合計の 曜日 × 時間帯bin 医師ベースの件数ヒートマップ。
+    """医師×時間帯 ヒートマップデータ（診療科フィルタ対応）。
 
-    `14_doctor_hourly.csv` の区分=全体・曜日0-4 の件数合計を
-    評価科で集約し、`12_hourly_load.csv` と同形式で返す。
+    区分=全体 のみ対象。指標: 出勤頻度率 + 件数_日平均。
+    医師は月内総件数の降順で並べる。
     """
     if dh.empty:
-        return {"bins": _HOUR_BINS, "rows": [], "max_val": 0}
-    sub = dh[
+        return {"filter_opts": [], "series": {}}
+
+    df = dh[
         (dh["診療科名"].isin(eval_names))
         & (dh["区分"] == "全体")
-        & (dh["曜日"].isin(list(_WEEKDAY_RANGE)))
-    ]
-    if sub.empty:
-        return {"bins": _HOUR_BINS, "rows": [], "max_val": 0}
+        & (dh["曜日"].isin(_WEEKDAY_RANGE_5))
+    ].copy()
 
-    # 科×医師×曜日×bin を科レベルに集約（出勤日数を代理で最大値取得）
-    agg = (
-        sub.groupby(["曜日", "bin_label"])
-        .agg(件数合計=("件数合計", "sum"))
-        .reset_index()
-    )
-    # 月の実営業日で割って日平均を推定（全科なので素直にsumで可）
-    # ここでは月 20営業日（近似）で割るよりも「月合計件数」として表示
-    matrix: dict[tuple[int, str], float] = {
-        (int(r["曜日"]), str(r["bin_label"])): float(r["件数合計"])
-        for _, r in agg.iterrows()
-    }
-    max_val = max(matrix.values()) if matrix else 0.0
+    series: dict[str, Any] = {}
+    filter_opts: list[dict[str, str]] = []
 
-    heatmap_rows = []
-    for wd in _WEEKDAY_RANGE:
-        vals = [round(matrix.get((wd, b), 0.0), 0) for b in _HOUR_BINS]
-        intens = [_heatmap_intensity(v, max_val) for v in vals]
-        heatmap_rows.append(
-            {
-                "label": _WEEKDAY_LABELS[wd],
-                "counts": [int(v) for v in vals],
-                "intens": [round(x, 3) for x in intens],
-            }
+    for info in classifier.evaluation_targets():
+        sub = df[df["診療科名"] == info.name]
+        if sub.empty:
+            continue
+        k = f"DEPT_{info.code}"
+
+        totals = (
+            sub.groupby("予約担当者匿名ID")["件数合計"]
+            .sum()
+            .sort_values(ascending=False)
         )
-    return {"bins": _HOUR_BINS, "rows": heatmap_rows, "max_val": int(max_val)}
+        rows = []
+        for did in totals.index:
+            dsub = sub[sub["予約担当者匿名ID"] == did]
+            freq_m = [[0.0] * _HEATMAP_BIN_COUNT for _ in range(5)]
+            cpd_m = [[0.0] * _HEATMAP_BIN_COUNT for _ in range(5)]
+            for _, r in dsub.iterrows():
+                wd = int(r["曜日"])
+                bi = int(r["bin_idx"])
+                if 0 <= wd < 5 and 0 <= bi < _HEATMAP_BIN_COUNT:
+                    freq_m[wd][bi] = round(float(r["出勤頻度率"]), 3)
+                    cpd_m[wd][bi] = round(float(r["件数_日平均"]), 2)
+            rows.append(
+                {"id": str(did), "total": int(totals[did]), "freq": freq_m, "cpd": cpd_m}
+            )
+        series[k] = {"label": info.name, "type": info.type, "rows": rows}
+        filter_opts.append({"key": k, "label": f"{info.name}（{info.type}）"})
+
+    return {"filter_opts": filter_opts, "series": series}
 
 
 def _build_doctor_ctx(
@@ -562,22 +492,104 @@ def _build_doctor_ctx(
     eval_names: set[str],
     month: str,
     months: list[str],
+    classifier: DeptClassifier,
     biz_days: int,
     excluded_days: int,
 ) -> dict[str, Any]:
-    top_rows = _doctor_top(data.doctor_hourly, eval_names)
-    heatmap = _doctor_dept_heatmap(data.doctor_hourly, eval_names)
+    dataset = _doctor_heatmap_dataset(data.doctor_hourly, eval_names, classifier)
     nav = _nav(month, months, "doctor")
     return {
-        "doctor_top_rows": top_rows,
-        "heatmap": heatmap,
+        "heatmap_dataset_json": json.dumps(dataset, ensure_ascii=False),
+        "bin_labels_json": json.dumps(_BIN_LABELS, ensure_ascii=False),
+        "weekdays_json": json.dumps(_WEEKDAY_LABELS_5, ensure_ascii=False),
         "biz_days": biz_days,
         "excluded_days": excluded_days,
         **nav,
     }
 
 
-# ─────────────────── メイン build 関数 ──────────────────────────
+# ─────────────── Theme 5: 外来枠×時間帯 分析 ────────────────────────
+
+def _slot_heatmap_dataset(
+    sh: pd.DataFrame,
+    eval_names: set[str],
+    classifier: DeptClassifier,
+) -> dict[str, Any]:
+    """外来枠×時間帯 ヒートマップデータ（診療科フィルタ対応）。
+
+    区分=全体 のみ対象。指標: 稼働頻度率 + 件数_日平均。
+    枠は月内総件数の昇順（低稼働枠=縮小候補を先頭）で並べる。
+    """
+    if sh.empty:
+        return {"filter_opts": [], "series": {}}
+
+    df = sh[
+        (sh["診療科名"].isin(eval_names))
+        & (sh["区分"] == "全体")
+        & (sh["曜日"].isin(_WEEKDAY_RANGE_5))
+    ].copy()
+
+    series: dict[str, Any] = {}
+    filter_opts: list[dict[str, str]] = []
+
+    for info in classifier.evaluation_targets():
+        sub = df[df["診療科名"] == info.name]
+        if sub.empty:
+            continue
+        k = f"DEPT_{info.code}"
+
+        totals = (
+            sub.groupby("予約名称")["件数合計"]
+            .sum()
+            .sort_values(ascending=True)  # 低稼働順
+        )
+        rows = []
+        for sid in totals.index:
+            ssub = sub[sub["予約名称"] == sid]
+            freq_m = [[0.0] * _HEATMAP_BIN_COUNT for _ in range(5)]
+            cpd_m = [[0.0] * _HEATMAP_BIN_COUNT for _ in range(5)]
+            for _, r in ssub.iterrows():
+                wd = int(r["曜日"])
+                bi = int(r["bin_idx"])
+                if 0 <= wd < 5 and 0 <= bi < _HEATMAP_BIN_COUNT:
+                    freq_m[wd][bi] = round(float(r["稼働頻度率"]), 3)
+                    cpd_m[wd][bi] = round(float(r["件数_日平均"]), 2)
+            rows.append(
+                {
+                    "id": str(sid) if pd.notna(sid) else "(未設定)",
+                    "total": int(totals[sid]),
+                    "freq": freq_m,
+                    "cpd": cpd_m,
+                }
+            )
+        series[k] = {"label": info.name, "type": info.type, "rows": rows}
+        filter_opts.append({"key": k, "label": f"{info.name}（{info.type}）"})
+
+    return {"filter_opts": filter_opts, "series": series}
+
+
+def _build_slot_heatmap_ctx(
+    data: AggregatedData,
+    eval_names: set[str],
+    month: str,
+    months: list[str],
+    classifier: DeptClassifier,
+    biz_days: int,
+    excluded_days: int,
+) -> dict[str, Any]:
+    dataset = _slot_heatmap_dataset(data.slot_hourly, eval_names, classifier)
+    nav = _nav(month, months, "slot-heatmap")
+    return {
+        "heatmap_dataset_json": json.dumps(dataset, ensure_ascii=False),
+        "bin_labels_json": json.dumps(_BIN_LABELS, ensure_ascii=False),
+        "weekdays_json": json.dumps(_WEEKDAY_LABELS_5, ensure_ascii=False),
+        "biz_days": biz_days,
+        "excluded_days": excluded_days,
+        **nav,
+    }
+
+
+# ─────────────────── メイン build 関数 ──────────────────────────────
 
 def build_all_themes(
     month: str,
@@ -586,21 +598,12 @@ def build_all_themes(
     output_dir: Path,
     classification_path: Path,
 ) -> list[Path]:
-    """4テーマページを生成して書き出したパスのリストを返す。
-
-    Args:
-        month: "YYYY-MM"
-        aggregated_root: data/aggregated/ のパス
-        templates_dir: Jinja2 テンプレ格納ディレクトリ
-        output_dir: 出力先 (docs/themes/YYYY-MM/)
-        classification_path: config/dept_classification.csv
-    """
+    """5テーマページを生成して書き出したパスのリストを返す。"""
     classifier = DeptClassifier(classification_path)
     eval_names: set[str] = {info.name for info in classifier.evaluation_targets()}
     months = list_available_months(aggregated_root)
     data = load_aggregated_data(aggregated_root, month)
 
-    # 営業日情報
     biz_days = 0
     excluded_days = 0
     if not data.summary.empty:
@@ -611,7 +614,6 @@ def build_all_themes(
         loader=FileSystemLoader(str(templates_dir)),
         autoescape=select_autoescape(["html"]),
     )
-
     output_dir.mkdir(parents=True, exist_ok=True)
     generated: list[Path] = []
 
@@ -620,35 +622,31 @@ def build_all_themes(
 
     _THEMES = [
         (
-            "referral",
-            "紹介・逆紹介",
-            "theme_referral.html",
+            "referral", "紹介・逆紹介", "theme_referral.html",
             _build_referral_ctx(
                 data, eval_names, month, aggregated_root, months, biz_days, excluded_days
             ),
         ),
         (
-            "slot",
-            "予約枠の再編",
-            "theme_slot.html",
-            _build_slot_ctx(
-                data, eval_names, month, months, biz_days, excluded_days
-            ),
+            "slot", "予約枠サマリ", "theme_slot.html",
+            _build_slot_ctx(data, eval_names, month, months, biz_days, excluded_days),
         ),
         (
-            "nursing",
-            "時間帯と看護師配置",
-            "theme_nursing.html",
+            "nursing", "曜日×時間帯 分析", "theme_nursing.html",
             _build_nursing_ctx(
-                data, eval_names, month, months, biz_days, excluded_days
+                data, eval_names, month, months, classifier, biz_days, excluded_days
             ),
         ),
         (
-            "doctor",
-            "医師の負荷分布",
-            "theme_doctor.html",
+            "doctor", "医師×時間帯 分析", "theme_doctor.html",
             _build_doctor_ctx(
-                data, eval_names, month, months, biz_days, excluded_days
+                data, eval_names, month, months, classifier, biz_days, excluded_days
+            ),
+        ),
+        (
+            "slot-heatmap", "外来枠×時間帯 分析", "theme_slot_heatmap.html",
+            _build_slot_heatmap_ctx(
+                data, eval_names, month, months, classifier, biz_days, excluded_days
             ),
         ),
     ]
@@ -661,7 +659,6 @@ def build_all_themes(
         ]
         html = template.render(
             title=f"{title_ja} ／ {month}",
-            site_title="外来再編分析",
             generated_at=datetime.now().strftime("%Y-%m-%d %H:%M"),
             root_prefix="../../",
             latest_month=latest_month,

@@ -1,30 +1,29 @@
 {% extends "_layout.html" %}
+{% block extra_head %}
+<style>
+.dept-sel-wrap{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.dept-sel-wrap label{font-size:12px;color:var(--dim);font-weight:700;
+                     text-transform:uppercase;letter-spacing:.04em;}
+#dept-select{background:var(--surface2);border:1px solid var(--border);
+             color:var(--text);padding:6px 10px;border-radius:6px;
+             font-size:13px;cursor:pointer;min-width:200px;}
+</style>
+{% endblock %}
+
 {% block content %}
 
 <div class="card">
   <div class="card-head">
     <span class="card-num">00</span>
-    <h2>紹介・逆紹介 当月サマリ</h2>
-    <span class="card-sub">{{ month }} ／ 評価対象科合計 ／ 実営業日 {{ biz_days }}日{% if excluded_days > 0 %}（祝日・病院休 {{ excluded_days }}日除外）{% endif %}</span>
+    <h2>紹介率・初診率 トレンド</h2>
+    <span class="card-sub">{{ month }} ／ 直近12か月 ／ 実営業日 {{ biz_days }}日{% if excluded_days > 0 %}（祝日・病院休 {{ excluded_days }}日除外）{% endif %}</span>
   </div>
-  <div class="summary-row">
-    <div class="summary-stat">
-      <div class="summary-stat-k">総件数</div>
-      <div class="summary-stat-v">{{ "{:,}".format(summary.total) }}<span class="summary-stat-u">件</span></div>
-    </div>
-    <div class="summary-stat">
-      <div class="summary-stat-k">初診件数</div>
-      <div class="summary-stat-v">{{ "{:,}".format(summary.sho) }}<span class="summary-stat-u">件</span></div>
-    </div>
-    <div class="summary-stat">
-      <div class="summary-stat-k">紹介率（初診）</div>
-      <div class="summary-stat-v">{{ summary.ref_rate }}<span class="summary-stat-u">%</span></div>
-    </div>
-    <div class="summary-stat">
-      <div class="summary-stat-k">未来院率</div>
-      <div class="summary-stat-v">{{ summary.mirain_rate }}<span class="summary-stat-u">%</span></div>
-    </div>
+  <div class="dept-sel-wrap">
+    <label>診療科：</label>
+    <select id="dept-select"></select>
   </div>
+  <div class="chart-wrap" style="height:280px;"><canvas id="chartTrend"></canvas></div>
+  <p class="meta">紹介率 = 紹介状あり初診 ÷ 初診件数（左軸・青）。初診率 = 初診件数 ÷ 総件数（右軸・緑）。直近12か月分。</p>
 </div>
 
 <div class="card">
@@ -50,7 +49,8 @@
         <td class="num">{{ "{:,}".format(r.count) }}</td>
         <td>
           <div style="height:10px;background:var(--border);border-radius:3px;overflow:hidden;">
-            <div style="height:100%;width:{{ (r.count / _max * 100)|round(1) }}%;background:var(--down);border-radius:3px;"></div>
+            <div style="height:100%;width:{{ (r.count / _max * 100)|round(1) if _max > 0 else 0 }}%;
+                        background:var(--down);border-radius:3px;"></div>
           </div>
         </td>
       </tr>
@@ -108,16 +108,6 @@
   <p class="meta">スコア70以上（赤）は逆紹介・運用見直しの優先候補。科ごとの詳細は診療科 再編診断ページを参照。</p>
 </div>
 
-<div class="card">
-  <div class="card-head">
-    <span class="card-num">03</span>
-    <h2>紹介率・未来院率 トレンド（直近6か月）</h2>
-    <span class="card-sub">評価対象科合計</span>
-  </div>
-  <div class="chart-wrap" style="height:260px;"><canvas id="chartTrend"></canvas></div>
-  <p class="meta">紹介率 = 紹介状あり初診 ÷ 初診件数。未来院率 = 未来院件数 ÷ 総件数。</p>
-</div>
-
 <div class="lateral-nav">
   <div class="group">
     {% if prev_month_href %}<a href="{{ prev_month_href }}">← 前月</a>{% endif %}
@@ -132,48 +122,68 @@
 
 {% block scripts %}
 <script>
-const TREND_DATA = {{ trend_json | safe }};
-if (TREND_DATA && TREND_DATA.length > 0 && document.getElementById('chartTrend')) {
-  new Chart(document.getElementById('chartTrend'), {
+const TREND_ALL  = {{ trend_all_json | safe }};
+const DEPT_NAMES = {{ trend_dept_names | safe }};
+
+const sel  = document.getElementById('dept-select');
+const canv = document.getElementById('chartTrend');
+let chart  = null;
+
+/* "全評価科合計" を先頭に固定 */
+const ordered = ['全評価科合計', ...DEPT_NAMES.filter(n => n !== '全評価科合計')];
+ordered.forEach(name => {
+  const opt = document.createElement('option');
+  opt.value = name;
+  opt.textContent = name;
+  sel.appendChild(opt);
+});
+
+function drawChart(dept) {
+  const rows    = TREND_ALL[dept] || [];
+  const labels  = rows.map(r => r.month);
+  const refData = rows.map(r => r.ref_rate);
+  const shoData = rows.map(r => r.sho_rate);
+
+  if (chart) {
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = refData;
+    chart.data.datasets[1].data = shoData;
+    chart.update();
+    return;
+  }
+
+  chart = new Chart(canv, {
     type: 'line',
     data: {
-      labels: TREND_DATA.map(d => d.month),
+      labels,
       datasets: [
-        {
-          label: '紹介率（%）',
-          data: TREND_DATA.map(d => d.ref_rate),
-          borderColor: '#3F7FC1', backgroundColor: 'rgba(63,127,193,.1)',
-          borderWidth: 2.5, tension: 0.25, fill: true, yAxisID: 'y',
-        },
-        {
-          label: '未来院率（%）',
-          data: TREND_DATA.map(d => d.mirain_rate),
-          borderColor: '#D08620', backgroundColor: 'rgba(208,134,32,.1)',
-          borderWidth: 2, tension: 0.25, fill: false, yAxisID: 'y',
-        },
+        { label: '紹介率（%）',
+          data: refData,
+          borderColor: '#3F7FC1', backgroundColor: 'rgba(63,127,193,.10)',
+          borderWidth: 2.5, tension: 0.3, fill: true, yAxisID: 'y' },
+        { label: '初診率（%）',
+          data: shoData,
+          borderColor: '#2B9DB8', backgroundColor: 'rgba(43,157,184,.10)',
+          borderWidth: 2, tension: 0.3, fill: false, yAxisID: 'y1' },
       ],
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { position: 'bottom' },
-        tooltip: {
-          callbacks: {
-            afterBody: function(items) {
-              const i = items[0]?.dataIndex;
-              const d = TREND_DATA[i];
-              return d ? [`初診 ${d.sho.toLocaleString()} 件 ／ 紹介状あり ${d.ref.toLocaleString()} 件`] : [];
-            }
-          }
-        }
-      },
+      plugins: { legend: { position: 'bottom' } },
       scales: {
-        x: { grid: { display: false } },
-        y: { beginAtZero: true, title: { display: true, text: '率（%）' } },
+        x:  { grid: { display: false } },
+        y:  { position: 'left',  beginAtZero: true,
+              title: { display: true, text: '紹介率（%）' } },
+        y1: { position: 'right', beginAtZero: true,
+              title: { display: true, text: '初診率（%）' },
+              grid: { display: false } },
       },
     },
   });
 }
+
+sel.addEventListener('change', () => drawChart(sel.value));
+drawChart('全評価科合計');
 </script>
 {% endblock %}

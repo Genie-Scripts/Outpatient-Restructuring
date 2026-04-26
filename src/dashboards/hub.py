@@ -176,27 +176,33 @@ def _build_themes(latest_month: str | None) -> list[dict[str, Any]]:
     return [
         {
             "title": "紹介・逆紹介",
-            "desc": "薬再診スコア全科横断 / 逆紹介候補件数ランキング / 紹介率・未来院率トレンド",
+            "desc": "紹介率・初診率 12か月トレンド（科別切替） / 逆紹介候補ランキング / 薬再診スコア",
             "href": f"{base}referral.html" if m else None,
             "slug": "referral",
         },
         {
-            "title": "予約枠の再編",
-            "desc": "命名乖離枠 / 稀用枠（月5件未満）/ 科別枠ミックスサマリ",
+            "title": "予約枠サマリ",
+            "desc": "時間帯ゾーン × 曜日 / 稀用枠（月5件未満）/ 科別枠サマリ",
             "href": f"{base}slot.html" if m else None,
             "slug": "slot",
         },
         {
-            "title": "時間帯と看護師配置",
-            "desc": "曜日×時間帯ヒートマップ / 15時以降比率ランキング / 30分bin来院分布",
+            "title": "曜日×時間帯 分析",
+            "desc": "来院・同時並行 ヒートマップ（評価科全体／科別切替）/ 看護師配置計画用",
             "href": f"{base}nursing.html" if m else None,
             "slug": "nursing",
         },
         {
-            "title": "医師の負荷分布",
-            "desc": "日平均担当件数 TOP / 曜日×時間帯 医師件数ヒートマップ（匿名）",
+            "title": "医師×時間帯 分析",
+            "desc": "医師（匿名ID）別 件数・出勤頻度 ヒートマップ（科別・曜日タブ）",
             "href": f"{base}doctor.html" if m else None,
             "slug": "doctor",
+        },
+        {
+            "title": "外来枠×時間帯 分析",
+            "desc": "外来枠（予約名称）別 件数・稼働頻度 ヒートマップ（科別・縮小候補順）",
+            "href": f"{base}slot-heatmap.html" if m else None,
+            "slug": "slot-heatmap",
         },
     ]
 

@@ -1,0 +1,264 @@
+{% extends "_layout.html" %}
+{% block extra_head %}
+<style>
+.hm-controls{
+  display:flex;gap:14px;align-items:center;flex-wrap:wrap;
+  margin-bottom:16px;padding:12px 16px;
+  background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+}
+.hm-ctrl-group{display:flex;align-items:center;gap:8px;}
+.hm-ctrl-group label{
+  font-size:11px;color:var(--dim);font-weight:700;
+  text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;
+}
+.hm-ctrl-group select{
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--text);padding:5px 10px;border-radius:6px;
+  font-size:12px;cursor:pointer;min-width:200px;
+}
+.wd-tabs{display:flex;gap:4px;}
+.wd-tab{
+  padding:5px 14px;background:var(--surface);border:1px solid var(--border);
+  border-radius:5px;font-size:12px;color:var(--text-soft);cursor:pointer;
+  transition:all .15s;font-weight:600;
+}
+.wd-tab:hover{border-color:var(--geka);color:var(--geka);}
+.wd-tab.active{background:var(--header);color:#fff;border-color:var(--header);}
+.metric-tabs{display:flex;gap:4px;}
+.metric-tab{
+  padding:5px 12px;background:var(--surface);border:1px solid var(--border);
+  border-radius:5px;font-size:12px;color:var(--text-soft);cursor:pointer;
+  transition:all .15s;
+}
+.metric-tab:hover{border-color:var(--geka);color:var(--geka);}
+.metric-tab.active{background:var(--geka);color:#fff;border-color:var(--geka);font-weight:600;}
+.heatmap-wrap{overflow-x:auto;margin-top:8px;}
+.heatmap-tbl{border-collapse:collapse;font-size:11px;white-space:nowrap;}
+.heatmap-tbl th{
+  padding:4px 6px;background:var(--surface2);font-weight:700;
+  color:var(--text-soft);font-size:10px;border:1px solid var(--border);
+}
+.heatmap-tbl td{
+  padding:3px 5px;text-align:center;border:1px solid var(--border);
+  font-family:'DM Mono',monospace;font-size:10px;min-width:34px;
+  transition:background .12s;
+}
+.item-label{
+  text-align:left !important;padding:3px 8px !important;
+  font-size:10px;min-width:120px;white-space:nowrap;
+  background:var(--surface2) !important;
+}
+.total-cell{
+  text-align:right !important;padding:3px 8px !important;
+  font-family:'DM Mono',monospace;font-size:10px;
+  color:var(--text-soft);white-space:nowrap;min-width:60px;
+  background:var(--surface2) !important;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">00</span>
+    <h2>外来枠×時間帯 ヒートマップ</h2>
+    <span class="card-sub">{{ month }} ／ 区分=全体 ／ 実営業日 {{ biz_days }}日{% if excluded_days > 0 %}（祝日・病院休 {{ excluded_days }}日除外）{% endif %}</span>
+  </div>
+  <p style="font-size:13px;color:var(--text-soft);line-height:1.7;margin-bottom:16px;">
+    診療科を選択して、外来枠（予約名称）ごとの稼働頻度・件数を時間帯別に可視化します。
+    枠は月間件数の少ない順（縮小候補が上）に並んでいます。空白が多い枠は廃止・統合の検討対象です。
+  </p>
+
+  <div class="hm-controls">
+    <div class="hm-ctrl-group">
+      <label>診療科：</label>
+      <select id="dept-select"></select>
+    </div>
+    <div class="hm-ctrl-group">
+      <label>曜日：</label>
+      <div class="wd-tabs">
+        <button class="wd-tab active">月</button>
+        <button class="wd-tab">火</button>
+        <button class="wd-tab">水</button>
+        <button class="wd-tab">木</button>
+        <button class="wd-tab">金</button>
+      </div>
+    </div>
+    <div class="hm-ctrl-group">
+      <label>指標：</label>
+      <div class="metric-tabs">
+        <button class="metric-tab active" data-metric="cpd">件数/稼働日</button>
+        <button class="metric-tab" data-metric="freq">稼働頻度率</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="heatmap-wrap">
+    <div id="hm-container"></div>
+  </div>
+  <p class="meta" style="margin-top:8px;">
+    件数/稼働日 = 稼働した日の平均担当件数。稼働頻度率 = 当月中その曜日・時間帯に稼働した割合。
+    行は月間件数の少ない順（縮小候補が上位）。
+  </p>
+</div>
+
+<div class="lateral-nav">
+  <div class="group">
+    {% if prev_month_href %}<a href="{{ prev_month_href }}">← 前月</a>{% endif %}
+    {% if next_month_href %}<a href="{{ next_month_href }}">翌月 →</a>{% endif %}
+  </div>
+  <div class="group">
+    <a href="../../index.html">↑ ホーム</a>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const DATASET    = {{ heatmap_dataset_json | safe }};
+const BIN_LABELS = {{ bin_labels_json | safe }};
+const WD_LABELS  = {{ weekdays_json | safe }};
+
+const N_BIN = BIN_LABELS.length;  // 24
+
+let currentDept   = null;
+let currentWd     = 0;
+let currentMetric = 'cpd';
+
+function getRows() {
+  if (!currentDept) return [];
+  return (DATASET.series[currentDept] || {}).rows || [];
+}
+
+/* ── テーブル構築 ── */
+function buildTable(rows) {
+  const cont = document.getElementById('hm-container');
+  if (!rows.length) {
+    cont.innerHTML =
+      '<div class="empty" style="margin:12px 0;">この診療科に外来枠データがありません。</div>';
+    return;
+  }
+
+  const tbl = document.createElement('table');
+  tbl.className = 'heatmap-tbl';
+
+  /* thead */
+  const hRow = tbl.createTHead().insertRow();
+  ['予約枠名', '月間件数'].concat(BIN_LABELS).forEach((label, idx) => {
+    const th = document.createElement('th');
+    th.textContent = label;
+    if (idx >= 2) th.style.minWidth = '34px';
+    hRow.appendChild(th);
+  });
+
+  /* tbody */
+  const tbody = tbl.createTBody();
+  rows.forEach((row, i) => {
+    const tr = tbody.insertRow();
+
+    const lc = tr.insertCell();
+    lc.textContent = row.id;
+    lc.className = 'item-label';
+    lc.title = row.id;  /* ツールチップで全文表示 */
+
+    const tc = tr.insertCell();
+    tc.textContent = row.total.toLocaleString();
+    tc.className = 'total-cell';
+
+    for (let j = 0; j < N_BIN; j++) {
+      const td = tr.insertCell();
+      td.id = `hm-${i}-${j}`;
+    }
+  });
+
+  cont.innerHTML = '';
+  cont.appendChild(tbl);
+}
+
+/* ── 全体最大値（曜日・ビン横断） ── */
+function computeMax(rows, metric) {
+  let max = 0;
+  rows.forEach(row => {
+    const mat = row[metric];
+    if (!mat) return;
+    mat.forEach(wdRow => wdRow.forEach(v => { if (v > max) max = v; }));
+  });
+  return max;
+}
+
+/* ── レンダリング ── */
+function renderHeatmap() {
+  const rows = getRows();
+  if (!rows.length) return;
+  const max = computeMax(rows, currentMetric);
+
+  rows.forEach((row, i) => {
+    const mat = row[currentMetric];
+    if (!mat) return;
+    const wdRow = mat[currentWd] || [];
+    for (let j = 0; j < N_BIN; j++) {
+      const cell = document.getElementById(`hm-${i}-${j}`);
+      if (!cell) continue;
+      const v = wdRow[j] || 0;
+      const alpha = max > 0 ? Math.min(v / max * 0.78, 0.78) : 0;
+      cell.style.background = alpha > 0.015
+        ? `rgba(208,134,32,${alpha.toFixed(2)})` : '';
+      cell.style.color = alpha > 0.50 ? '#fff' : '';
+      if (currentMetric === 'freq') {
+        cell.textContent = v > 0 ? Math.round(v * 100) + '%' : '';
+      } else {
+        cell.textContent = v > 0 ? v.toFixed(1) : '';
+      }
+    }
+  });
+}
+
+/* ── dept select 構築 ── */
+const deptSel = document.getElementById('dept-select');
+(DATASET.filter_opts || []).forEach((opt, idx) => {
+  const el = document.createElement('option');
+  el.value = opt.key;
+  el.textContent = opt.label;
+  deptSel.appendChild(el);
+  if (idx === 0) currentDept = opt.key;
+});
+deptSel.addEventListener('change', () => {
+  currentDept = deptSel.value;
+  buildTable(getRows());
+  renderHeatmap();
+});
+
+/* ── 曜日タブ ── */
+document.querySelectorAll('.wd-tab').forEach((btn, i) => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.wd-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentWd = i;
+    renderHeatmap();
+  });
+});
+
+/* ── 指標タブ ── */
+document.querySelectorAll('.metric-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.metric-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentMetric = btn.dataset.metric;
+    renderHeatmap();
+  });
+});
+
+/* ── 初期化 ── */
+if (currentDept) {
+  buildTable(getRows());
+  renderHeatmap();
+} else if (DATASET.filter_opts && DATASET.filter_opts[0]) {
+  currentDept = DATASET.filter_opts[0].key;
+  deptSel.value = currentDept;
+  buildTable(getRows());
+  renderHeatmap();
+}
+</script>
+{% endblock %}
