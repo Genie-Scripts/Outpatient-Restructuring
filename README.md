@@ -41,6 +41,29 @@ python -m src.cli build --month 2026-04
 python -m src.cli build --all  # 全月をビルド
 ```
 
+### 一括 deploy（fetch → build → commit → push）
+
+```bash
+./scripts/deploy.sh                    # 全月再ビルドして push
+./scripts/deploy.sh --month 2026-04    # 単一月のみ
+./scripts/deploy.sh --skip-fetch       # symlink 想定で fetch_upstream をスキップ
+```
+
+`deploy.sh` は内部で `fetch_upstream.sh` → `build` → `git add` →
+`git commit` → `git push` を実行し、macOS 通知でステータスを表示します。
+フッタの「医師フィードバックサイト」リンクは
+`FEEDBACK_URL` 環境変数で上書き可能（既定: Dashboard の GitHub Pages URL）。
+
+両サイト（Dashboard + Restructuring）を一括で更新する場合は
+`~/dev/ai-apps/deploy_all.sh` を使ってください。
+Dashboard の最新集計CSVを push してから本サイトを再ビルドします。
+
+```bash
+~/dev/ai-apps/deploy_all.sh                    # 両方とも自動検出
+~/dev/ai-apps/deploy_all.sh 2026-05            # 単月指定
+~/dev/ai-apps/deploy_all.sh --restructuring-only  # 本リポだけ更新
+```
+
 ## ディレクトリ構成
 
 ```
