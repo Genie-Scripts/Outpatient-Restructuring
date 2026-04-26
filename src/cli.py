@@ -7,6 +7,7 @@
 使用例:
     python -m src.cli build --month 2026-04
     python -m src.cli build --all
+    python -m src.cli build --all --local      # 実名版（local/aggregated → local/docs）
     python -m src.cli list
 """
 from __future__ import annotations
@@ -67,12 +68,26 @@ def _build_one_month(month: str, docs_root: Path) -> None:
 
 
 def cmd_build(args: argparse.Namespace) -> int:
+    if getattr(args, "local", False):
+        # --local: ローカル実名版。local/aggregated → local/docs に切替。
+        # 上流（Dashboard 側 --no-anon ビルド）が local/aggregated/ を埋めている前提。
+        local_root = paths.PROJECT_ROOT / "local"
+        if not args.aggregated_root:
+            args.aggregated_root = str(local_root / "aggregated")
+        if not args.docs_dir:
+            args.docs_dir = str(local_root / "docs")
+        logger.info("--local: aggregated=%s, docs=%s", args.aggregated_root, args.docs_dir)
+
     docs_root = paths.docs_dir(args.docs_dir)
     aggregated_root = paths.aggregated_root(args.aggregated_root)
 
     if not aggregated_root.exists():
         logger.error("集計ディレクトリが存在しません: %s", aggregated_root)
-        logger.error("scripts/fetch_upstream.sh で取得するか、シンボリックリンクを張ってください。")
+        if getattr(args, "local", False):
+            logger.error("先に Dashboard 側で `python -m src.cli run-all --no-anon` を実行するか、")
+            logger.error("scripts/fetch_upstream.sh --local で取り込んでください。")
+        else:
+            logger.error("scripts/fetch_upstream.sh で取得するか、シンボリックリンクを張ってください。")
         return 2
 
     if args.all:
@@ -130,6 +145,12 @@ def main(argv: list[str] | None = None) -> int:
     p_build.add_argument("--all", action="store_true", help="全月を対象にビルド")
     p_build.add_argument("--aggregated-root", help="集計CSVのルート（既定: paths.py）")
     p_build.add_argument("--docs-dir", help="出力先（既定: docs/）")
+    p_build.add_argument(
+        "--local",
+        action="store_true",
+        help="ローカル確認専用（Gitコミット不可）。"
+             "local/aggregated を入力、local/docs を出力にする実名版ビルド。",
+    )
     p_build.add_argument(
         "--feedback-url",
         help="医師フィードバックサイトのURL（フッタの相互リンク用）",
