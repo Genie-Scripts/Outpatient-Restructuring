@@ -199,7 +199,7 @@
       <div class="sub">Outpatient Restructuring</div>
     </div>
     <div class="gh-meta">
-      <div>更新 2026-04-27 15:03</div>
+      <div>更新 2026-04-27 15:30</div>
       <div>※ 件数は 22営業日換算</div>
     </div>
   </div>
@@ -247,6 +247,20 @@
         <option value="2025-12">2025-12</option>
         
         <option value="2025-11">2025-11</option>
+        
+        <option value="2025-10">2025-10</option>
+        
+        <option value="2025-09">2025-09</option>
+        
+        <option value="2025-08">2025-08</option>
+        
+        <option value="2025-07">2025-07</option>
+        
+        <option value="2025-06">2025-06</option>
+        
+        <option value="2025-05">2025-05</option>
+        
+        <option value="2025-04">2025-04</option>
         
       </select>
       <button id="gh-next-month" type="button" title="翌月">→</button>
@@ -494,7 +508,7 @@
 
 
 <script>
-const TREND_DATA = [{"month": "2025-11", "total": 27786, "sho": 2616, "sai": 25170, "ref_rate": 65.3, "miraiin": 1325, "miraiin_rate": 4.8, "biz_days": 18, "cal_days": 30, "excluded_days": 2, "total_norm": 33961, "sho_norm": 3197, "sai_norm": 30763, "miraiin_norm": 1619}, {"month": "2025-12", "total": 32352, "sho": 2809, "sai": 29543, "ref_rate": 69.0, "miraiin": 1560, "miraiin_rate": 4.8, "biz_days": 20, "cal_days": 31, "excluded_days": 3, "total_norm": 35587, "sho_norm": 3090, "sai_norm": 32497, "miraiin_norm": 1716}, {"month": "2026-01", "total": 29945, "sho": 2722, "sai": 27223, "ref_rate": 66.0, "miraiin": 1489, "miraiin_rate": 5.0, "biz_days": 19, "cal_days": 31, "excluded_days": 3, "total_norm": 34673, "sho_norm": 3152, "sai_norm": 31521, "miraiin_norm": 1724}, {"month": "2026-02", "total": 27798, "sho": 2410, "sai": 25388, "ref_rate": 64.0, "miraiin": 1370, "miraiin_rate": 4.9, "biz_days": 18, "cal_days": 28, "excluded_days": 2, "total_norm": 33975, "sho_norm": 2946, "sai_norm": 31030, "miraiin_norm": 1674}, {"month": "2026-03", "total": 32861, "sho": 2714, "sai": 30147, "ref_rate": 68.9, "miraiin": 1642, "miraiin_rate": 5.0, "biz_days": 21, "cal_days": 31, "excluded_days": 1, "total_norm": 34426, "sho_norm": 2843, "sai_norm": 31583, "miraiin_norm": 1720}, {"month": "2026-04", "total": 23279, "sho": 2021, "sai": 21258, "ref_rate": 69.0, "miraiin": 1150, "miraiin_rate": 4.9, "biz_days": 16, "cal_days": 22, "excluded_days": 0, "total_norm": 32009, "sho_norm": 2779, "sai_norm": 29230, "miraiin_norm": 1581}];
+const TREND_DATA = [{"month": "2025-04", "total": 31321, "sho": 2885, "sai": 28436, "ref_rate": 71.2, "miraiin": 1464, "miraiin_rate": 4.7, "biz_days": 21, "cal_days": 30, "excluded_days": 1, "total_norm": 32812, "sho_norm": 3022, "sai_norm": 29790, "miraiin_norm": 1534}, {"month": "2025-05", "total": 30147, "sho": 2831, "sai": 27316, "ref_rate": 70.2, "miraiin": 1470, "miraiin_rate": 4.9, "biz_days": 20, "cal_days": 31, "excluded_days": 2, "total_norm": 33162, "sho_norm": 3114, "sai_norm": 30048, "miraiin_norm": 1617}, {"month": "2025-06", "total": 31343, "sho": 2857, "sai": 28486, "ref_rate": 71.9, "miraiin": 1528, "miraiin_rate": 4.9, "biz_days": 21, "cal_days": 30, "excluded_days": 0, "total_norm": 32836, "sho_norm": 2993, "sai_norm": 29842, "miraiin_norm": 1601}, {"month": "2025-07", "total": 32543, "sho": 2880, "sai": 29663, "ref_rate": 69.4, "miraiin": 1547, "miraiin_rate": 4.8, "biz_days": 22, "cal_days": 31, "excluded_days": 1, "total_norm": 32543, "sho_norm": 2880, "sai_norm": 29663, "miraiin_norm": 1547}, {"month": "2025-08", "total": 28457, "sho": 2645, "sai": 25812, "ref_rate": 66.6, "miraiin": 1372, "miraiin_rate": 4.8, "biz_days": 20, "cal_days": 31, "excluded_days": 1, "total_norm": 31303, "sho_norm": 2910, "sai_norm": 28393, "miraiin_norm": 1509}, {"month": "2025-09", "total": 30882, "sho": 2718, "sai": 28164, "ref_rate": 69.5, "miraiin": 1482, "miraiin_rate": 4.8, "biz_days": 20, "cal_days": 30, "excluded_days": 2, "total_norm": 33970, "sho_norm": 2990, "sai_norm": 30980, "miraiin_norm": 1630}, {"month": "2025-10", "total": 32516, "sho": 2958, "sai": 29558, "ref_rate": 69.1, "miraiin": 1703, "miraiin_rate": 5.2, "biz_days": 22, "cal_days": 31, "excluded_days": 1, "total_norm": 32516, "sho_norm": 2958, "sai_norm": 29558, "miraiin_norm": 1703}, {"month": "2025-11", "total": 27786, "sho": 2616, "sai": 25170, "ref_rate": 65.3, "miraiin": 1325, "miraiin_rate": 4.8, "biz_days": 18, "cal_days": 30, "excluded_days": 2, "total_norm": 33961, "sho_norm": 3197, "sai_norm": 30763, "miraiin_norm": 1619}, {"month": "2025-12", "total": 32352, "sho": 2809, "sai": 29543, "ref_rate": 69.0, "miraiin": 1560, "miraiin_rate": 4.8, "biz_days": 20, "cal_days": 31, "excluded_days": 3, "total_norm": 35587, "sho_norm": 3090, "sai_norm": 32497, "miraiin_norm": 1716}, {"month": "2026-01", "total": 29945, "sho": 2722, "sai": 27223, "ref_rate": 66.0, "miraiin": 1489, "miraiin_rate": 5.0, "biz_days": 19, "cal_days": 31, "excluded_days": 3, "total_norm": 34673, "sho_norm": 3152, "sai_norm": 31521, "miraiin_norm": 1724}, {"month": "2026-02", "total": 27798, "sho": 2410, "sai": 25388, "ref_rate": 64.0, "miraiin": 1370, "miraiin_rate": 4.9, "biz_days": 18, "cal_days": 28, "excluded_days": 2, "total_norm": 33975, "sho_norm": 2946, "sai_norm": 31030, "miraiin_norm": 1674}, {"month": "2026-03", "total": 32861, "sho": 2714, "sai": 30147, "ref_rate": 68.9, "miraiin": 1642, "miraiin_rate": 5.0, "biz_days": 21, "cal_days": 31, "excluded_days": 1, "total_norm": 34426, "sho_norm": 2843, "sai_norm": 31583, "miraiin_norm": 1720}, {"month": "2026-04", "total": 23279, "sho": 2021, "sai": 21258, "ref_rate": 69.0, "miraiin": 1150, "miraiin_rate": 4.9, "biz_days": 16, "cal_days": 22, "excluded_days": 0, "total_norm": 32009, "sho_norm": 2779, "sai_norm": 29230, "miraiin_norm": 1581}];
 if (TREND_DATA && TREND_DATA.length > 0 && document.getElementById('trendChart')) {
   new Chart(document.getElementById('trendChart').getContext('2d'), {
     type: 'line',

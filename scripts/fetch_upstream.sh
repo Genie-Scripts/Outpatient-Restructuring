@@ -94,15 +94,33 @@ else
 fi
 
 # 集計CSVと診療科分類を反映（rsync で安全に上書き）
-echo "[fetch_upstream] data/aggregated/ を反映"
-mkdir -p data/aggregated
-rsync -a --delete "$CACHE_DIR/data/aggregated/" data/aggregated/
+# ただし data/aggregated や config の各ファイルがシンボリックリンクの場合、
+# rsync --delete や cp が上流リポ（Dashboard）の実体を上書きしてしまうため、
+# symlink を検出したら反映をスキップする（--skip-fetch 等価）。
+# README.md / CLAUDE.md に記載の「ローカル symlink 運用」を安全に成立させる保護。
+if [ -L data/aggregated ]; then
+  echo "[fetch_upstream] data/aggregated はシンボリックリンクのため反映をスキップ"
+  echo "  link target: $(readlink data/aggregated)"
+  echo "  上流（GitHub）の状態を取り込みたい場合は symlink を解除してから再実行してください"
+else
+  echo "[fetch_upstream] data/aggregated/ を反映"
+  mkdir -p data/aggregated
+  rsync -a --delete "$CACHE_DIR/data/aggregated/" data/aggregated/
+fi
 
 echo "[fetch_upstream] config/ を反映"
 mkdir -p config
-cp "$CACHE_DIR/config/dept_classification.csv" config/dept_classification.csv
+copy_unless_symlink() {
+  local src="$1" dst="$2"
+  if [ -L "$dst" ]; then
+    echo "  [skip] $dst はシンボリックリンク（target: $(readlink "$dst")）"
+  else
+    cp "$src" "$dst"
+  fi
+}
+copy_unless_symlink "$CACHE_DIR/config/dept_classification.csv" config/dept_classification.csv
 if [ -f "$CACHE_DIR/config/dept_targets.csv" ]; then
-  cp "$CACHE_DIR/config/dept_targets.csv" config/dept_targets.csv
+  copy_unless_symlink "$CACHE_DIR/config/dept_targets.csv" config/dept_targets.csv
 fi
 
 echo "[fetch_upstream] 完了"

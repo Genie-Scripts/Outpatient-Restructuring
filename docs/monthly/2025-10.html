@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>月次経営サマリ ／ 2025-10 | 外来再編分析</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&family=DM+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F3EF; --surface:#FFFFFF; --surface2:#FAF9F6; --surface3:#F0EDE8;
+    --border:#E5E3DF; --border-strong:#D6D3CC;
+    --text:#2C2A28; --text-soft:#5A5651; --dim:#8A847C; --muted:#B0ABA3;
+    --header:#3D3A35; --header-line:#4F4B45;
+    --blue:#3F7FC1; --blue-light:#E7F0FA;
+    --naika:#2B9DB8; --naika-bg:#E4F3F6;
+    --geka:#D08620;  --geka-bg:#FAEEDB;
+    --other:#8B6FB6; --other-bg:#EFEAF5;
+    --up:#2F7A4B; --up-bg:#E5F1E9;
+    --down:#A33838; --down-bg:#F5E4E4;
+    --flat:#8A847C; --flat-bg:#EDEBE7;
+    --warn:#8A6D1A; --warn-bg:#FAF3E0; --warn-border:#D4B860;
+    --grade-s-bg:#C89020;  --grade-s-fg:#FFFFFF;
+    --grade-a-bg:#2F7A4B;  --grade-a-fg:#FFFFFF;
+    --grade-b-bg:#2E5F85;  --grade-b-fg:#FFFFFF;
+    --grade-c-bg:#7A746B;  --grade-c-fg:#FFFFFF;
+    --grade-d-bg:#A33838;  --grade-d-fg:#FFFFFF;
+    --grade-na-bg:#E5E3DF; --grade-na-fg:#8A847C;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.55;}
+  a{color:inherit;text-decoration:none;}
+
+  /* ===== Global header (sticky) ===== */
+  header.site{position:sticky;top:0;z-index:30;background:var(--header);color:#fff;
+              border-bottom:3px solid var(--geka);box-shadow:0 2px 8px rgba(0,0,0,.06);}
+  .gh-row1{display:flex;align-items:center;gap:14px;padding:12px 28px;
+           border-bottom:1px solid var(--header-line);flex-wrap:wrap;}
+  .gh-logo{width:34px;height:34px;background:var(--geka);border-radius:8px;
+           display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;
+           font-family:'DM Mono',monospace;flex-shrink:0;}
+  .gh-title h1{font-size:16px;font-weight:700;color:#fff;margin:0;line-height:1.2;}
+  .gh-title .sub{font-size:11px;color:rgba(255,255,255,.65);font-family:'DM Mono',monospace;}
+  .gh-meta{margin-left:auto;display:flex;gap:14px;align-items:center;font-size:11px;
+           color:rgba(255,255,255,.65);font-family:'DM Mono',monospace;flex-wrap:wrap;}
+
+  .gh-row2{display:flex;align-items:center;gap:18px;padding:8px 28px;
+           background:rgba(0,0,0,.12);flex-wrap:wrap;}
+  .gh-views{display:flex;gap:4px;flex-wrap:wrap;}
+  .gh-views a{font-size:12px;color:rgba(255,255,255,.85);padding:6px 14px;border-radius:6px;
+              transition:background .15s, color .15s;font-weight:500;white-space:nowrap;}
+  .gh-views a:hover{background:rgba(255,255,255,.12);color:#fff;}
+  .gh-views a.active{background:#fff;color:var(--header);font-weight:700;}
+  .gh-views a.disabled{color:rgba(255,255,255,.35);cursor:not-allowed;}
+
+  .gh-month{margin-left:auto;display:flex;gap:8px;align-items:center;font-size:12px;color:rgba(255,255,255,.85);flex-wrap:nowrap;}
+  .gh-month label{color:rgba(255,255,255,.6);font-size:11px;letter-spacing:.04em;text-transform:uppercase;font-weight:700;}
+  .gh-month select{background:rgba(255,255,255,.95);color:var(--text);
+                   border:none;padding:5px 10px;border-radius:6px;
+                   font-family:'DM Mono',monospace;font-size:13px;font-weight:600;cursor:pointer;
+                   min-width:110px;}
+  .gh-month button{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.2);
+                   padding:4px 10px;border-radius:5px;font-size:12px;cursor:pointer;
+                   font-family:'DM Mono',monospace;}
+  .gh-month button:hover:not(:disabled){background:rgba(255,255,255,.2);}
+  .gh-month button:disabled{opacity:.35;cursor:not-allowed;}
+
+  /* ===== ヘッダのレスポンシブ ===== */
+  @media (max-width: 760px){
+    .gh-row1, .gh-row2{padding-left:14px;padding-right:14px;}
+    .gh-meta{margin-left:0;flex-basis:100%;}
+    .gh-month{margin-left:0;width:100%;justify-content:flex-end;}
+    .gh-views{flex-basis:100%;justify-content:flex-start;}
+  }
+  @media (max-width: 760px){
+    .container{padding:16px 14px 30px;}
+    .breadcrumb{padding:8px 14px;}
+  }
+
+  .breadcrumb{background:var(--surface2);border-bottom:1px solid var(--border);
+              padding:8px 28px;font-size:12px;color:var(--text-soft);
+              display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .breadcrumb a{color:var(--blue);}
+  .breadcrumb a:hover{text-decoration:underline;}
+  .breadcrumb .sep{color:var(--dim);}
+  .breadcrumb .current{color:var(--text);font-weight:600;}
+
+  .container{max-width:1400px;margin:0 auto;padding:24px 28px 40px;}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+        padding:22px 26px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.03);}
+  .card-head{display:flex;align-items:baseline;gap:10px;margin-bottom:16px;
+             padding-bottom:10px;border-bottom:1px solid var(--border);}
+  .card-num{font-size:10px;font-family:'DM Mono',monospace;color:var(--blue);
+            background:var(--blue-light);padding:3px 8px;border-radius:4px;
+            font-weight:700;letter-spacing:.04em;}
+  .card-title{font-size:15px;font-weight:700;color:var(--text);}
+  .card-sub{font-size:12px;color:var(--dim);margin-left:4px;}
+  h2{font-size:16px;font-weight:700;color:var(--text);}
+  h3{font-size:13px;font-weight:600;color:var(--text-soft);margin-bottom:8px;}
+  p{font-size:13px;color:var(--text-soft);line-height:1.6;}
+  .meta{font-size:12px;color:var(--dim);margin-top:4px;}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  table thead th{background:var(--surface2);padding:9px 12px;text-align:left;
+                 font-size:11px;font-weight:700;color:var(--text-soft);
+                 border-bottom:1px solid var(--border-strong);text-transform:uppercase;letter-spacing:.04em;}
+  table tbody td{padding:8px 12px;border-bottom:1px solid var(--border);}
+  table tbody tr:hover td{background:var(--surface2);}
+  table .num{text-align:right;font-family:'DM Mono',monospace;}
+  table .num.warn{color:var(--warn);font-weight:700;}
+
+  .type-badge{display:inline-block;padding:1px 8px;border-radius:4px;font-size:10px;
+              font-weight:700;letter-spacing:.04em;margin-left:6px;vertical-align:middle;}
+  .type-badge.naika{background:var(--naika-bg);color:var(--naika);}
+  .type-badge.geka{background:var(--geka-bg);color:var(--geka);}
+  .type-badge.other{background:var(--other-bg);color:var(--other);}
+
+  .summary-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+               gap:12px;margin-bottom:16px;}
+  .summary-stat{background:var(--surface2);padding:12px 14px;border-radius:8px;border:1px solid var(--border);}
+  .summary-stat-k{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.04em;font-weight:700;}
+  .summary-stat-v{font-size:22px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text);margin-top:4px;}
+  .summary-stat-u{font-size:11px;color:var(--text-soft);margin-left:3px;font-weight:500;}
+  .summary-stat-norm{font-size:10px;color:var(--dim);font-family:'DM Mono',monospace;margin-top:2px;}
+
+  .nav-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+  .nav-pill{padding:6px 12px;background:var(--surface2);border:1px solid var(--border);
+            border-radius:6px;font-size:12px;color:var(--text-soft);transition:all .15s;}
+  .nav-pill:hover{border-color:var(--blue);color:var(--blue);}
+  .nav-pill.current{background:var(--header);color:#fff;border-color:var(--header);}
+
+  .chart-wrap{position:relative;height:240px;}
+
+  .lateral-nav{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;
+               padding:14px 22px;background:var(--surface2);border:1px solid var(--border);
+               border-radius:10px;margin-top:24px;}
+  .lateral-nav a{font-size:12px;color:var(--blue);padding:6px 12px;
+                 border-radius:6px;background:var(--surface);
+                 border:1px solid var(--border);transition:all .15s;}
+  .lateral-nav a:hover{border-color:var(--blue);background:var(--blue-light);}
+  .lateral-nav .group{display:flex;gap:6px;flex-wrap:wrap;}
+
+  .empty{color:var(--dim);font-size:13px;padding:16px;background:var(--surface3);
+         border-radius:6px;text-align:center;}
+
+  .score-badge{display:inline-block;min-width:36px;padding:2px 8px;
+               border-radius:4px;font-weight:700;text-align:center;
+               font-family:'DM Mono',monospace;font-size:12px;}
+  .score-high{background:var(--down);color:#fff;}
+  .score-mid{background:#E0A344;color:#fff;}
+  .score-low{background:var(--surface3);color:var(--text-soft);}
+
+  /* Grade badges (monthly scorecard) */
+  .grade{display:inline-block;min-width:24px;padding:2px 8px;border-radius:4px;
+         font-weight:700;text-align:center;font-family:'DM Mono',monospace;font-size:12px;}
+  .grade-S{background:var(--grade-s-bg);color:var(--grade-s-fg);}
+  .grade-A{background:var(--grade-a-bg);color:var(--grade-a-fg);}
+  .grade-B{background:var(--grade-b-bg);color:var(--grade-b-fg);}
+  .grade-C{background:var(--grade-c-bg);color:var(--grade-c-fg);}
+  .grade-D{background:var(--grade-d-bg);color:var(--grade-d-fg);}
+  .grade-NA{background:var(--grade-na-bg);color:var(--grade-na-fg);}
+
+  footer.site{padding:18px 28px;text-align:center;color:var(--dim);font-size:11px;
+              border-top:1px solid var(--border);margin-top:20px;}
+  footer.site .feedback-link{color:var(--blue);}
+
+  /* テーマドロップダウン（JS クリックトグル） */
+  .gh-dropdown{position:relative;}
+  .gh-dropdown-menu{
+    display:none;position:absolute;top:calc(100% + 6px);left:0;
+    background:var(--header);border:1px solid var(--header-line);
+    border-radius:8px;min-width:200px;z-index:100;padding:6px 0;
+    box-shadow:0 4px 16px rgba(0,0,0,.2);
+  }
+  .gh-dropdown-menu.open{ display:block; }
+  .gh-dropdown-menu a{
+    display:block;padding:8px 16px;font-size:12px;
+    color:rgba(255,255,255,.85);white-space:nowrap;
+  }
+  .gh-dropdown-menu a:hover{background:rgba(255,255,255,.12);color:#fff;}
+  .gh-dropdown-menu a.active{background:rgba(255,255,255,.15);color:#fff;font-weight:700;}
+</style>
+
+<style>
+  /* ===== monthly 固有スタイル（SCREEN1-3 用） ===== */
+
+  .screen{margin-bottom:36px;}
+  .screen-title{display:flex;align-items:baseline;gap:10px;margin:0 0 16px;
+                padding-bottom:10px;border-bottom:2px solid var(--border-strong);}
+  .screen-num{font-size:11px;font-family:'DM Mono',monospace;color:var(--blue);
+              background:var(--blue-light);padding:4px 10px;border-radius:4px;
+              font-weight:700;letter-spacing:.04em;}
+  .screen-head{font-size:18px;font-weight:700;color:var(--text);}
+  .screen-subhead{font-size:12px;color:var(--dim);margin-left:6px;}
+
+  /* ===== KPI cards ===== */
+  .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:18px;}
+  .kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+       padding:16px 18px;position:relative;box-shadow:0 1px 3px rgba(0,0,0,.03);}
+  .kpi-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px;}
+  .kpi-label{font-size:11px;color:var(--text-soft);font-weight:600;}
+  .kpi-trend{display:flex;align-items:center;gap:3px;font-size:11px;font-weight:700;
+             font-family:'DM Mono',monospace;padding:3px 8px;border-radius:4px;}
+  .trend-up{background:rgba(47,122,75,.1);color:var(--up);}
+  .trend-down{background:rgba(163,56,56,.1);color:var(--down);}
+  .trend-flat{background:rgba(138,132,124,.1);color:var(--flat);}
+  .kpi-value{font-size:26px;font-weight:700;font-family:'DM Mono',monospace;
+             margin:4px 0 2px;color:var(--text);line-height:1.1;}
+  .kpi-unit{font-size:12px;color:var(--dim);margin-left:4px;}
+  .kpi-target{font-size:11px;color:var(--dim);font-family:'DM Mono',monospace;margin-top:3px;}
+  .kpi-bar{height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;margin-top:10px;}
+  .kpi-bar-fill{height:100%;transition:width .5s;border-radius:3px;}
+  .kpi-spark-wrap{position:relative;height:30px;margin-top:10px;}
+
+  /* ===== highlights ===== */
+  .highlights{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+              padding:16px 20px;margin-bottom:18px;box-shadow:0 1px 3px rgba(0,0,0,.03);}
+  .highlights-title{font-size:12px;font-weight:700;color:var(--text-soft);letter-spacing:.05em;
+                    text-transform:uppercase;margin-bottom:12px;padding-bottom:9px;
+                    border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+  .hl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  .hl-item{padding:12px 14px;border-radius:8px;border-left:3px solid;}
+  .hl-success{background:rgba(47,122,75,.05);border-left-color:var(--up);}
+  .hl-warn{background:rgba(212,184,96,.08);border-left-color:var(--warn-border);}
+  .hl-danger{background:rgba(163,56,56,.05);border-left-color:var(--down);}
+  .hl-icon{font-size:14px;}
+  .hl-head{font-weight:700;font-size:13px;margin:4px 0;color:var(--text);}
+  .hl-body{font-size:12px;color:var(--text-soft);line-height:1.5;}
+
+  .ctitle{font-size:12px;font-weight:700;color:var(--text-soft);letter-spacing:.05em;
+          text-transform:uppercase;margin-bottom:12px;padding-bottom:9px;
+          border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex-shrink:0;}
+  .d-blue{background:var(--blue);} .d-naika{background:var(--naika);}
+  .d-geka{background:var(--geka);} .d-other{background:var(--other);}
+  .d-red{background:var(--down);} .d-green{background:var(--up);}
+  .d-gold{background:#C89020;}
+
+  .g2{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:14px;margin-bottom:14px;}
+  .g3{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:14px;}
+  .g4{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:14px;}
+  .chart-md{height:240px;position:relative;}
+  .chart-xs{height:100px;position:relative;}
+
+  /* ===== レスポンシブ調整 ===== */
+  .hl-grid{grid-template-columns:repeat(auto-fit,minmax(260px,1fr));}
+  @media (max-width: 720px){
+    .screen-title{flex-wrap:wrap;}
+    .screen-subhead{flex-basis:100%;margin-left:0;margin-top:4px;}
+    .kpi-value{font-size:22px;}
+    .filter-bar{font-size:11px;}
+  }
+
+  .note{font-size:11px;color:var(--dim);margin-top:8px;line-height:1.5;}
+  .note-box{background:var(--blue-light);color:var(--text);padding:10px 14px;
+            border-radius:6px;font-size:12px;margin-bottom:14px;border-left:3px solid var(--blue);}
+
+  /* ===== Heatmap ===== */
+  .heatmap-wrap{overflow-x:auto;}
+  .sc-table{width:100%;border-collapse:collapse;}
+  .sc-table th{background:var(--surface2);padding:7px 8px;text-align:center;
+               font-size:11px;font-weight:700;color:var(--text-soft);
+               border-bottom:1px solid var(--border-strong);letter-spacing:.04em;}
+  .sc-table td{padding:6px 8px;border-bottom:1px solid var(--border);font-size:12px;text-align:center;}
+  .sc-table tr.clickable{cursor:pointer;transition:background .15s;}
+  .sc-table tr.clickable:hover td{background:var(--surface2);}
+  .hm-cell{display:inline-block;min-width:30px;padding:3px 6px;border-radius:4px;
+           font-weight:700;font-family:'DM Mono',monospace;font-size:11px;}
+  .hm-cell.g-S{background:var(--grade-s-bg);color:var(--grade-s-fg);}
+  .hm-cell.g-A{background:var(--grade-a-bg);color:var(--grade-a-fg);}
+  .hm-cell.g-B{background:var(--grade-b-bg);color:var(--grade-b-fg);}
+  .hm-cell.g-C{background:var(--grade-c-bg);color:var(--grade-c-fg);}
+  .hm-cell.g-D{background:var(--grade-d-bg);color:var(--grade-d-fg);}
+  .hm-cell.g-NA{background:var(--grade-na-bg);color:var(--grade-na-fg);}
+
+  .grade.g-S{background:var(--grade-s-bg);color:var(--grade-s-fg);}
+  .grade.g-A{background:var(--grade-a-bg);color:var(--grade-a-fg);}
+  .grade.g-B{background:var(--grade-b-bg);color:var(--grade-b-fg);}
+  .grade.g-C{background:var(--grade-c-bg);color:var(--grade-c-fg);}
+  .grade.g-D{background:var(--grade-d-bg);color:var(--grade-d-fg);}
+  .grade.g-NA{background:var(--grade-na-bg);color:var(--grade-na-fg);}
+
+  .grade-legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px;}
+  .leg-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-soft);}
+  .leg-desc{color:var(--dim);}
+
+  .filter-bar{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+  .filter-label{font-size:11px;color:var(--text-soft);font-weight:700;}
+  .filter-btn{padding:5px 12px;border-radius:6px;background:var(--surface2);
+              border:1px solid var(--border);font-size:12px;cursor:pointer;transition:all .15s;}
+  .filter-btn:hover{border-color:var(--blue);}
+  .filter-btn.active{background:var(--blue);color:#fff;border-color:var(--blue);}
+
+  .type-tag{display:inline-block;padding:1px 7px;border-radius:3px;
+            font-size:10px;font-weight:700;margin-right:6px;letter-spacing:.04em;}
+  .tag-naika{background:var(--naika-bg);color:var(--naika);}
+  .tag-geka{background:var(--geka-bg);color:var(--geka);}
+  .tag-other{background:var(--other-bg);color:var(--other);}
+
+  .ach-over{color:var(--up);font-weight:700;}
+  .ach-near{color:var(--warn);font-weight:700;}
+  .ach-under{color:var(--down);font-weight:700;}
+  .change-up{color:var(--up);font-weight:700;}
+  .change-down{color:var(--down);font-weight:700;}
+  .change-flat{color:var(--flat);}
+  .achiev{font-size:10px;font-family:'DM Mono',monospace;margin-top:1px;}
+
+  .biz-note{background:var(--warn-bg);color:var(--warn);
+            padding:6px 10px;border-radius:5px;border:1px solid var(--warn-border);
+            font-size:11px;margin-left:12px;font-family:'DM Mono',monospace;font-weight:700;
+            display:inline-block;}
+</style>
+
+</head>
+<body data-view="monthly" data-month="2025-10">
+
+<header class="site">
+  <div class="gh-row1">
+    <div class="gh-logo">OR</div>
+    <div class="gh-title">
+      <h1>外来再編分析</h1>
+      <div class="sub">Outpatient Restructuring</div>
+    </div>
+    <div class="gh-meta">
+      <div>更新 2026-04-27 15:30</div>
+      <div>※ 件数は 22営業日換算</div>
+    </div>
+  </div>
+  <div class="gh-row2">
+    <div class="gh-views">
+      <a href="../index.html">ホーム</a>
+      <a href="../monthly/2025-10.html" class="active">月次経営サマリ</a>
+      <a href="../dept/2025-10/index.html">診療科 再編診断</a>
+      <div class="gh-dropdown">
+        <button type="button" id="gh-theme-btn"
+           
+           style="background:none;border:none;cursor:pointer;font-family:inherit;font-size:12px;
+                  color:rgba(255,255,255,.85);
+                  padding:6px 14px;border-radius:6px;font-weight:500;
+                  display:flex;align-items:center;gap:4px;white-space:nowrap;
+                  ">テーマ分析 <span style="font-size:9px;">▾</span></button>
+        <div class="gh-dropdown-menu">
+          <a href="../themes/2025-10/referral.html"
+             >紹介・逆紹介</a>
+          <a href="../themes/2025-10/slot.html"
+             >予約枠サマリ</a>
+          <a href="../themes/2025-10/nursing.html"
+             >曜日×時間帯 分析</a>
+          <a href="../themes/2025-10/doctor.html"
+             >医師×時間帯 分析</a>
+          <a href="../themes/2025-10/slot-heatmap.html"
+             >外来枠×時間帯 分析</a>
+        </div>
+      </div>
+    </div>
+    
+    <div class="gh-month">
+      <label>月:</label>
+      <button id="gh-prev-month" type="button" title="前月">←</button>
+      <select id="gh-month-select">
+        
+        <option value="2026-04">2026-04</option>
+        
+        <option value="2026-03">2026-03</option>
+        
+        <option value="2026-02">2026-02</option>
+        
+        <option value="2026-01">2026-01</option>
+        
+        <option value="2025-12">2025-12</option>
+        
+        <option value="2025-11">2025-11</option>
+        
+        <option value="2025-10" selected>2025-10</option>
+        
+        <option value="2025-09">2025-09</option>
+        
+        <option value="2025-08">2025-08</option>
+        
+        <option value="2025-07">2025-07</option>
+        
+        <option value="2025-06">2025-06</option>
+        
+        <option value="2025-05">2025-05</option>
+        
+        <option value="2025-04">2025-04</option>
+        
+      </select>
+      <button id="gh-next-month" type="button" title="翌月">→</button>
+    </div>
+    
+  </div>
+</header>
+
+
+<div class="breadcrumb">
+  
+    
+    <a href="../index.html">ホーム</a>
+    
+    <span class="sep">/</span>
+  
+    
+    <span class="current">月次経営サマリ ／ 2025-10</span>
+    
+    
+  
+</div>
+
+
+<main class="container">
+
+
+<!-- ====================================================================
+ SCREEN 1: エグゼクティブサマリー
+===================================================================== -->
+<div class="screen">
+  <div class="screen-title">
+    <span class="screen-num">SCREEN 1</span>
+    <span class="screen-head">エグゼクティブサマリー</span>
+    <span class="screen-subhead">10月・実営業日 22日（祝日・病院休 1日除外）／ 22営業日換算で表示</span>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-head">
+        <span class="kpi-label">総外来件数</span>
+        <span class="kpi-trend" id="kpi1Trend">—</span>
+      </div>
+      <div class="kpi-value" id="kpi1Val">—</div>
+      <div class="kpi-target" id="kpi1Target">—</div>
+      <div class="kpi-spark-wrap"><canvas id="sparkTotal"></canvas></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-head">
+        <span class="kpi-label">初診件数</span>
+        <span class="kpi-trend" id="kpi2Trend">—</span>
+      </div>
+      <div class="kpi-value" id="kpi2Val" style="color:var(--blue);">—</div>
+      <div class="kpi-target" id="kpi2Target">—</div>
+      <div class="kpi-bar"><div class="kpi-bar-fill" id="kpi2Bar" style="background:var(--blue);"></div></div>
+      <div class="kpi-spark-wrap"><canvas id="sparkSho"></canvas></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-head">
+        <span class="kpi-label">再診:初診 比率</span>
+        <span class="kpi-trend" id="kpi3Trend">—</span>
+      </div>
+      <div class="kpi-value" id="kpi3Val" style="color:var(--other);">—</div>
+      <div class="kpi-target" id="kpi3Target">—</div>
+      <div class="kpi-spark-wrap"><canvas id="sparkSps"></canvas></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-head">
+        <span class="kpi-label">「薬のみ」再診件数</span>
+        <span class="kpi-trend" id="kpi4Trend">—</span>
+      </div>
+      <div class="kpi-value" id="kpi4Val" style="color:#C89020;">—</div>
+      <div class="kpi-target" id="kpi4Target">—</div>
+      <div class="kpi-bar"><div class="kpi-bar-fill" id="kpi4Bar" style="background:#C89020;"></div></div>
+      <div class="kpi-spark-wrap"><canvas id="sparkKus"></canvas></div>
+    </div>
+  </div>
+
+  <div class="highlights">
+    <div class="highlights-title"><span class="dot d-blue"></span>今月のハイライト（自動抽出）</div>
+    <div class="hl-grid" id="highlightsContainer"></div>
+  </div>
+
+  <div class="card" style="margin-bottom:14px;">
+    <div class="ctitle"><span class="dot d-blue"></span>初診件数 達成率ヒートマップ（診療科×月）</div>
+    <div class="heatmap-wrap">
+      <table class="sc-table" style="font-size:11px;">
+        <thead id="heatShoHead"></thead>
+        <tbody id="heatShoBody"></tbody>
+      </table>
+    </div>
+    <p class="note">各月の初診実績 ÷ 初診目標 の達成率をS〜Dで表示。実績は22営業日換算。</p>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ctitle"><span class="dot d-other"></span>再診:初診 比率の月次変化（低下＝改善）</div>
+      <div class="heatmap-wrap">
+        <table class="sc-table" style="font-size:11px;">
+          <thead id="heatSpsHead"></thead>
+          <tbody id="heatSpsBody"></tbody>
+        </table>
+      </div>
+      <p class="note">目標は6ヶ月平均比率 × 0.9（10%削減）。比率が低いほど高評価。</p>
+    </div>
+
+    <div class="card">
+      <div class="ctitle"><span class="dot d-gold"></span>「薬のみ」再診件数の月次変化（減少＝改善）</div>
+      <div class="heatmap-wrap">
+        <table class="sc-table" style="font-size:11px;">
+          <thead id="heatKusHead"></thead>
+          <tbody id="heatKusBody"></tbody>
+        </table>
+      </div>
+      <p class="note">目標は6ヶ月平均 × 0.85（15%削減）。処方更新のみ再診＝逆紹介最有力。</p>
+    </div>
+  </div>
+</div>
+
+<!-- ====================================================================
+ SCREEN 2: トレンド分析
+===================================================================== -->
+<div class="screen">
+  <div class="screen-title">
+    <span class="screen-num">SCREEN 2</span>
+    <span class="screen-head">主要指標トレンド分析</span>
+    <span class="screen-subhead">3指標の月次推移と目標線（22営業日換算）</span>
+  </div>
+
+  <div class="note-box">
+    💡 <strong>逆紹介候補件数</strong>は評価指標から外し、参考情報としてスコアカードの右端に表示しています。「候補」ではなく「実際の実行」を測るには電子カルテ連携が必要です。
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ctitle"><span class="dot d-blue"></span>全体 初診件数 月次推移（目標線付き）</div>
+      <div class="chart-md"><canvas id="chartShoTrend"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ctitle"><span class="dot d-other"></span>全体 再診:初診 比率 月次推移</div>
+      <div class="chart-md"><canvas id="chartSpsTrend"></canvas></div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ctitle"><span class="dot d-gold"></span>全体 「薬のみ」再診件数 月次推移（目標線付き）</div>
+      <div class="chart-md"><canvas id="chartKusTrend"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ctitle"><span class="dot d-blue"></span>主要診療科 初診件数 月次推移</div>
+      <div class="chart-md"><canvas id="chartShoDept"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ====================================================================
+ SCREEN 3: 診療科スコアカード
+===================================================================== -->
+<div class="screen">
+  <div class="screen-title">
+    <span class="screen-num">SCREEN 3</span>
+    <span class="screen-head">診療科スコアカード</span>
+    <span class="screen-subhead">3軸独立評価・行クリックで「再編診断」へ</span>
+  </div>
+
+  <div class="grade-legend">
+    <div class="leg-item"><span class="grade g-S">S</span><span class="leg-desc">110%以上</span></div>
+    <div class="leg-item"><span class="grade g-A">A</span><span class="leg-desc">100〜110%</span></div>
+    <div class="leg-item"><span class="grade g-B">B</span><span class="leg-desc">90〜100%</span></div>
+    <div class="leg-item"><span class="grade g-C">C</span><span class="leg-desc">75〜90%</span></div>
+    <div class="leg-item"><span class="grade g-D">D</span><span class="leg-desc">75%未満</span></div>
+    <div class="leg-item"><span class="grade g-NA">—</span><span class="leg-desc">目標未設定</span></div>
+  </div>
+
+  <div class="filter-bar">
+    <span class="filter-label">診療科タイプ:</span>
+    <span class="filter-btn active" data-filter="all">全て</span>
+    <span class="filter-btn" data-filter="naika">内科系</span>
+    <span class="filter-btn" data-filter="geka">外科系</span>
+    <span class="filter-btn" data-filter="alert">要注意（どれかD）</span>
+    <span style="margin-left:auto;color:var(--dim);font-size:11px;">※ 「薬のみ」「再診:初診比率」は少ない/低いほど高評価</span>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">
+      <span class="dot d-blue"></span>診療科別 3軸評価（10月 ／ 22営業日換算）
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="sc-table">
+        <thead>
+          <tr>
+            <th rowspan="2" style="width:17%;vertical-align:middle;">診療科</th>
+            <th rowspan="2" style="width:8%;vertical-align:middle;">月平均件数</th>
+            <th colspan="3" style="background:rgba(63,127,193,.06);">
+              <div style="color:var(--blue);">初診件数</div>
+            </th>
+            <th colspan="3" style="background:rgba(139,111,182,.06);">
+              <div style="color:var(--other);">再診:初診 比率</div>
+            </th>
+            <th colspan="3" style="background:rgba(200,144,32,.06);">
+              <div style="color:#C89020;">「薬のみ」再診</div>
+            </th>
+            <th rowspan="2" style="width:9%;vertical-align:middle;background:var(--surface2);color:var(--dim);">
+              <div>候補件数</div><div style="font-size:9px;font-weight:400;">(参考)</div>
+            </th>
+          </tr>
+          <tr>
+            <th style="width:5%;background:rgba(63,127,193,.04);">評価</th>
+            <th style="width:8%;background:rgba(63,127,193,.04);">実績/目標</th>
+            <th style="width:8%;background:rgba(63,127,193,.04);">前月比</th>
+            <th style="width:5%;background:rgba(139,111,182,.04);">評価</th>
+            <th style="width:7%;background:rgba(139,111,182,.04);">実績/目標</th>
+            <th style="width:8%;background:rgba(139,111,182,.04);">前月比</th>
+            <th style="width:5%;background:rgba(200,144,32,.04);">評価</th>
+            <th style="width:7%;background:rgba(200,144,32,.04);">実績/目標</th>
+            <th style="width:8%;background:rgba(200,144,32,.04);">前月比</th>
+          </tr>
+        </thead>
+        <tbody id="scoreCardBody"></tbody>
+      </table>
+    </div>
+    <p class="note" style="margin-top:14px;">
+      <strong>目標値の自動算出ルール</strong>：初診目標=直近6ヶ月実績×1.10（+10%）、再診:初診比率目標=6ヶ月平均×0.9（-10%）、薬のみ目標=6ヶ月平均×0.85（-15%）。
+      <code>dept_targets.csv</code> で個別上書き可能。
+    </p>
+  </div>
+</div>
+
+
+</main>
+
+<footer class="site">
+  外来再編分析ダッシュボード
+  
+</footer>
+
+<script>
+/* グローバルヘッダ：月セレクタとビュー切替の連動。
+   現在のビュー（data-view）と現在の科コード（data-code）を保ったまま
+   月だけを切り替える。ホームの場合はその月の monthly に遷移する。 */
+(function(){
+  const body = document.body;
+  const view = body.getAttribute('data-view');
+  const code = body.getAttribute('data-code');
+  const sel = document.getElementById('gh-month-select');
+  const prevBtn = document.getElementById('gh-prev-month');
+  const nextBtn = document.getElementById('gh-next-month');
+  if (!sel) return;
+
+  const months = Array.from(sel.options).map(o => o.value); // 新→旧
+
+  function targetUrl(month, view, code){
+    /* root から見たパス。各ページで root_prefix が異なるため
+       絶対パスではなく、ビューに応じた相対パスを構築する。 */
+    if (view === 'home') {
+      return rootPrefix() + 'monthly/' + month + '.html';
+    }
+    if (view === 'monthly') {
+      return rootPrefix() + 'monthly/' + month + '.html';
+    }
+    if (view === 'dept' || view === 'dept-detail') {
+      const filename = code ? (code + '.html') : 'index.html';
+      return rootPrefix() + 'dept/' + month + '/' + filename;
+    }
+    if (view && view.startsWith('theme-')) {
+      const slug = view.replace('theme-', '');
+      return rootPrefix() + 'themes/' + month + '/' + slug + '.html';
+    }
+    return rootPrefix() + 'index.html';
+  }
+
+  function rootPrefix(){
+    /* グローバルヘッダの「ホーム」リンクから root_prefix を推測する。
+       href の末尾が "index.html" でその直前までが prefix。 */
+    const a = document.querySelector('header.site .gh-views a');
+    if (!a) return '';
+    const href = a.getAttribute('href') || '';
+    return href.replace(/index\.html$/, '');
+  }
+
+  sel.addEventListener('change', () => {
+    const m = sel.value;
+    location.href = targetUrl(m, view, code);
+  });
+
+  function shiftMonth(delta){
+    /* sel.options は新→旧で並んでいる。delta=-1 で前月（旧側=index増）、+1 で翌月。 */
+    const idx = sel.selectedIndex;
+    const newIdx = idx - delta; // 翌月に進む = 新側＝idx 減
+    if (newIdx < 0 || newIdx >= sel.options.length) return;
+    sel.selectedIndex = newIdx;
+    sel.dispatchEvent(new Event('change'));
+  }
+  if (prevBtn) prevBtn.addEventListener('click', () => shiftMonth(-1));
+  if (nextBtn) nextBtn.addEventListener('click', () => shiftMonth(+1));
+
+  // 端で押せないボタンは disabled に
+  function refreshBtns(){
+    const idx = sel.selectedIndex;
+    if (prevBtn) prevBtn.disabled = (idx >= sel.options.length - 1);
+    if (nextBtn) nextBtn.disabled = (idx <= 0);
+  }
+  refreshBtns();
+  sel.addEventListener('change', refreshBtns);
+})();
+
+/* テーマドロップダウン：クリックトグル */
+(function(){
+  const btn  = document.getElementById('gh-theme-btn');
+  const menu = btn && btn.parentElement.querySelector('.gh-dropdown-menu');
+  if (!btn || !menu) return;
+
+  btn.addEventListener('click', function(e){
+    e.stopPropagation();
+    menu.classList.toggle('open');
+  });
+
+  /* メニュー項目クリックで閉じる（ページ遷移前に閉じておく） */
+  menu.addEventListener('click', function(){ menu.classList.remove('open'); });
+
+  /* ドロップダウン外クリックで閉じる */
+  document.addEventListener('click', function(){ menu.classList.remove('open'); });
+})();
+</script>
+
+
+<script>
+// ============================================================
+// Helper functions
+// ============================================================
+function gradeFromPct(pct, inverse=false){
+  if(inverse){
+    if(pct <= 90) return 'S';
+    if(pct <= 100) return 'A';
+    if(pct <= 110) return 'B';
+    if(pct <= 125) return 'C';
+    return 'D';
+  }
+  if(pct >= 110) return 'S';
+  if(pct >= 100) return 'A';
+  if(pct >= 90) return 'B';
+  if(pct >= 75) return 'C';
+  return 'D';
+}
+function fmtNum(n){ return Number(n).toLocaleString(); }
+
+const CC = {
+  blue:'#3F7FC1', blueL:'rgba(63,127,193,.15)',
+  gold:'#C89020', goldL:'rgba(200,144,32,.15)',
+  naika:'#2B9DB8', naikaL:'rgba(43,157,184,.15)',
+  geka:'#D08620', gekaL:'rgba(208,134,32,.15)',
+  other:'#8B6FB6', otherL:'rgba(139,111,182,.15)',
+  green:'#2F7A4B', red:'#A33838',
+  target:'#2F7A4B',
+  grid:'rgba(214,211,204,.6)',
+  text:'#5A5651'
+};
+Chart.defaults.color = '#5A5651';
+Chart.defaults.borderColor = CC.grid;
+Chart.defaults.font.family = "'Noto Sans JP', sans-serif";
+
+const charts = {};
+</script>
+
+<script id="dataScript">
+const DATA = {"biz_days": [20, 21, 22, 20, 20, 22], "cal_days": [31, 30, 31, 31, 30, 31], "depts": [{"avg_monthly": 3527, "cand_apr": 494, "cand_m": [418, 458, 480, 445, 495, 494], "cand_m_norm": [460, 480, 480, 490, 544, 494], "code": "U", "href": "../dept/2025-10/U.html", "kus_apr": 912, "kus_m": [780, 840, 901, 791, 916, 912], "kus_m_norm": [858, 880, 901, 870, 1008, 912], "kus_target": 769, "name": "\u6ccc\u5c3f\u5668\u79d1", "sai_apr": 3545, "sai_m": [3241, 3461, 3475, 3106, 3577, 3545], "sai_m_norm": [3565, 3626, 3475, 3417, 3935, 3545], "sho_apr": 136, "sho_apr_raw": 136, "sho_m": [140, 128, 124, 108, 122, 136], "sho_m_norm": [154, 134, 124, 119, 134, 136], "sho_target": 146, "sps_apr": 26.1, "sps_m": [23.1, 27.0, 28.0, 28.8, 29.3, 26.1], "sps_target": 24.2, "total_apr": 3681, "total_apr_raw": 3681, "total_m": [3381, 3589, 3599, 3214, 3699, 3681], "total_m_norm": [3719, 3760, 3599, 3535, 4069, 3681], "type": "geka"}, {"avg_monthly": 3347, "cand_apr": 103, "cand_m": [116, 79, 90, 96, 110, 103], "cand_m_norm": [128, 83, 90, 106, 121, 103], "code": "E", "href": "../dept/2025-10/E.html", "kus_apr": 190, "kus_m": [209, 185, 193, 177, 204, 190], "kus_m_norm": [230, 194, 193, 195, 224, 190], "kus_target": 173, "name": "\u773c\u79d1", "sai_apr": 3225, "sai_m": [3166, 3230, 3289, 2909, 3005, 3225], "sai_m_norm": [3483, 3384, 3289, 3200, 3306, 3225], "sho_apr": 226, "sho_apr_raw": 226, "sho_m": [239, 223, 213, 168, 190, 226], "sho_m_norm": [263, 234, 213, 185, 209, 226], "sho_target": 243, "sps_apr": 14.3, "sps_m": [13.2, 14.5, 15.4, 17.3, 15.8, 14.3], "sps_target": 13.5, "total_apr": 3451, "total_apr_raw": 3451, "total_m": [3405, 3453, 3502, 3077, 3195, 3451], "total_m_norm": [3746, 3617, 3502, 3385, 3515, 3451], "type": "geka"}, {"avg_monthly": 2040, "cand_apr": 52, "cand_m": [37, 54, 59, 47, 48, 52], "cand_m_norm": [41, 57, 59, 52, 53, 52], "code": "G", "href": "../dept/2025-10/G.html", "kus_apr": 213, "kus_m": [147, 190, 198, 206, 181, 213], "kus_m_norm": [162, 199, 198, 227, 199, 213], "kus_target": 169, "name": "\u7523\u5a66\u4eba\u79d1", "sai_apr": 2035, "sai_m": [1840, 1835, 2029, 1799, 1800, 2035], "sai_m_norm": [2024, 1922, 2029, 1979, 1980, 2035], "sho_apr": 154, "sho_apr_raw": 154, "sho_m": [150, 146, 169, 163, 124, 154], "sho_m_norm": [165, 153, 169, 179, 136, 154], "sho_target": 175, "sps_apr": 13.2, "sps_m": [12.3, 12.6, 12.0, 11.0, 14.5, 13.2], "sps_target": 11.2, "total_apr": 2189, "total_apr_raw": 2189, "total_m": [1990, 1981, 2198, 1962, 1924, 2189], "total_m_norm": [2189, 2075, 2198, 2158, 2116, 2189], "type": "geka"}, {"avg_monthly": 1948, "cand_apr": 190, "cand_m": [184, 169, 238, 195, 196, 190], "cand_m_norm": [202, 177, 238, 215, 216, 190], "code": "ENT", "href": "../dept/2025-10/ENT.html", "kus_apr": 305, "kus_m": [274, 290, 368, 300, 322, 305], "kus_m_norm": [301, 304, 368, 330, 354, 305], "kus_target": 277, "name": "\u8033\u9f3b\u54bd\u5589\u79d1", "sai_apr": 1782, "sai_m": [1625, 1696, 2016, 1577, 1763, 1782], "sai_m_norm": [1788, 1777, 2016, 1735, 1939, 1782], "sho_apr": 201, "sho_apr_raw": 201, "sho_m": [198, 211, 241, 181, 197, 201], "sho_m_norm": [218, 221, 241, 199, 217, 201], "sho_target": 237, "sps_apr": 8.9, "sps_m": [8.2, 8.0, 8.4, 8.7, 8.9, 8.9], "sps_target": 7.7, "total_apr": 1983, "total_apr_raw": 1983, "total_m": [1823, 1907, 2257, 1758, 1960, 1983], "total_m_norm": [2005, 1998, 2257, 1934, 2156, 1983], "type": "geka"}, {"avg_monthly": 1801, "cand_apr": 92, "cand_m": [81, 89, 65, 80, 86, 92], "cand_m_norm": [89, 93, 65, 88, 95, 92], "code": "OR", "href": "../dept/2025-10/OR.html", "kus_apr": 165, "kus_m": [174, 184, 166, 145, 155, 165], "kus_m_norm": [191, 193, 166, 160, 170, 165], "kus_target": 148, "name": "\u6574\u5f62\u5916\u79d1", "sai_apr": 1682, "sai_m": [1539, 1679, 1609, 1387, 1582, 1682], "sai_m_norm": [1693, 1759, 1609, 1526, 1740, 1682], "sho_apr": 220, "sho_apr_raw": 220, "sho_m": [224, 234, 218, 207, 229, 220], "sho_m_norm": [246, 245, 218, 228, 252, 220], "sho_target": 258, "sps_apr": 7.6, "sps_m": [6.9, 7.2, 7.4, 6.7, 6.9, 7.6], "sps_target": 6.4, "total_apr": 1902, "total_apr_raw": 1902, "total_m": [1763, 1913, 1827, 1594, 1811, 1902], "total_m_norm": [1939, 2004, 1827, 1753, 1992, 1902], "type": "geka"}, {"avg_monthly": 1594, "cand_apr": 120, "cand_m": [91, 73, 89, 75, 96, 120], "cand_m_norm": [100, 76, 89, 82, 106, 120], "code": "GI", "href": "../dept/2025-10/GI.html", "kus_apr": 220, "kus_m": [176, 130, 188, 148, 174, 220], "kus_m_norm": [194, 136, 188, 163, 191, 220], "kus_target": 154, "name": "\u6d88\u5316\u5668\u5185\u79d1", "sai_apr": 1550, "sai_m": [1359, 1448, 1521, 1278, 1426, 1550], "sai_m_norm": [1495, 1517, 1521, 1406, 1569, 1550], "sho_apr": 194, "sho_apr_raw": 194, "sho_m": [170, 163, 158, 138, 162, 194], "sho_m_norm": [187, 171, 158, 152, 178, 194], "sho_target": 190, "sps_apr": 8.0, "sps_m": [8.0, 8.9, 9.6, 9.3, 8.8, 8.0], "sps_target": 7.8, "total_apr": 1744, "total_apr_raw": 1744, "total_m": [1529, 1611, 1679, 1416, 1588, 1744], "total_m_norm": [1682, 1688, 1679, 1558, 1747, 1744], "type": "naika"}, {"avg_monthly": 1585, "cand_apr": 71, "cand_m": [52, 82, 62, 78, 60, 71], "cand_m_norm": [57, 86, 62, 86, 66, 71], "code": "BR", "href": "../dept/2025-10/BR.html", "kus_apr": 178, "kus_m": [143, 166, 121, 147, 158, 178], "kus_m_norm": [157, 174, 121, 162, 174, 178], "kus_target": 136, "name": "\u4e73\u817a\u5916\u79d1", "sai_apr": 1643, "sai_m": [1429, 1633, 1529, 1408, 1508, 1643], "sai_m_norm": [1572, 1711, 1529, 1549, 1659, 1643], "sho_apr": 71, "sho_apr_raw": 71, "sho_m": [54, 56, 56, 53, 74, 71], "sho_m_norm": [59, 59, 56, 58, 81, 71], "sho_target": 70, "sps_apr": 23.1, "sps_m": [26.5, 29.2, 27.3, 26.6, 20.4, 23.1], "sps_target": 22.7, "total_apr": 1714, "total_apr_raw": 1714, "total_m": [1483, 1689, 1585, 1461, 1582, 1714], "total_m_norm": [1631, 1769, 1585, 1607, 1740, 1714], "type": "geka"}, {"avg_monthly": 1528, "cand_apr": 79, "cand_m": [82, 82, 90, 72, 77, 79], "cand_m_norm": [90, 86, 90, 79, 85, 79], "code": "CV", "href": "../dept/2025-10/CV.html", "kus_apr": 194, "kus_m": [196, 220, 217, 155, 196, 194], "kus_m_norm": [216, 230, 217, 170, 216, 194], "kus_target": 176, "name": "\u5faa\u74b0\u5668\u5185\u79d1", "sai_apr": 1524, "sai_m": [1288, 1451, 1437, 1220, 1449, 1524], "sai_m_norm": [1417, 1520, 1437, 1342, 1594, 1524], "sho_apr": 131, "sho_apr_raw": 131, "sho_m": [128, 142, 150, 129, 124, 131], "sho_m_norm": [141, 149, 150, 142, 136, 131], "sho_target": 155, "sps_apr": 11.6, "sps_m": [10.1, 10.2, 9.6, 9.5, 11.7, 11.6], "sps_target": 9.4, "total_apr": 1655, "total_apr_raw": 1655, "total_m": [1416, 1593, 1587, 1349, 1573, 1655], "total_m_norm": [1558, 1669, 1587, 1484, 1730, 1655], "type": "naika"}, {"avg_monthly": 1324, "cand_apr": 59, "cand_m": [58, 50, 53, 58, 56, 59], "cand_m_norm": [64, 52, 53, 64, 62, 59], "code": "RS", "href": "../dept/2025-10/RS.html", "kus_apr": 138, "kus_m": [153, 141, 145, 135, 135, 138], "kus_m_norm": [168, 148, 145, 148, 148, 138], "kus_target": 126, "name": "\u547c\u5438\u5668\u5185\u79d1", "sai_apr": 1283, "sai_m": [1258, 1289, 1293, 1076, 1277, 1283], "sai_m_norm": [1384, 1350, 1293, 1184, 1405, 1283], "sho_apr": 80, "sho_apr_raw": 80, "sho_m": [86, 77, 65, 87, 73, 80], "sho_m_norm": [95, 81, 65, 96, 80, 80], "sho_target": 91, "sps_apr": 16.0, "sps_m": [14.6, 16.7, 19.9, 12.4, 17.5, 16.0], "sps_target": 14.3, "total_apr": 1363, "total_apr_raw": 1363, "total_m": [1344, 1366, 1358, 1163, 1350, 1363], "total_m_norm": [1478, 1431, 1358, 1279, 1485, 1363], "type": "naika"}, {"avg_monthly": 1309, "cand_apr": 129, "cand_m": [107, 108, 98, 89, 103, 129], "cand_m_norm": [118, 113, 98, 98, 113, 129], "code": "DM", "href": "../dept/2025-10/DM.html", "kus_apr": 282, "kus_m": [254, 247, 213, 208, 224, 282], "kus_m_norm": [279, 259, 213, 229, 246, 282], "kus_target": 213, "name": "\u76ae\u819a\u79d1", "sai_apr": 1267, "sai_m": [1246, 1231, 1202, 1104, 1109, 1267], "sai_m_norm": [1371, 1290, 1202, 1214, 1220, 1267], "sho_apr": 123, "sho_apr_raw": 123, "sho_m": [109, 115, 120, 104, 125, 123], "sho_m_norm": [120, 120, 120, 114, 138, 123], "sho_target": 134, "sps_apr": 10.3, "sps_m": [11.4, 10.7, 10.0, 10.6, 8.9, 10.3], "sps_target": 9.3, "total_apr": 1390, "total_apr_raw": 1390, "total_m": [1355, 1346, 1322, 1208, 1234, 1390], "total_m_norm": [1491, 1410, 1322, 1329, 1357, 1390], "type": "geka"}, {"avg_monthly": 1291, "cand_apr": 121, "cand_m": [119, 116, 118, 123, 92, 121], "cand_m_norm": [131, 122, 118, 135, 101, 121], "code": "GM", "href": "../dept/2025-10/GM.html", "kus_apr": 316, "kus_m": [320, 285, 326, 300, 274, 316], "kus_m_norm": [352, 299, 326, 330, 301, 316], "kus_target": 272, "name": "\u7dcf\u5408\u5185\u79d1", "sai_apr": 1112, "sai_m": [1052, 1027, 1174, 1035, 1019, 1112], "sai_m_norm": [1157, 1076, 1174, 1138, 1121, 1112], "sho_apr": 227, "sho_apr_raw": 227, "sho_m": [243, 236, 232, 193, 196, 227], "sho_m_norm": [267, 247, 232, 212, 216, 227], "sho_target": 256, "sps_apr": 4.9, "sps_m": [4.3, 4.4, 5.1, 5.4, 5.2, 4.9], "sps_target": 4.3, "total_apr": 1339, "total_apr_raw": 1339, "total_m": [1295, 1263, 1406, 1228, 1215, 1339], "total_m_norm": [1425, 1323, 1406, 1351, 1336, 1339], "type": "naika"}, {"avg_monthly": 1162, "cand_apr": 30, "cand_m": [55, 50, 54, 51, 58, 30], "cand_m_norm": [61, 52, 54, 56, 64, 30], "code": "GS", "href": "../dept/2025-10/GS.html", "kus_apr": 93, "kus_m": [118, 103, 124, 104, 131, 93], "kus_m_norm": [130, 108, 124, 114, 144, 93], "kus_target": 101, "name": "\u4e00\u822c\u6d88\u5316\u5668\u5916\u79d1", "sai_apr": 1103, "sai_m": [1072, 1117, 1200, 967, 1154, 1103], "sai_m_norm": [1179, 1170, 1200, 1064, 1269, 1103], "sho_apr": 60, "sho_apr_raw": 60, "sho_m": [58, 71, 57, 58, 59, 60], "sho_m_norm": [64, 74, 57, 64, 65, 60], "sho_target": 70, "sps_apr": 18.4, "sps_m": [18.5, 15.7, 21.1, 16.7, 19.6, 18.4], "sps_target": 16.4, "total_apr": 1163, "total_apr_raw": 1163, "total_m": [1130, 1188, 1257, 1025, 1213, 1163], "total_m_norm": [1243, 1245, 1257, 1128, 1334, 1163], "type": "geka"}, {"avg_monthly": 1089, "cand_apr": 86, "cand_m": [71, 53, 69, 86, 81, 86], "cand_m_norm": [78, 56, 69, 95, 89, 86], "code": "OS", "href": "../dept/2025-10/OS.html", "kus_apr": 196, "kus_m": [150, 141, 171, 195, 191, 196], "kus_m_norm": [165, 148, 171, 215, 210, 196], "kus_target": 156, "name": "\u6b6f\u79d1\u53e3\u8154\u5916\u79d1", "sai_apr": 896, "sai_m": [719, 774, 944, 835, 872, 896], "sai_m_norm": [791, 811, 944, 919, 959, 896], "sho_apr": 259, "sho_apr_raw": 259, "sho_m": [246, 282, 251, 235, 224, 259], "sho_m_norm": [271, 295, 251, 258, 246, 259], "sho_target": 289, "sps_apr": 3.5, "sps_m": [2.9, 2.7, 3.8, 3.6, 3.9, 3.5], "sps_target": 3.1, "total_apr": 1155, "total_apr_raw": 1155, "total_m": [965, 1056, 1195, 1070, 1096, 1155], "total_m_norm": [1062, 1106, 1195, 1177, 1206, 1155], "type": "geka"}, {"avg_monthly": 1046, "cand_apr": 45, "cand_m": [43, 26, 39, 41, 34, 45], "cand_m_norm": [47, 27, 39, 45, 37, 45], "code": "RH", "href": "../dept/2025-10/RH.html", "kus_apr": 120, "kus_m": [105, 86, 100, 112, 127, 120], "kus_m_norm": [116, 90, 100, 123, 140, 120], "kus_target": 97, "name": "\u30ea\u30a6\u30de\u30c1\u81a0\u539f\u75c5\u5185\u79d1", "sai_apr": 1096, "sai_m": [1070, 931, 1037, 926, 1018, 1096], "sai_m_norm": [1177, 975, 1037, 1019, 1120, 1096], "sho_apr": 29, "sho_apr_raw": 29, "sho_m": [34, 38, 33, 35, 30, 29], "sho_m_norm": [37, 40, 33, 38, 33, 29], "sho_target": 38, "sps_apr": 37.8, "sps_m": [31.5, 24.5, 31.4, 26.5, 33.9, 37.8], "sps_target": 27.5, "total_apr": 1125, "total_apr_raw": 1125, "total_m": [1104, 969, 1070, 961, 1048, 1125], "total_m_norm": [1214, 1015, 1070, 1057, 1153, 1125], "type": "naika"}, {"avg_monthly": 956, "cand_apr": 122, "cand_m": [147, 112, 131, 115, 99, 122], "cand_m_norm": [162, 117, 131, 127, 109, 122], "code": "RT", "href": "../dept/2025-10/RT.html", "kus_apr": 210, "kus_m": [230, 185, 221, 193, 174, 210], "kus_m_norm": [253, 194, 221, 212, 191, 210], "kus_target": 181, "name": "\u653e\u5c04\u7dda\u6cbb\u7642\u79d1", "sai_apr": 977, "sai_m": [973, 952, 1005, 896, 898, 977], "sai_m_norm": [1070, 997, 1005, 986, 988, 977], "sho_apr": 7, "sho_apr_raw": 7, "sho_m": [3, 7, 7, 7, 8, 7], "sho_m_norm": [3, 7, 7, 8, 9, 7], "sho_target": 7, "sps_apr": 139.6, "sps_m": [324.3, 136.0, 143.6, 128.0, 112.2, 139.6], "sps_target": 132.2, "total_apr": 984, "total_apr_raw": 984, "total_m": [976, 959, 1012, 903, 906, 984], "total_m_norm": [1074, 1005, 1012, 993, 997, 984], "type": "other"}, {"avg_monthly": 839, "cand_apr": 21, "cand_m": [19, 31, 20, 34, 21, 21], "cand_m_norm": [21, 32, 20, 37, 23, 21], "code": "HE", "href": "../dept/2025-10/HE.html", "kus_apr": 43, "kus_m": [49, 61, 56, 67, 54, 43], "kus_m_norm": [54, 64, 56, 74, 59, 43], "kus_target": 49, "name": "\u8840\u6db2\u5185\u79d1", "sai_apr": 791, "sai_m": [800, 861, 823, 799, 820, 791], "sai_m_norm": [880, 902, 823, 879, 902, 791], "sho_apr": 32, "sho_apr_raw": 32, "sho_m": [22, 34, 18, 16, 23, 32], "sho_m_norm": [24, 36, 18, 18, 25, 32], "sho_target": 28, "sps_apr": 24.7, "sps_m": [36.4, 25.3, 45.7, 49.9, 35.7, 24.7], "sps_target": 30.4, "total_apr": 823, "total_apr_raw": 823, "total_m": [822, 895, 841, 815, 843, 823], "total_m_norm": [904, 938, 841, 897, 927, 823], "type": "naika"}, {"avg_monthly": 784, "cand_apr": 27, "cand_m": [27, 22, 18, 22, 26, 27], "cand_m_norm": [30, 23, 18, 24, 29, 27], "code": "NE", "href": "../dept/2025-10/NE.html", "kus_apr": 90, "kus_m": [90, 88, 89, 86, 86, 90], "kus_m_norm": [99, 92, 89, 95, 95, 90], "kus_target": 79, "name": "\u814e\u5185\u79d1", "sai_apr": 795, "sai_m": [695, 771, 794, 749, 767, 795], "sai_m_norm": [765, 808, 794, 824, 844, 795], "sho_apr": 27, "sho_apr_raw": 27, "sho_m": [15, 23, 27, 24, 20, 27], "sho_m_norm": [16, 24, 27, 26, 22, 27], "sho_target": 26, "sps_apr": 29.4, "sps_m": [46.3, 33.5, 29.4, 31.2, 38.4, 29.4], "sps_target": 30.6, "total_apr": 822, "total_apr_raw": 822, "total_m": [710, 794, 821, 773, 787, 822], "total_m_norm": [781, 832, 821, 850, 866, 822], "type": "naika"}, {"avg_monthly": 620, "cand_apr": 31, "cand_m": [18, 12, 21, 11, 15, 31], "cand_m_norm": [20, 13, 21, 12, 16, 31], "code": "PD", "href": "../dept/2025-10/PD.html", "kus_apr": 47, "kus_m": [54, 48, 63, 32, 29, 47], "kus_m_norm": [59, 50, 63, 35, 32, 47], "kus_target": 40, "name": "\u5c0f\u5150\u79d1", "sai_apr": 492, "sai_m": [455, 505, 516, 473, 431, 492], "sai_m_norm": [501, 529, 516, 520, 474, 492], "sho_apr": 161, "sho_apr_raw": 161, "sho_m": [132, 145, 151, 137, 126, 161], "sho_m_norm": [145, 152, 151, 151, 139, 161], "sho_target": 164, "sps_apr": 3.1, "sps_m": [3.4, 3.5, 3.4, 3.5, 3.4, 3.1], "sps_target": 3.1, "total_apr": 653, "total_apr_raw": 653, "total_m": [587, 650, 667, 610, 557, 653], "total_m_norm": [646, 681, 667, 671, 613, 653], "type": "naika"}, {"avg_monthly": 597, "cand_apr": 28, "cand_m": [35, 32, 25, 22, 31, 28], "cand_m_norm": [38, 34, 25, 24, 34, 28], "code": "PS", "href": "../dept/2025-10/PS.html", "kus_apr": 133, "kus_m": [151, 145, 156, 121, 140, 133], "kus_m_norm": [166, 152, 156, 133, 154, 133], "kus_target": 126, "name": "\u5f62\u6210\u5916\u79d1", "sai_apr": 535, "sai_m": [588, 554, 570, 508, 552, 535], "sai_m_norm": [647, 580, 570, 559, 607, 535], "sho_apr": 59, "sho_apr_raw": 59, "sho_m": [52, 45, 43, 33, 45, 59], "sho_m_norm": [57, 47, 43, 36, 50, 59], "sho_target": 53, "sps_apr": 9.1, "sps_m": [11.3, 12.3, 13.3, 15.4, 12.3, 9.1], "sps_target": 10.8, "total_apr": 594, "total_apr_raw": 594, "total_m": [640, 599, 613, 541, 597, 594], "total_m_norm": [704, 628, 613, 595, 657, 594], "type": "geka"}, {"avg_monthly": 547, "cand_apr": 44, "cand_m": [30, 31, 31, 43, 33, 44], "cand_m_norm": [33, 32, 31, 47, 36, 44], "code": "NR", "href": "../dept/2025-10/NR.html", "kus_apr": 104, "kus_m": [72, 76, 74, 78, 88, 104], "kus_m_norm": [79, 80, 74, 86, 97, 104], "kus_target": 73, "name": "\u8133\u795e\u7d4c\u5185\u79d1", "sai_apr": 551, "sai_m": [456, 493, 513, 391, 530, 551], "sai_m_norm": [502, 516, 513, 430, 583, 551], "sho_apr": 60, "sho_apr_raw": 60, "sho_m": [59, 61, 60, 43, 67, 60], "sho_m_norm": [65, 64, 60, 47, 74, 60], "sho_target": 67, "sps_apr": 9.2, "sps_m": [7.7, 8.1, 8.6, 9.1, 7.9, 9.2], "sps_target": 7.6, "total_apr": 611, "total_apr_raw": 611, "total_m": [515, 554, 573, 434, 597, 611], "total_m_norm": [566, 580, 573, 477, 657, 611], "type": "naika"}, {"avg_monthly": 360, "cand_apr": 32, "cand_m": [33, 27, 42, 53, 40, 32], "cand_m_norm": [36, 28, 42, 58, 44, 32], "code": "MN", "href": "../dept/2025-10/MN.html", "kus_apr": 87, "kus_m": [81, 82, 115, 113, 109, 87], "kus_m_norm": [89, 86, 115, 124, 120, 87], "kus_target": 87, "name": "\u30e1\u30f3\u30bf\u30eb\u30b1\u30a2\u79d1", "sai_apr": 378, "sai_m": [320, 336, 384, 367, 373, 378], "sai_m_norm": [352, 352, 384, 404, 410, 378], "sho_apr": 1, "sho_apr_raw": 1, "sho_m": [1, 3, 0, 0, 0, 1], "sho_m_norm": [1, 3, 0, 0, 0, 1], "sho_target": 0, "sps_apr": 378.0, "sps_m": [320.0, 112.0, null, null, null, 378.0], "sps_target": 410.4, "total_apr": 379, "total_apr_raw": 379, "total_m": [321, 339, 384, 367, 373, 379], "total_m_norm": [353, 355, 384, 404, 410, 379], "type": "naika"}, {"avg_monthly": 356, "cand_apr": 1, "cand_m": [0, 0, 0, 0, 0, 1], "cand_m_norm": [0, 0, 0, 0, 0, 1], "code": "ER", "href": "../dept/2025-10/ER.html", "kus_apr": 12, "kus_m": [11, 7, 9, 12, 13, 12], "kus_m_norm": [12, 7, 9, 13, 14, 12], "kus_target": 9, "name": "\u6551\u6025\u79d1", "sai_apr": 111, "sai_m": [115, 105, 129, 104, 119, 111], "sai_m_norm": [127, 110, 129, 114, 131, 111], "sho_apr": 245, "sho_apr_raw": 245, "sho_m": [248, 205, 247, 275, 234, 245], "sho_m_norm": [273, 215, 247, 302, 257, 245], "sho_target": 282, "sps_apr": 0.5, "sps_m": [0.5, 0.5, 0.5, 0.4, 0.5, 0.5], "sps_target": 0.5, "total_apr": 356, "total_apr_raw": 356, "total_m": [363, 310, 376, 379, 353, 356], "total_m_norm": [399, 325, 376, 417, 388, 356], "type": "other"}, {"avg_monthly": 355, "cand_apr": 0, "cand_m": [0, 1, 1, 1, 1, 0], "cand_m_norm": [0, 1, 1, 1, 1, 0], "code": "IM", "href": "../dept/2025-10/IM.html", "kus_apr": 0, "kus_m": [0, 3, 1, 0, 1, 0], "kus_m_norm": [0, 3, 1, 0, 1, 0], "kus_target": 0, "name": "\u5185\u79d1", "sai_apr": 179, "sai_m": [159, 134, 176, 152, 144, 179], "sai_m_norm": [175, 140, 176, 167, 158, 179], "sho_apr": 216, "sho_apr_raw": 216, "sho_m": [166, 165, 202, 214, 223, 216], "sho_m_norm": [183, 173, 202, 235, 245, 216], "sho_target": 229, "sps_apr": 0.8, "sps_m": [1.0, 0.8, 0.9, 0.7, 0.6, 0.8], "sps_target": 0.7, "total_apr": 395, "total_apr_raw": 395, "total_m": [325, 299, 378, 366, 367, 395], "total_m_norm": [358, 313, 378, 403, 404, 395], "type": "naika"}, {"avg_monthly": 240, "cand_apr": 5, "cand_m": [13, 11, 9, 10, 12, 5], "cand_m_norm": [14, 12, 9, 11, 13, 5], "code": "NS", "href": "../dept/2025-10/NS.html", "kus_apr": 21, "kus_m": [27, 27, 23, 26, 23, 21], "kus_m_norm": [30, 28, 23, 29, 25, 21], "kus_target": 22, "name": "\u8133\u795e\u7d4c\u5916\u79d1", "sai_apr": 223, "sai_m": [182, 224, 221, 172, 226, 223], "sai_m_norm": [200, 235, 221, 189, 249, 223], "sho_apr": 24, "sho_apr_raw": 24, "sho_m": [43, 36, 27, 32, 33, 24], "sho_m_norm": [47, 38, 27, 35, 36, 24], "sho_target": 37, "sps_apr": 9.3, "sps_m": [4.2, 6.2, 8.2, 5.4, 6.8, 9.3], "sps_target": 5.8, "total_apr": 247, "total_apr_raw": 247, "total_m": [225, 260, 248, 204, 259, 247], "total_m_norm": [248, 272, 248, 224, 285, 247], "type": "geka"}, {"avg_monthly": 206, "cand_apr": 10, "cand_m": [8, 8, 3, 10, 2, 10], "cand_m_norm": [9, 8, 3, 11, 2, 10], "code": "CS", "href": "../dept/2025-10/CS.html", "kus_apr": 26, "kus_m": [15, 27, 13, 27, 17, 26], "kus_m_norm": [16, 28, 13, 30, 19, 26], "kus_target": 18, "name": "\u5fc3\u81d3\u8840\u7ba1\u5916\u79d1", "sai_apr": 206, "sai_m": [220, 210, 212, 186, 181, 206], "sai_m_norm": [242, 220, 212, 205, 199, 206], "sho_apr": 4, "sho_apr_raw": 4, "sho_m": [3, 3, 7, 2, 2, 4], "sho_m_norm": [3, 3, 7, 2, 2, 4], "sho_target": 3, "sps_apr": 51.5, "sps_m": [73.3, 70.0, 30.3, 93.0, 90.5, 51.5], "sps_target": 55.0, "total_apr": 210, "total_apr_raw": 210, "total_m": [223, 213, 219, 188, 183, 210], "total_m_norm": [245, 223, 219, 207, 201, 210], "type": "geka"}, {"avg_monthly": 192, "cand_apr": 8, "cand_m": [5, 2, 6, 1, 0, 8], "cand_m_norm": [6, 2, 6, 1, 0, 8], "code": "RS2", "href": "../dept/2025-10/RS2.html", "kus_apr": 17, "kus_m": [10, 7, 12, 6, 10, 17], "kus_m_norm": [11, 7, 12, 7, 11, 17], "kus_target": 9, "name": "\u547c\u5438\u5668\u5916\u79d1", "sai_apr": 212, "sai_m": [175, 215, 194, 129, 200, 212], "sai_m_norm": [193, 225, 194, 142, 220, 212], "sho_apr": 7, "sho_apr_raw": 7, "sho_m": [4, 6, 4, 2, 6, 7], "sho_m_norm": [4, 6, 4, 2, 7, 7], "sho_target": 5, "sps_apr": 30.3, "sps_m": [43.8, 35.8, 48.5, 64.5, 33.3, 30.3], "sps_target": 35.6, "total_apr": 219, "total_apr_raw": 219, "total_m": [179, 221, 198, 131, 206, 219], "total_m_norm": [197, 232, 198, 144, 227, 219], "type": "geka"}, {"avg_monthly": 164, "cand_apr": 2, "cand_m": [2, 1, 0, 2, 3, 2], "cand_m_norm": [2, 1, 0, 2, 3, 2], "code": "AL", "href": "../dept/2025-10/AL.html", "kus_apr": 12, "kus_m": [13, 3, 2, 5, 8, 12], "kus_m_norm": [14, 3, 2, 6, 9, 12], "kus_target": 6, "name": "\u30a2\u30ec\u30eb\u30ae\u30fc\u79d1", "sai_apr": 183, "sai_m": [141, 160, 186, 127, 175, 183], "sai_m_norm": [155, 168, 186, 140, 193, 183], "sho_apr": 3, "sho_apr_raw": 3, "sho_m": [4, 2, 0, 1, 2, 3], "sho_m_norm": [4, 2, 0, 1, 2, 3], "sho_target": 2, "sps_apr": 61.0, "sps_m": [35.2, 80.0, null, 127.0, 87.5, 61.0], "sps_target": 76.9, "total_apr": 186, "total_apr_raw": 186, "total_m": [145, 162, 186, 128, 177, 186], "total_m_norm": [160, 170, 186, 141, 195, 186], "type": "naika"}, {"avg_monthly": 164, "cand_apr": 5, "cand_m": [1, 1, 4, 0, 3, 5], "cand_m_norm": [1, 1, 4, 0, 3, 5], "code": "ON", "href": "../dept/2025-10/ON.html", "kus_apr": 39, "kus_m": [21, 20, 34, 19, 37, 39], "kus_m_norm": [23, 21, 34, 21, 41, 39], "kus_target": 25, "name": "\u81e8\u5e8a\u816b\u760d\u79d1", "sai_apr": 182, "sai_m": [133, 164, 185, 132, 189, 182], "sai_m_norm": [146, 172, 185, 145, 208, 182], "sho_apr": 1, "sho_apr_raw": 1, "sho_m": [0, 0, 0, 0, 0, 1], "sho_m_norm": [0, 0, 0, 0, 0, 1], "sho_target": 0, "sps_apr": 182.0, "sps_m": [null, null, null, null, null, 182.0], "sps_target": 934.2, "total_apr": 183, "total_apr_raw": 183, "total_m": [133, 164, 185, 132, 189, 183], "total_m_norm": [146, 172, 185, 145, 208, 183], "type": "naika"}], "excluded_days": [2, 0, 1, 1, 2, 1], "generated_at": "2026-04-27T15:30:40.773311", "global_kus_target": 3691, "global_sho_target": 3255, "monthLabels": ["5\u6708", "6\u6708", "7\u6708", "8\u6708", "9\u6708", "10\u6708"], "months": ["2025-05", "2025-06", "2025-07", "2025-08", "2025-09", "2025-10"], "norm_base": 22, "total_apr": 32516, "total_apr_raw": 32516, "total_cand_monthly": [2037, 1865, 1915, 2046, 2066, 2007], "total_kus_apr": 4363, "total_kus_monthly": [4425, 4177, 4299, 4299, 4595, 4363], "total_monthly": [33162, 32836, 32543, 31303, 33970, 32516], "total_raw_monthly": [30147, 31343, 32543, 28457, 30882, 32516], "total_sai_apr": 29558, "total_sai_monthly": [30048, 29842, 29663, 28393, 30980, 29558], "total_sho_apr": 2958, "total_sho_apr_raw": 2958, "total_sho_monthly": [3114, 2993, 2880, 2910, 2990, 2958], "total_sho_raw_monthly": [2831, 2857, 2880, 2645, 2718, 2958]};
+const HL = {"best": {"body": "\u8840\u6db2\u5185\u79d1\u306e\u521d\u8a3a\u4ef6\u6570\u304c\u524d\u6708\u6bd4 +39.1%\u3002\u6700\u65b0\u6708 32\u4ef6\uff08\u524d\u6708 23\u4ef6\uff09\u3002\u8981\u56e0\u691c\u8a3c\u3068\u6a2a\u5c55\u958b\u3092\u691c\u8a0e\u3002", "head": "\u4eca\u6708\u306e\u597d\u4e8b\u4f8b\uff08\u521d\u8a3a\u4ef6\u6570\uff09", "raw": {"achievement": 114.0, "name": "\u8840\u6db2\u5185\u79d1", "pct_change": 39.1, "sho_latest": 32, "sho_prev": 23, "target": 28}}, "declining": {"body": "\u7523\u5a66\u4eba\u79d1\u306e\u521d\u8a3a\u4ef6\u6570\u304c3\u30f6\u6708\u9023\u7d9a\u3067\u6e1b\u5c11\u50be\u5411\u3002\u6700\u65b0\u6708 154\u4ef6\u3002\u65e9\u671f\u306e\u8981\u56e0\u5206\u6790\u304c\u5fc5\u8981\u3002", "head": "\u9023\u7d9a\u60aa\u5316\u50be\u5411", "raw": {"achievement": 88.0, "name": "\u7523\u5a66\u4eba\u79d1", "pct_change": 0.0, "sho_latest": 154, "sho_prev": 124, "target": 175}}, "worst": {"body": "\u8133\u795e\u7d4c\u5916\u79d1\u306e\u521d\u8a3a\u9054\u6210\u7387\u306f 65%\u3002\u6700\u65b0\u6708 24\u4ef6\uff0f\u76ee\u6a19 37\u4ef6\u3002\u500b\u5225\u30d2\u30a2\u30ea\u30f3\u30b0\u5bfe\u8c61\u3002", "head": "\u76ee\u6a19\u9054\u6210\u7387 \u6700\u4e0b\u4f4d", "raw": {"achievement": 65.0, "name": "\u8133\u795e\u7d4c\u5916\u79d1", "pct_change": -27.3, "sho_latest": 24, "sho_prev": 33, "target": 37}}};
+
+// ============================================================
+// SCREEN 1: KPI cards
+// ============================================================
+const apr = DATA.months.length - 1;
+const mar = Math.max(0, apr - 1);
+const hasPrev = apr > 0;
+
+// 総件数
+const totalApr = DATA.total_sho_apr + DATA.total_sai_apr;
+const totalMar = hasPrev ? (DATA.total_sho_monthly[mar] + DATA.total_sai_monthly[mar]) : totalApr;
+const totalPct = hasPrev ? ((totalApr/totalMar - 1)*100).toFixed(1) : '0.0';
+document.getElementById('kpi1Val').innerHTML = fmtNum(totalApr) + '<span class="kpi-unit">件</span>';
+const exclTxt = DATA.excluded_days[apr] > 0 ? `（祝日・病院休 ${DATA.excluded_days[apr]}日除外）` : '';
+document.getElementById('kpi1Target').textContent = hasPrev
+  ? `前月 ${fmtNum(totalMar)}（換算）／ 実数 ${fmtNum(DATA.total_apr_raw)}件 ／ 実営業日 ${DATA.biz_days[apr]}日${exclTxt}`
+  : `実数 ${fmtNum(DATA.total_apr_raw)}件 ／ 実営業日 ${DATA.biz_days[apr]}日${exclTxt}`;
+const tr1 = document.getElementById('kpi1Trend');
+if (hasPrev) {
+  tr1.className = 'kpi-trend ' + (totalPct>1?'trend-up':totalPct<-1?'trend-down':'trend-flat');
+  tr1.textContent = (totalPct>0?'▲ ':'▼ ') + Math.abs(totalPct) + '%';
+} else { tr1.className = 'kpi-trend trend-flat'; tr1.textContent = '—'; }
+
+// 初診件数
+const shoApr = DATA.total_sho_apr;
+const shoMar = hasPrev ? DATA.total_sho_monthly[mar] : shoApr;
+const shoPct = hasPrev ? ((shoApr/shoMar - 1)*100).toFixed(1) : '0.0';
+const shoAch = DATA.global_sho_target ? (shoApr/DATA.global_sho_target*100).toFixed(0) : '0';
+document.getElementById('kpi2Val').innerHTML = fmtNum(shoApr) + '<span class="kpi-unit">件</span>';
+document.getElementById('kpi2Target').textContent = hasPrev
+  ? `実数 ${fmtNum(DATA.total_sho_apr_raw)} 件 ／ 前月 ${fmtNum(shoMar)}（換算）／ 目標 ${fmtNum(DATA.global_sho_target)} ／ 達成率 ${shoAch}%`
+  : `実数 ${fmtNum(DATA.total_sho_apr_raw)} 件 ／ 目標 ${fmtNum(DATA.global_sho_target)} ／ 達成率 ${shoAch}%`;
+document.getElementById('kpi2Bar').style.width = Math.min(100, shoAch) + '%';
+const tr2 = document.getElementById('kpi2Trend');
+if (hasPrev) {
+  tr2.className = 'kpi-trend ' + (shoPct>1?'trend-up':shoPct<-1?'trend-down':'trend-flat');
+  tr2.textContent = (shoPct>0?'▲ ':'▼ ') + Math.abs(shoPct) + '%';
+} else { tr2.className = 'kpi-trend trend-flat'; tr2.textContent = '—'; }
+
+// 再診:初診 比率
+const spsApr = (DATA.total_sai_apr / shoApr).toFixed(1);
+const spsMar = hasPrev ? (DATA.total_sai_monthly[mar] / shoMar).toFixed(1) : spsApr;
+const spsDelta = hasPrev ? (spsApr - spsMar).toFixed(1) : '0.0';
+document.getElementById('kpi3Val').innerHTML = spsApr + '<span class="kpi-unit">倍</span>';
+document.getElementById('kpi3Target').textContent = hasPrev ? `前月 ${spsMar}倍 ／ 低下=改善方向` : `低下=改善方向`;
+const tr3 = document.getElementById('kpi3Trend');
+if (hasPrev) {
+  tr3.className = 'kpi-trend ' + (spsDelta<-0.1?'trend-up':spsDelta>0.1?'trend-down':'trend-flat');
+  tr3.textContent = (spsDelta>0?'▲ ':'▼ ') + Math.abs(spsDelta);
+} else { tr3.className = 'kpi-trend trend-flat'; tr3.textContent = '—'; }
+
+// 「薬のみ」再診件数
+const kusApr = DATA.total_kus_apr;
+const kusMar = hasPrev ? DATA.total_kus_monthly[mar] : kusApr;
+const kusPct = hasPrev ? ((kusApr/kusMar - 1)*100).toFixed(1) : '0.0';
+document.getElementById('kpi4Val').innerHTML = fmtNum(kusApr) + '<span class="kpi-unit">件</span>';
+document.getElementById('kpi4Target').textContent = hasPrev
+  ? `前月 ${fmtNum(kusMar)} ／ 目標 ${fmtNum(DATA.global_kus_target)}以下`
+  : `目標 ${fmtNum(DATA.global_kus_target)}以下`;
+const kusPctBar = kusApr > 0 ? Math.min(100, (DATA.global_kus_target/kusApr*100)) : 0;
+document.getElementById('kpi4Bar').style.width = kusPctBar + '%';
+const tr4 = document.getElementById('kpi4Trend');
+if (hasPrev) {
+  tr4.className = 'kpi-trend ' + (kusPct<-1?'trend-up':kusPct>1?'trend-down':'trend-flat');
+  tr4.textContent = (kusPct>0?'▲ ':'▼ ') + Math.abs(kusPct) + '%';
+} else { tr4.className = 'kpi-trend trend-flat'; tr4.textContent = '—'; }
+
+// ============================================================
+// Sparklines
+// ============================================================
+function makeSpark(id, data, color){
+  charts[id] = new Chart(document.getElementById(id),{
+    type:'line',
+    data:{labels:DATA.monthLabels,datasets:[{
+      data:data, borderColor:color, backgroundColor:color+'22',
+      borderWidth:1.5, pointRadius:2, pointBackgroundColor:color, fill:true, tension:.3
+    }]},
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{enabled:false}},
+      scales:{x:{display:false},y:{display:false}}}
+  });
+}
+const totalSpark = DATA.total_monthly;
+const shoSpark = DATA.total_sho_monthly;
+const spsSpark = DATA.total_sai_monthly.map((s,i)=>{
+  const sho = DATA.total_sho_monthly[i]; return sho>0 ? (s/sho) : 0;
+});
+const kusSpark = DATA.total_kus_monthly;
+makeSpark('sparkTotal', totalSpark, CC.blue);
+makeSpark('sparkSho', shoSpark, CC.blue);
+makeSpark('sparkSps', spsSpark, CC.other);
+makeSpark('sparkKus', kusSpark, CC.gold);
+
+// ============================================================
+// Highlights
+// ============================================================
+const hlc = document.getElementById('highlightsContainer');
+function renderHighlight(item, cls, icon) {
+  if(!item) return '';
+  return `
+    <div class="hl-item hl-${cls}">
+      <div class="hl-icon">${icon}</div>
+      <div class="hl-head">${item.head}</div>
+      <div class="hl-body">${item.body}</div>
+    </div>`;
+}
+hlc.innerHTML = renderHighlight(HL.best, 'success', '🎉') +
+                renderHighlight(HL.declining, 'warn', '⚠') +
+                renderHighlight(HL.worst, 'danger', '📉');
+
+// ============================================================
+// Heatmaps
+// ============================================================
+const topDepts = DATA.depts.filter(d => d.sho_target>0 && d.avg_monthly>=200).slice(0, 18);
+
+function buildHeatmap(type) {
+  const headId = {sho:'heatShoHead', sps:'heatSpsHead', kus:'heatKusHead'}[type];
+  const bodyId = {sho:'heatShoBody', sps:'heatSpsBody', kus:'heatKusBody'}[type];
+  const head = document.getElementById(headId);
+  const body = document.getElementById(bodyId);
+
+  let h = `<tr><th style="text-align:left;">診療科</th><th>目標</th>`;
+  DATA.monthLabels.forEach(m => h += `<th>${m}</th>`);
+  h += '</tr>';
+  head.innerHTML = h;
+
+  body.innerHTML = '';
+  topDepts
+    .filter(d => (type==='sho' && d.sho_target>0) ||
+                 (type==='sps' && d.sps_target>0) ||
+                 (type==='kus' && d.kus_target>0))
+    .forEach(d => {
+      let targetVal, monthlyVals, unit='', inverse=false;
+      if(type==='sho'){
+        targetVal = d.sho_target; monthlyVals = d.sho_m_norm;
+      } else if(type==='sps'){
+        targetVal = d.sps_target; monthlyVals = d.sps_m;
+        unit = '倍'; inverse = true;
+      } else {
+        targetVal = d.kus_target; monthlyVals = d.kus_m_norm;
+        inverse = true;
+      }
+
+      let row = `<tr>
+        <td style="text-align:left;"><span class="type-tag tag-${d.type}">${d.type==='naika'?'内':d.type==='geka'?'外':'他'}</span>${d.name}</td>
+        <td style="color:var(--dim);">${targetVal}${unit}</td>`;
+      for(let i=0; i<DATA.months.length; i++){
+        const actual = monthlyVals[i];
+        if(actual===null || actual===undefined){
+          row += `<td><div class="hm-cell g-NA">—</div></td>`;
+          continue;
+        }
+        const pct = targetVal>0 ? (actual/targetVal*100) : 0;
+        const g = gradeFromPct(pct, inverse);
+        const tooltip = `${d.name} ${DATA.monthLabels[i]}: ${actual}${unit} / 目標${targetVal}${unit} (${pct.toFixed(0)}%)`;
+        row += `<td style="padding:4px;"><div class="hm-cell g-${g}" title="${tooltip}">${g}</div></td>`;
+      }
+      row += '</tr>';
+      body.innerHTML += row;
+    });
+}
+buildHeatmap('sho');
+buildHeatmap('sps');
+buildHeatmap('kus');
+
+// ============================================================
+// SCREEN 2: Trend charts
+// ============================================================
+function commonOpts(yLabel) {
+  return {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom', labels:{boxWidth:12}}},
+    scales:{
+      y:{beginAtZero:true, title:{display:!!yLabel, text:yLabel}, grid:{color:CC.grid}},
+      x:{grid:{display:false}}
+    }
+  };
+}
+function dashedLineDataset(label, val, color, count) {
+  return {
+    label, data:Array(count).fill(val),
+    borderColor:color, borderDash:[6,4], borderWidth:1.5,
+    pointRadius:0, fill:false, type:'line'
+  };
+}
+const N = DATA.months.length;
+
+charts.shoTrend = new Chart(document.getElementById('chartShoTrend'),{
+  type:'line',
+  data:{labels:DATA.monthLabels, datasets:[
+    {label:'初診件数（換算）', data:DATA.total_sho_monthly, borderColor:CC.blue, backgroundColor:CC.blueL, borderWidth:2.5, tension:.3, pointRadius:4, pointBackgroundColor:CC.blue},
+    dashedLineDataset('全体目標', DATA.global_sho_target, CC.target, N)
+  ]},
+  options:commonOpts('件数')
+});
+
+charts.spsTrend = new Chart(document.getElementById('chartSpsTrend'),{
+  type:'line',
+  data:{labels:DATA.monthLabels, datasets:[{
+    label:'再診/初診 比率', data:spsSpark.map(v => Number(v.toFixed(1))),
+    borderColor:CC.other, backgroundColor:CC.otherL, borderWidth:2.5, tension:.3, pointRadius:4, pointBackgroundColor:CC.other
+  }]},
+  options:commonOpts('倍')
+});
+
+charts.kusTrend = new Chart(document.getElementById('chartKusTrend'),{
+  type:'line',
+  data:{labels:DATA.monthLabels, datasets:[
+    {label:'薬のみ再診（換算）', data:DATA.total_kus_monthly, borderColor:CC.gold, backgroundColor:CC.goldL, borderWidth:2.5, tension:.3, pointRadius:4, pointBackgroundColor:CC.gold},
+    dashedLineDataset('全体目標(以下)', DATA.global_kus_target, CC.target, N)
+  ]},
+  options:commonOpts('件数')
+});
+
+// 主要科の初診トレンド
+const mainDepts = DATA.depts.filter(d => d.avg_monthly>=300).slice(0, 6);
+const palette = [CC.blue, CC.gold, CC.naika, CC.geka, CC.other, CC.green];
+charts.shoDept = new Chart(document.getElementById('chartShoDept'),{
+  type:'line',
+  data:{labels:DATA.monthLabels, datasets: mainDepts.map((d,i)=>({
+    label:d.name, data:d.sho_m_norm,
+    borderColor:palette[i%palette.length], backgroundColor:palette[i%palette.length]+'22',
+    borderWidth:2, tension:.3, pointRadius:3
+  }))},
+  options:commonOpts('件数')
+});
+
+// ============================================================
+// SCREEN 3: Score card
+// ============================================================
+function renderScoreCard(filter='all'){
+  const tbody = document.getElementById('scoreCardBody');
+  tbody.innerHTML = '';
+  let list = DATA.depts.filter(d => d.sho_target>0 || d.kus_target>0);
+  if(filter==='naika') list = list.filter(d => d.type==='naika');
+  if(filter==='geka') list = list.filter(d => d.type==='geka');
+  if(filter==='alert') list = list.filter(d => {
+    const shoPct = d.sho_target>0 ? (d.sho_apr/d.sho_target*100) : 100;
+    const spsPct = d.sps_target>0 ? (d.sps_apr/d.sps_target*100) : 100;
+    const kusPct = d.kus_target>0 ? (d.kus_apr/d.kus_target*100) : 100;
+    return gradeFromPct(shoPct) === 'D' ||
+           gradeFromPct(spsPct, true) === 'D' ||
+           gradeFromPct(kusPct, true) === 'D';
+  });
+
+  list.forEach(d => {
+    const tr = document.createElement('tr');
+    if (d.href) {
+      tr.classList.add('clickable');
+      tr.addEventListener('click', () => { window.location.href = d.href; });
+    }
+
+    const shoTgt = d.sho_target, shoActual = d.sho_apr;
+    const shoMarVal = d.sho_m_norm[mar];
+    const shoPct = shoTgt>0 ? (shoActual/shoTgt*100) : null;
+    const shoGrade = shoPct !== null ? gradeFromPct(shoPct) : 'NA';
+    const shoDelta = shoActual - shoMarVal;
+
+    const spsTgt = d.sps_target, spsActual = d.sps_apr;
+    const spsMarVal = d.sps_m[mar];
+    const spsPct = spsTgt>0 && spsActual!==null ? (spsActual/spsTgt*100) : null;
+    const spsGrade = spsPct !== null ? gradeFromPct(spsPct, true) : 'NA';
+    const spsDelta = spsActual!==null && spsMarVal!==null ? (spsActual - spsMarVal).toFixed(1) : null;
+
+    const kusTgt = d.kus_target, kusActual = d.kus_apr;
+    const kusMarVal = d.kus_m_norm[mar];
+    const kusPct = kusTgt>0 ? (kusActual/kusTgt*100) : null;
+    const kusGrade = kusPct !== null ? gradeFromPct(kusPct, true) : 'NA';
+    const kusDelta = kusActual - kusMarVal;
+
+    const achClass = (pct) => pct>=100 ? 'ach-over' : pct>=90 ? 'ach-near' : 'ach-under';
+    const achClassInv = (pct) => pct<=100 ? 'ach-over' : pct<=110 ? 'ach-near' : 'ach-under';
+    const chgClass = (delta) => delta>0 ? 'change-up' : delta<0 ? 'change-down' : 'change-flat';
+    const chgClassInv = (delta) => delta<0 ? 'change-up' : delta>0 ? 'change-down' : 'change-flat';
+    const chgArrow = (delta) => delta>0 ? '▲' : delta<0 ? '▼' : '→';
+
+    tr.innerHTML = `
+      <td style="text-align:left;"><span class="type-tag tag-${d.type}">${d.type==='naika'?'内':d.type==='geka'?'外':'他'}</span>${d.name}</td>
+      <td style="color:var(--dim);">${fmtNum(d.avg_monthly)}</td>
+      <td style="background:rgba(63,127,193,.03);"><span class="grade g-${shoGrade}">${shoGrade}</span></td>
+      <td style="background:rgba(63,127,193,.03);">
+        ${shoTgt>0 ? `<div><span style="font-weight:700;">${shoActual}</span><span style="color:var(--dim);">/${shoTgt}</span></div>
+        <div class="achiev ${achClass(shoPct)}">${shoPct.toFixed(0)}%</div>` : '<span style="color:var(--muted);">—</span>'}
+      </td>
+      <td style="background:rgba(63,127,193,.03);">
+        ${shoMarVal>0 ? `<div class="${chgClass(shoDelta)}">${chgArrow(shoDelta)} ${Math.abs(shoDelta)}件</div>` : '—'}
+      </td>
+      <td style="background:rgba(139,111,182,.03);"><span class="grade g-${spsGrade}">${spsGrade}</span></td>
+      <td style="background:rgba(139,111,182,.03);">
+        ${spsTgt>0 && spsActual!==null ? `<div><span style="font-weight:700;">${spsActual}</span><span style="color:var(--dim);">/${spsTgt}</span></div>
+        <div class="achiev ${achClassInv(spsPct)}">${spsPct.toFixed(0)}%</div>` : '<span style="color:var(--muted);">—</span>'}
+      </td>
+      <td style="background:rgba(139,111,182,.03);">
+        ${spsDelta!==null ? `<div class="${chgClassInv(spsDelta)}">${chgArrow(spsDelta)} ${Math.abs(spsDelta)}</div>` : '—'}
+      </td>
+      <td style="background:rgba(200,144,32,.03);"><span class="grade g-${kusGrade}">${kusGrade}</span></td>
+      <td style="background:rgba(200,144,32,.03);">
+        ${kusTgt>0 ? `<div><span style="font-weight:700;">${kusActual}</span><span style="color:var(--dim);">/${kusTgt}</span></div>
+        <div class="achiev ${achClassInv(kusPct)}">${kusPct.toFixed(0)}%</div>` : '<span style="color:var(--muted);">—</span>'}
+      </td>
+      <td style="background:rgba(200,144,32,.03);">
+        ${kusMarVal>0 ? `<div class="${chgClassInv(kusDelta)}">${chgArrow(kusDelta)} ${Math.abs(kusDelta)}件</div>` : '—'}
+      </td>
+      <td style="background:var(--surface2);color:var(--dim);">${d.cand_apr||0}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+renderScoreCard();
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(x=>x.classList.remove('active'));
+    btn.classList.add('active');
+    renderScoreCard(btn.dataset.filter);
+  });
+});
+</script>
+
+</body>
+</html>

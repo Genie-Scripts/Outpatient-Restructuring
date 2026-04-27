@@ -1,0 +1,2730 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>予約枠サマリ ／ 2025-06 | 外来再編分析</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&family=DM+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F3EF; --surface:#FFFFFF; --surface2:#FAF9F6; --surface3:#F0EDE8;
+    --border:#E5E3DF; --border-strong:#D6D3CC;
+    --text:#2C2A28; --text-soft:#5A5651; --dim:#8A847C; --muted:#B0ABA3;
+    --header:#3D3A35; --header-line:#4F4B45;
+    --blue:#3F7FC1; --blue-light:#E7F0FA;
+    --naika:#2B9DB8; --naika-bg:#E4F3F6;
+    --geka:#D08620;  --geka-bg:#FAEEDB;
+    --other:#8B6FB6; --other-bg:#EFEAF5;
+    --up:#2F7A4B; --up-bg:#E5F1E9;
+    --down:#A33838; --down-bg:#F5E4E4;
+    --flat:#8A847C; --flat-bg:#EDEBE7;
+    --warn:#8A6D1A; --warn-bg:#FAF3E0; --warn-border:#D4B860;
+    --grade-s-bg:#C89020;  --grade-s-fg:#FFFFFF;
+    --grade-a-bg:#2F7A4B;  --grade-a-fg:#FFFFFF;
+    --grade-b-bg:#2E5F85;  --grade-b-fg:#FFFFFF;
+    --grade-c-bg:#7A746B;  --grade-c-fg:#FFFFFF;
+    --grade-d-bg:#A33838;  --grade-d-fg:#FFFFFF;
+    --grade-na-bg:#E5E3DF; --grade-na-fg:#8A847C;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.55;}
+  a{color:inherit;text-decoration:none;}
+
+  /* ===== Global header (sticky) ===== */
+  header.site{position:sticky;top:0;z-index:30;background:var(--header);color:#fff;
+              border-bottom:3px solid var(--geka);box-shadow:0 2px 8px rgba(0,0,0,.06);}
+  .gh-row1{display:flex;align-items:center;gap:14px;padding:12px 28px;
+           border-bottom:1px solid var(--header-line);flex-wrap:wrap;}
+  .gh-logo{width:34px;height:34px;background:var(--geka);border-radius:8px;
+           display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;
+           font-family:'DM Mono',monospace;flex-shrink:0;}
+  .gh-title h1{font-size:16px;font-weight:700;color:#fff;margin:0;line-height:1.2;}
+  .gh-title .sub{font-size:11px;color:rgba(255,255,255,.65);font-family:'DM Mono',monospace;}
+  .gh-meta{margin-left:auto;display:flex;gap:14px;align-items:center;font-size:11px;
+           color:rgba(255,255,255,.65);font-family:'DM Mono',monospace;flex-wrap:wrap;}
+
+  .gh-row2{display:flex;align-items:center;gap:18px;padding:8px 28px;
+           background:rgba(0,0,0,.12);flex-wrap:wrap;}
+  .gh-views{display:flex;gap:4px;flex-wrap:wrap;}
+  .gh-views a{font-size:12px;color:rgba(255,255,255,.85);padding:6px 14px;border-radius:6px;
+              transition:background .15s, color .15s;font-weight:500;white-space:nowrap;}
+  .gh-views a:hover{background:rgba(255,255,255,.12);color:#fff;}
+  .gh-views a.active{background:#fff;color:var(--header);font-weight:700;}
+  .gh-views a.disabled{color:rgba(255,255,255,.35);cursor:not-allowed;}
+
+  .gh-month{margin-left:auto;display:flex;gap:8px;align-items:center;font-size:12px;color:rgba(255,255,255,.85);flex-wrap:nowrap;}
+  .gh-month label{color:rgba(255,255,255,.6);font-size:11px;letter-spacing:.04em;text-transform:uppercase;font-weight:700;}
+  .gh-month select{background:rgba(255,255,255,.95);color:var(--text);
+                   border:none;padding:5px 10px;border-radius:6px;
+                   font-family:'DM Mono',monospace;font-size:13px;font-weight:600;cursor:pointer;
+                   min-width:110px;}
+  .gh-month button{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.2);
+                   padding:4px 10px;border-radius:5px;font-size:12px;cursor:pointer;
+                   font-family:'DM Mono',monospace;}
+  .gh-month button:hover:not(:disabled){background:rgba(255,255,255,.2);}
+  .gh-month button:disabled{opacity:.35;cursor:not-allowed;}
+
+  /* ===== ヘッダのレスポンシブ ===== */
+  @media (max-width: 760px){
+    .gh-row1, .gh-row2{padding-left:14px;padding-right:14px;}
+    .gh-meta{margin-left:0;flex-basis:100%;}
+    .gh-month{margin-left:0;width:100%;justify-content:flex-end;}
+    .gh-views{flex-basis:100%;justify-content:flex-start;}
+  }
+  @media (max-width: 760px){
+    .container{padding:16px 14px 30px;}
+    .breadcrumb{padding:8px 14px;}
+  }
+
+  .breadcrumb{background:var(--surface2);border-bottom:1px solid var(--border);
+              padding:8px 28px;font-size:12px;color:var(--text-soft);
+              display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .breadcrumb a{color:var(--blue);}
+  .breadcrumb a:hover{text-decoration:underline;}
+  .breadcrumb .sep{color:var(--dim);}
+  .breadcrumb .current{color:var(--text);font-weight:600;}
+
+  .container{max-width:1400px;margin:0 auto;padding:24px 28px 40px;}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+        padding:22px 26px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.03);}
+  .card-head{display:flex;align-items:baseline;gap:10px;margin-bottom:16px;
+             padding-bottom:10px;border-bottom:1px solid var(--border);}
+  .card-num{font-size:10px;font-family:'DM Mono',monospace;color:var(--blue);
+            background:var(--blue-light);padding:3px 8px;border-radius:4px;
+            font-weight:700;letter-spacing:.04em;}
+  .card-title{font-size:15px;font-weight:700;color:var(--text);}
+  .card-sub{font-size:12px;color:var(--dim);margin-left:4px;}
+  h2{font-size:16px;font-weight:700;color:var(--text);}
+  h3{font-size:13px;font-weight:600;color:var(--text-soft);margin-bottom:8px;}
+  p{font-size:13px;color:var(--text-soft);line-height:1.6;}
+  .meta{font-size:12px;color:var(--dim);margin-top:4px;}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  table thead th{background:var(--surface2);padding:9px 12px;text-align:left;
+                 font-size:11px;font-weight:700;color:var(--text-soft);
+                 border-bottom:1px solid var(--border-strong);text-transform:uppercase;letter-spacing:.04em;}
+  table tbody td{padding:8px 12px;border-bottom:1px solid var(--border);}
+  table tbody tr:hover td{background:var(--surface2);}
+  table .num{text-align:right;font-family:'DM Mono',monospace;}
+  table .num.warn{color:var(--warn);font-weight:700;}
+
+  .type-badge{display:inline-block;padding:1px 8px;border-radius:4px;font-size:10px;
+              font-weight:700;letter-spacing:.04em;margin-left:6px;vertical-align:middle;}
+  .type-badge.naika{background:var(--naika-bg);color:var(--naika);}
+  .type-badge.geka{background:var(--geka-bg);color:var(--geka);}
+  .type-badge.other{background:var(--other-bg);color:var(--other);}
+
+  .summary-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+               gap:12px;margin-bottom:16px;}
+  .summary-stat{background:var(--surface2);padding:12px 14px;border-radius:8px;border:1px solid var(--border);}
+  .summary-stat-k{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.04em;font-weight:700;}
+  .summary-stat-v{font-size:22px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text);margin-top:4px;}
+  .summary-stat-u{font-size:11px;color:var(--text-soft);margin-left:3px;font-weight:500;}
+  .summary-stat-norm{font-size:10px;color:var(--dim);font-family:'DM Mono',monospace;margin-top:2px;}
+
+  .nav-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+  .nav-pill{padding:6px 12px;background:var(--surface2);border:1px solid var(--border);
+            border-radius:6px;font-size:12px;color:var(--text-soft);transition:all .15s;}
+  .nav-pill:hover{border-color:var(--blue);color:var(--blue);}
+  .nav-pill.current{background:var(--header);color:#fff;border-color:var(--header);}
+
+  .chart-wrap{position:relative;height:240px;}
+
+  .lateral-nav{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;
+               padding:14px 22px;background:var(--surface2);border:1px solid var(--border);
+               border-radius:10px;margin-top:24px;}
+  .lateral-nav a{font-size:12px;color:var(--blue);padding:6px 12px;
+                 border-radius:6px;background:var(--surface);
+                 border:1px solid var(--border);transition:all .15s;}
+  .lateral-nav a:hover{border-color:var(--blue);background:var(--blue-light);}
+  .lateral-nav .group{display:flex;gap:6px;flex-wrap:wrap;}
+
+  .empty{color:var(--dim);font-size:13px;padding:16px;background:var(--surface3);
+         border-radius:6px;text-align:center;}
+
+  .score-badge{display:inline-block;min-width:36px;padding:2px 8px;
+               border-radius:4px;font-weight:700;text-align:center;
+               font-family:'DM Mono',monospace;font-size:12px;}
+  .score-high{background:var(--down);color:#fff;}
+  .score-mid{background:#E0A344;color:#fff;}
+  .score-low{background:var(--surface3);color:var(--text-soft);}
+
+  /* Grade badges (monthly scorecard) */
+  .grade{display:inline-block;min-width:24px;padding:2px 8px;border-radius:4px;
+         font-weight:700;text-align:center;font-family:'DM Mono',monospace;font-size:12px;}
+  .grade-S{background:var(--grade-s-bg);color:var(--grade-s-fg);}
+  .grade-A{background:var(--grade-a-bg);color:var(--grade-a-fg);}
+  .grade-B{background:var(--grade-b-bg);color:var(--grade-b-fg);}
+  .grade-C{background:var(--grade-c-bg);color:var(--grade-c-fg);}
+  .grade-D{background:var(--grade-d-bg);color:var(--grade-d-fg);}
+  .grade-NA{background:var(--grade-na-bg);color:var(--grade-na-fg);}
+
+  footer.site{padding:18px 28px;text-align:center;color:var(--dim);font-size:11px;
+              border-top:1px solid var(--border);margin-top:20px;}
+  footer.site .feedback-link{color:var(--blue);}
+
+  /* テーマドロップダウン（JS クリックトグル） */
+  .gh-dropdown{position:relative;}
+  .gh-dropdown-menu{
+    display:none;position:absolute;top:calc(100% + 6px);left:0;
+    background:var(--header);border:1px solid var(--header-line);
+    border-radius:8px;min-width:200px;z-index:100;padding:6px 0;
+    box-shadow:0 4px 16px rgba(0,0,0,.2);
+  }
+  .gh-dropdown-menu.open{ display:block; }
+  .gh-dropdown-menu a{
+    display:block;padding:8px 16px;font-size:12px;
+    color:rgba(255,255,255,.85);white-space:nowrap;
+  }
+  .gh-dropdown-menu a:hover{background:rgba(255,255,255,.12);color:#fff;}
+  .gh-dropdown-menu a.active{background:rgba(255,255,255,.15);color:#fff;font-weight:700;}
+</style>
+
+</head>
+<body data-view="theme-slot" data-month="2025-06">
+
+<header class="site">
+  <div class="gh-row1">
+    <div class="gh-logo">OR</div>
+    <div class="gh-title">
+      <h1>外来再編分析</h1>
+      <div class="sub">Outpatient Restructuring</div>
+    </div>
+    <div class="gh-meta">
+      <div>更新 2026-04-27 15:30</div>
+      
+    </div>
+  </div>
+  <div class="gh-row2">
+    <div class="gh-views">
+      <a href="../../index.html">ホーム</a>
+      <a href="../../monthly/2025-06.html">月次経営サマリ</a>
+      <a href="../../dept/2025-06/index.html">診療科 再編診断</a>
+      <div class="gh-dropdown">
+        <button type="button" id="gh-theme-btn"
+           class="active"
+           style="background:none;border:none;cursor:pointer;font-family:inherit;font-size:12px;
+                  color:var(--header);
+                  padding:6px 14px;border-radius:6px;font-weight:700;
+                  display:flex;align-items:center;gap:4px;white-space:nowrap;
+                  background:#fff;">テーマ分析 <span style="font-size:9px;">▾</span></button>
+        <div class="gh-dropdown-menu">
+          <a href="../../themes/2025-06/referral.html"
+             >紹介・逆紹介</a>
+          <a href="../../themes/2025-06/slot.html"
+             class="active">予約枠サマリ</a>
+          <a href="../../themes/2025-06/nursing.html"
+             >曜日×時間帯 分析</a>
+          <a href="../../themes/2025-06/doctor.html"
+             >医師×時間帯 分析</a>
+          <a href="../../themes/2025-06/slot-heatmap.html"
+             >外来枠×時間帯 分析</a>
+        </div>
+      </div>
+    </div>
+    
+    <div class="gh-month">
+      <label>月:</label>
+      <button id="gh-prev-month" type="button" title="前月">←</button>
+      <select id="gh-month-select">
+        
+        <option value="2026-04">2026-04</option>
+        
+        <option value="2026-03">2026-03</option>
+        
+        <option value="2026-02">2026-02</option>
+        
+        <option value="2026-01">2026-01</option>
+        
+        <option value="2025-12">2025-12</option>
+        
+        <option value="2025-11">2025-11</option>
+        
+        <option value="2025-10">2025-10</option>
+        
+        <option value="2025-09">2025-09</option>
+        
+        <option value="2025-08">2025-08</option>
+        
+        <option value="2025-07">2025-07</option>
+        
+        <option value="2025-06" selected>2025-06</option>
+        
+        <option value="2025-05">2025-05</option>
+        
+        <option value="2025-04">2025-04</option>
+        
+      </select>
+      <button id="gh-next-month" type="button" title="翌月">→</button>
+    </div>
+    
+  </div>
+</header>
+
+
+<div class="breadcrumb">
+  
+    
+    <a href="../../index.html">ホーム</a>
+    
+    <span class="sep">/</span>
+  
+    
+    <span class="current">テーマ：予約枠サマリ ／ 2025-06</span>
+    
+    
+  
+</div>
+
+
+<main class="container">
+
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">00</span>
+    <h2>時間帯ゾーン × 曜日（評価対象科 合計）</h2>
+    <span class="card-sub">2025-06 ／ 全評価科の延べ来院件数（月間累計）／ 実営業日 21日</span>
+  </div>
+  <div class="chart-wrap" style="height:280px;"><canvas id="chartTimezone"></canvas></div>
+  <p class="meta">各棒は1か月分の件数合計（月〜金）。時間帯ゾーン別の稼働配分を評価対象科横断で確認します。</p>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">01</span>
+    <h2>稀用枠 — 月間件数 5件未満の枠</h2>
+    <span class="card-sub">215枠 該当 ／ 縮小・統合・廃止の候補</span>
+  </div>
+  
+  <div style="overflow-x:auto;">
+  <table>
+    <thead>
+      <tr>
+        <th>診療科</th>
+        <th>予約名称</th>
+        <th class="num">総件数</th>
+        <th class="num">初診</th>
+        <th class="num">再診</th>
+        <th class="num">初診率</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td>アレルギー科</td>
+        <td>SL_0561</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>アレルギー科</td>
+        <td>SL_0783</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>アレルギー科</td>
+        <td>SL_0820</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>アレルギー科</td>
+        <td>SL_0852</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>メンタルケア科</td>
+        <td>SL_0005</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>メンタルケア科</td>
+        <td>SL_0891</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>メンタルケア科</td>
+        <td>SL_0951</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>リウマチ膠原病内科</td>
+        <td>SL_0526</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>リウマチ膠原病内科</td>
+        <td>SL_0682</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>リウマチ膠原病内科</td>
+        <td>SL_0926</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>リウマチ膠原病内科</td>
+        <td>SL_0957</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>リウマチ膠原病内科</td>
+        <td>SL_0983</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>一般消化器外科</td>
+        <td>SL_0541</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>一般消化器外科</td>
+        <td>SL_0601</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>一般消化器外科</td>
+        <td>SL_0691</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>一般消化器外科</td>
+        <td>SL_0696</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>一般消化器外科</td>
+        <td>SL_0835</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>一般消化器外科</td>
+        <td>SL_0842</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>一般消化器外科</td>
+        <td>SL_0885</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>一般消化器外科</td>
+        <td>SL_0968</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>一般消化器外科</td>
+        <td>SL_0984</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>一般消化器外科</td>
+        <td>SL_0985</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>乳腺外科</td>
+        <td>SL_0476</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>乳腺外科</td>
+        <td>SL_0854</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>乳腺外科</td>
+        <td>SL_0862</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>乳腺外科</td>
+        <td>SL_0909</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>呼吸器内科</td>
+        <td>SL_0914</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>呼吸器外科</td>
+        <td>SL_0557</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>呼吸器外科</td>
+        <td>SL_0644</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>呼吸器外科</td>
+        <td>SL_0760</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>小児科</td>
+        <td>SL_0180</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>形成外科</td>
+        <td>SL_0515</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>形成外科</td>
+        <td>SL_0816</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>形成外科</td>
+        <td>SL_0896</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>循環器内科</td>
+        <td>SL_0228</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>循環器内科</td>
+        <td>SL_0458</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>循環器内科</td>
+        <td>SL_0980</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>心臓血管外科</td>
+        <td>SL_0581</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>放射線治療科</td>
+        <td>SL_0786</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>整形外科</td>
+        <td>SL_0253</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>整形外科</td>
+        <td>SL_0544</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>整形外科</td>
+        <td>SL_0908</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>整形外科</td>
+        <td>SL_0910</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>整形外科</td>
+        <td>SL_0919</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>整形外科</td>
+        <td>SL_0982</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>歯科口腔外科</td>
+        <td>SL_0929</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>泌尿器科</td>
+        <td>SL_0273</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>泌尿器科</td>
+        <td>SL_0558</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>泌尿器科</td>
+        <td>SL_0585</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>泌尿器科</td>
+        <td>SL_0694</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>泌尿器科</td>
+        <td>SL_0769</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>泌尿器科</td>
+        <td>SL_0864</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>消化器内科</td>
+        <td>SL_0556</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>消化器内科</td>
+        <td>SL_0627</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>消化器内科</td>
+        <td>SL_0697</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>消化器内科</td>
+        <td>SL_0734</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>消化器内科</td>
+        <td>SL_0805</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>消化器内科</td>
+        <td>SL_0970</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>産婦人科</td>
+        <td>SL_0653</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>産婦人科</td>
+        <td>SL_0663</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>産婦人科</td>
+        <td>SL_0672</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>産婦人科</td>
+        <td>SL_0882</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>産婦人科</td>
+        <td>SL_0927</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>皮膚科</td>
+        <td>SL_0690</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>皮膚科</td>
+        <td>SL_0762</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>眼科</td>
+        <td>SL_0578</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>眼科</td>
+        <td>SL_0811</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>眼科</td>
+        <td>SL_0822</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>眼科</td>
+        <td>SL_0943</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>総合内科</td>
+        <td>SL_0482</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>総合内科</td>
+        <td>SL_0888</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>総合内科</td>
+        <td>SL_0893</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>耳鼻咽喉科</td>
+        <td>SL_0650</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>耳鼻咽喉科</td>
+        <td>SL_0792</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>脳神経内科</td>
+        <td>SL_0971</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>脳神経外科</td>
+        <td>SL_0610</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>脳神経外科</td>
+        <td>SL_0642</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>脳神経外科</td>
+        <td>SL_0659</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>脳神経外科</td>
+        <td>SL_0662</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>脳神経外科</td>
+        <td>SL_0937</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>腎内科</td>
+        <td>SL_0504</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>腎内科</td>
+        <td>SL_0638</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>腎内科</td>
+        <td>SL_0804</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>臨床腫瘍科</td>
+        <td>SL_0005</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>血液内科</td>
+        <td>SL_0788</td>
+        <td class="num">1</td>
+        <td class="num">0</td>
+        <td class="num">1</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>アレルギー科</td>
+        <td>SL_0005</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">2</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>メンタルケア科</td>
+        <td>SL_0552</td>
+        <td class="num">2</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">50.0%</td>
+      </tr>
+      
+      <tr>
+        <td>メンタルケア科</td>
+        <td>SL_0678</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">2</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>メンタルケア科</td>
+        <td>SL_0828</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">2</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>リウマチ膠原病内科</td>
+        <td>SL_0961</td>
+        <td class="num">2</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>一般消化器外科</td>
+        <td>SL_0384</td>
+        <td class="num">2</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>一般消化器外科</td>
+        <td>SL_0491</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">2</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>一般消化器外科</td>
+        <td>SL_0863</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">2</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>一般消化器外科</td>
+        <td>SL_0942</td>
+        <td class="num">2</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>呼吸器内科</td>
+        <td>SL_0030</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">2</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>呼吸器内科</td>
+        <td>SL_0480</td>
+        <td class="num">2</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>呼吸器内科</td>
+        <td>SL_0530</td>
+        <td class="num">2</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">50.0%</td>
+      </tr>
+      
+      <tr>
+        <td>呼吸器内科</td>
+        <td>SL_0618</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">2</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>呼吸器内科</td>
+        <td>SL_0779</td>
+        <td class="num">2</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>小児科</td>
+        <td>SL_0270</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">2</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>小児科</td>
+        <td>SL_0418</td>
+        <td class="num">2</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">50.0%</td>
+      </tr>
+      
+      <tr>
+        <td>小児科</td>
+        <td>SL_0639</td>
+        <td class="num">2</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>小児科</td>
+        <td>SL_0856</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">2</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>形成外科</td>
+        <td>SL_0684</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">2</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>形成外科</td>
+        <td>SL_0687</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">2</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>循環器内科</td>
+        <td>SL_0599</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">2</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>循環器内科</td>
+        <td>SL_0688</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">2</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>心臓血管外科</td>
+        <td>SL_0567</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">2</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>心臓血管外科</td>
+        <td>SL_0776</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">2</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>整形外科</td>
+        <td>SL_0431</td>
+        <td class="num">2</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">50.0%</td>
+      </tr>
+      
+      <tr>
+        <td>整形外科</td>
+        <td>SL_0522</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">2</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>整形外科</td>
+        <td>SL_0533</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">2</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>整形外科</td>
+        <td>SL_0579</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">2</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>整形外科</td>
+        <td>SL_0640</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">2</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>整形外科</td>
+        <td>SL_0915</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">2</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>整形外科</td>
+        <td>SL_0966</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">2</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>歯科口腔外科</td>
+        <td>SL_0814</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">2</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>歯科口腔外科</td>
+        <td>SL_0955</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">2</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>泌尿器科</td>
+        <td>SL_0308</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">2</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>泌尿器科</td>
+        <td>SL_0493</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">2</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>消化器内科</td>
+        <td>SL_0657</td>
+        <td class="num">2</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">50.0%</td>
+      </tr>
+      
+      <tr>
+        <td>皮膚科</td>
+        <td>SL_0981</td>
+        <td class="num">2</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>眼科</td>
+        <td>SL_0647</td>
+        <td class="num">2</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td class="num">50.0%</td>
+      </tr>
+      
+      <tr>
+        <td>眼科</td>
+        <td>SL_0656</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">2</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>耳鼻咽喉科</td>
+        <td>SL_0360</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">2</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>耳鼻咽喉科</td>
+        <td>SL_0978</td>
+        <td class="num">2</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>脳神経外科</td>
+        <td>SL_0812</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">2</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>脳神経外科</td>
+        <td>SL_0953</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">2</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>腎内科</td>
+        <td>SL_0005</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">2</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>腎内科</td>
+        <td>SL_0540</td>
+        <td class="num">2</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>腎内科</td>
+        <td>SL_0566</td>
+        <td class="num">2</td>
+        <td class="num">2</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>アレルギー科</td>
+        <td>SL_0009</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">3</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>メンタルケア科</td>
+        <td>SL_0545</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">3</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>リウマチ膠原病内科</td>
+        <td>SL_0065</td>
+        <td class="num">3</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>一般消化器外科</td>
+        <td>SL_0501</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">3</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>一般消化器外科</td>
+        <td>SL_0568</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">3</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>一般消化器外科</td>
+        <td>SL_0607</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">3</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>一般消化器外科</td>
+        <td>SL_0613</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">3</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>一般消化器外科</td>
+        <td>SL_0668</td>
+        <td class="num">3</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>一般消化器外科</td>
+        <td>SL_0724</td>
+        <td class="num">3</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>乳腺外科</td>
+        <td>SL_0849</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">3</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>内科</td>
+        <td>SL_0009</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">3</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>呼吸器内科</td>
+        <td>SL_0634</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">3</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>形成外科</td>
+        <td>SL_0513</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">3</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>心臓血管外科</td>
+        <td>SL_0759</td>
+        <td class="num">3</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>整形外科</td>
+        <td>SL_0587</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">3</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>整形外科</td>
+        <td>SL_0665</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">3</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>歯科口腔外科</td>
+        <td>SL_0310</td>
+        <td class="num">3</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>歯科口腔外科</td>
+        <td>SL_0413</td>
+        <td class="num">3</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>歯科口腔外科</td>
+        <td>SL_0531</td>
+        <td class="num">3</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>産婦人科</td>
+        <td>SL_0830</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">3</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>皮膚科</td>
+        <td>SL_0583</td>
+        <td class="num">3</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>皮膚科</td>
+        <td>SL_0593</td>
+        <td class="num">3</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>耳鼻咽喉科</td>
+        <td>SL_0300</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">3</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>脳神経内科</td>
+        <td>SL_0005</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">3</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>脳神経内科</td>
+        <td>SL_0677</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">3</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>脳神経外科</td>
+        <td>SL_0002</td>
+        <td class="num">3</td>
+        <td class="num">1</td>
+        <td class="num">2</td>
+        <td class="num">33.3%</td>
+      </tr>
+      
+      <tr>
+        <td>腎内科</td>
+        <td>SL_0405</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">3</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>腎内科</td>
+        <td>SL_0946</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">3</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>血液内科</td>
+        <td>SL_0131</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">3</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>血液内科</td>
+        <td>SL_0445</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">3</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>血液内科</td>
+        <td>SL_0615</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">3</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>血液内科</td>
+        <td>SL_0617</td>
+        <td class="num">3</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>血液内科</td>
+        <td>SL_0670</td>
+        <td class="num">3</td>
+        <td class="num">2</td>
+        <td class="num">1</td>
+        <td class="num">66.7%</td>
+      </tr>
+      
+      <tr>
+        <td>血液内科</td>
+        <td>SL_0675</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">3</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>血液内科</td>
+        <td>SL_0823</td>
+        <td class="num">3</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>血液内科</td>
+        <td>SL_0844</td>
+        <td class="num">3</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>メンタルケア科</td>
+        <td>SL_0763</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">4</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>リウマチ膠原病内科</td>
+        <td>SL_0768</td>
+        <td class="num">4</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>呼吸器内科</td>
+        <td>SL_0403</td>
+        <td class="num">4</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>呼吸器内科</td>
+        <td>SL_0479</td>
+        <td class="num">4</td>
+        <td class="num">3</td>
+        <td class="num">1</td>
+        <td class="num">75.0%</td>
+      </tr>
+      
+      <tr>
+        <td>呼吸器内科</td>
+        <td>SL_0525</td>
+        <td class="num">4</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>呼吸器内科</td>
+        <td>SL_0561</td>
+        <td class="num">4</td>
+        <td class="num">3</td>
+        <td class="num">1</td>
+        <td class="num">75.0%</td>
+      </tr>
+      
+      <tr>
+        <td>呼吸器内科</td>
+        <td>SL_0580</td>
+        <td class="num">4</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>呼吸器内科</td>
+        <td>SL_0658</td>
+        <td class="num">4</td>
+        <td class="num">2</td>
+        <td class="num">2</td>
+        <td class="num">50.0%</td>
+      </tr>
+      
+      <tr>
+        <td>呼吸器外科</td>
+        <td>SL_0686</td>
+        <td class="num">4</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>小児科</td>
+        <td>SL_0419</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">4</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>小児科</td>
+        <td>SL_0604</td>
+        <td class="num">4</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>小児科</td>
+        <td>SL_0747</td>
+        <td class="num">4</td>
+        <td class="num">3</td>
+        <td class="num">1</td>
+        <td class="num">75.0%</td>
+      </tr>
+      
+      <tr>
+        <td>形成外科</td>
+        <td>SL_0535</td>
+        <td class="num">4</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>放射線治療科</td>
+        <td>SL_0741</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">4</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>放射線治療科</td>
+        <td>SL_0824</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">4</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>整形外科</td>
+        <td>SL_0281</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">4</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>整形外科</td>
+        <td>SL_0304</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">4</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>整形外科</td>
+        <td>SL_0576</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">4</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>整形外科</td>
+        <td>SL_0782</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">4</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>整形外科</td>
+        <td>SL_0906</td>
+        <td class="num">4</td>
+        <td class="num">3</td>
+        <td class="num">1</td>
+        <td class="num">75.0%</td>
+      </tr>
+      
+      <tr>
+        <td>整形外科</td>
+        <td>SL_0920</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">4</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>歯科口腔外科</td>
+        <td>SL_0592</td>
+        <td class="num">4</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>歯科口腔外科</td>
+        <td>SL_0746</td>
+        <td class="num">4</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>歯科口腔外科</td>
+        <td>SL_0802</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">4</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>歯科口腔外科</td>
+        <td>SL_0898</td>
+        <td class="num">4</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>泌尿器科</td>
+        <td>SL_0051</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">4</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>泌尿器科</td>
+        <td>SL_0377</td>
+        <td class="num">4</td>
+        <td class="num">1</td>
+        <td class="num">3</td>
+        <td class="num">25.0%</td>
+      </tr>
+      
+      <tr>
+        <td>泌尿器科</td>
+        <td>SL_0645</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">4</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>消化器内科</td>
+        <td>SL_0192</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">4</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>産婦人科</td>
+        <td>SL_0317</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">4</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>産婦人科</td>
+        <td>SL_0588</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">4</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>皮膚科</td>
+        <td>SL_0005</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">4</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>皮膚科</td>
+        <td>SL_0146</td>
+        <td class="num">4</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>皮膚科</td>
+        <td>SL_0461</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">4</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>皮膚科</td>
+        <td>SL_0564</td>
+        <td class="num">4</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>皮膚科</td>
+        <td>SL_0669</td>
+        <td class="num">4</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>皮膚科</td>
+        <td>SL_0785</td>
+        <td class="num">4</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>眼科</td>
+        <td>SL_0402</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">4</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>眼科</td>
+        <td>SL_0520</td>
+        <td class="num">4</td>
+        <td class="num">3</td>
+        <td class="num">1</td>
+        <td class="num">75.0%</td>
+      </tr>
+      
+      <tr>
+        <td>総合内科</td>
+        <td>SL_0249</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">4</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>脳神経外科</td>
+        <td>SL_0509</td>
+        <td class="num">4</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>脳神経外科</td>
+        <td>SL_0681</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">4</td>
+        <td class="num">0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>腎内科</td>
+        <td>SL_0387</td>
+        <td class="num">4</td>
+        <td class="num">3</td>
+        <td class="num">1</td>
+        <td class="num">75.0%</td>
+      </tr>
+      
+      <tr>
+        <td>血液内科</td>
+        <td>SL_0266</td>
+        <td class="num">4</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>血液内科</td>
+        <td>SL_0595</td>
+        <td class="num">4</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>血液内科</td>
+        <td>SL_0620</td>
+        <td class="num">4</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>血液内科</td>
+        <td>SL_0623</td>
+        <td class="num">4</td>
+        <td class="num">4</td>
+        <td class="num">0</td>
+        <td class="num">100.0%</td>
+      </tr>
+      
+      <tr>
+        <td>血液内科</td>
+        <td>SL_0851</td>
+        <td class="num">4</td>
+        <td class="num">1</td>
+        <td class="num">3</td>
+        <td class="num">25.0%</td>
+      </tr>
+      
+    </tbody>
+  </table>
+  </div>
+  
+  <p class="meta">稀用枠は既存枠への吸収合併か廃止を検討してください。年単位で継続して件数が増えない場合は廃止が妥当です。</p>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">02</span>
+    <h2>科別サマリ</h2>
+    <span class="card-sub">評価対象科の枠数・稀用枠数（件数降順）</span>
+  </div>
+  
+  <div style="overflow-x:auto;">
+  <table>
+    <thead>
+      <tr>
+        <th>診療科</th>
+        <th class="num">総件数</th>
+        <th class="num">初診率</th>
+        <th class="num">枠種数</th>
+        <th class="num">稀用枠</th>
+        <th>状況</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td>泌尿器科</td>
+        <td class="num">3,589</td>
+        <td class="num">3.6%</td>
+        <td class="num">41</td>
+        <td class="num warn">11</td>
+        <td>
+          <span class="score-badge score-low">稀用</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>眼科</td>
+        <td class="num">3,453</td>
+        <td class="num">6.5%</td>
+        <td class="num">53</td>
+        <td class="num warn">8</td>
+        <td>
+          <span class="score-badge score-low">稀用</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>産婦人科</td>
+        <td class="num">1,981</td>
+        <td class="num">7.4%</td>
+        <td class="num">42</td>
+        <td class="num warn">8</td>
+        <td>
+          <span class="score-badge score-low">稀用</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>整形外科</td>
+        <td class="num">1,913</td>
+        <td class="num">12.2%</td>
+        <td class="num">68</td>
+        <td class="num warn">21</td>
+        <td>
+          <span class="score-badge score-low">稀用</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>耳鼻咽喉科</td>
+        <td class="num">1,907</td>
+        <td class="num">11.1%</td>
+        <td class="num">34</td>
+        <td class="num warn">5</td>
+        <td>
+          <span class="score-badge score-low">稀用</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>乳腺外科</td>
+        <td class="num">1,689</td>
+        <td class="num">3.3%</td>
+        <td class="num">18</td>
+        <td class="num warn">5</td>
+        <td>
+          <span class="score-badge score-low">稀用</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>消化器内科</td>
+        <td class="num">1,611</td>
+        <td class="num">10.1%</td>
+        <td class="num">40</td>
+        <td class="num warn">8</td>
+        <td>
+          <span class="score-badge score-low">稀用</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>循環器内科</td>
+        <td class="num">1,593</td>
+        <td class="num">8.9%</td>
+        <td class="num">33</td>
+        <td class="num warn">5</td>
+        <td>
+          <span class="score-badge score-low">稀用</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>呼吸器内科</td>
+        <td class="num">1,366</td>
+        <td class="num">5.6%</td>
+        <td class="num">35</td>
+        <td class="num warn">13</td>
+        <td>
+          <span class="score-badge score-low">稀用</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>皮膚科</td>
+        <td class="num">1,346</td>
+        <td class="num">8.5%</td>
+        <td class="num">27</td>
+        <td class="num warn">11</td>
+        <td>
+          <span class="score-badge score-low">稀用</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>総合内科</td>
+        <td class="num">1,263</td>
+        <td class="num">18.7%</td>
+        <td class="num">29</td>
+        <td class="num warn">4</td>
+        <td>
+          <span class="score-badge score-low">稀用</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>一般消化器外科</td>
+        <td class="num">1,188</td>
+        <td class="num">6.0%</td>
+        <td class="num">44</td>
+        <td class="num warn">20</td>
+        <td>
+          <span class="score-badge score-low">稀用</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>歯科口腔外科</td>
+        <td class="num">1,056</td>
+        <td class="num">26.7%</td>
+        <td class="num">35</td>
+        <td class="num warn">10</td>
+        <td>
+          <span class="score-badge score-low">稀用</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>リウマチ膠原病内科</td>
+        <td class="num">969</td>
+        <td class="num">3.9%</td>
+        <td class="num">26</td>
+        <td class="num warn">8</td>
+        <td>
+          <span class="score-badge score-low">稀用</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>放射線治療科</td>
+        <td class="num">959</td>
+        <td class="num">0.7%</td>
+        <td class="num">13</td>
+        <td class="num warn">3</td>
+        <td>
+          <span class="score-badge score-low">稀用</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>血液内科</td>
+        <td class="num">895</td>
+        <td class="num">3.8%</td>
+        <td class="num">29</td>
+        <td class="num warn">14</td>
+        <td>
+          <span class="score-badge score-low">稀用</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>腎内科</td>
+        <td class="num">794</td>
+        <td class="num">2.9%</td>
+        <td class="num">19</td>
+        <td class="num warn">9</td>
+        <td>
+          <span class="score-badge score-low">稀用</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>小児科</td>
+        <td class="num">650</td>
+        <td class="num">22.3%</td>
+        <td class="num">36</td>
+        <td class="num warn">8</td>
+        <td>
+          <span class="score-badge score-low">稀用</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>形成外科</td>
+        <td class="num">599</td>
+        <td class="num">7.5%</td>
+        <td class="num">24</td>
+        <td class="num warn">7</td>
+        <td>
+          <span class="score-badge score-low">稀用</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>脳神経内科</td>
+        <td class="num">554</td>
+        <td class="num">11.0%</td>
+        <td class="num">13</td>
+        <td class="num warn">3</td>
+        <td>
+          <span class="score-badge score-low">稀用</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>メンタルケア科</td>
+        <td class="num">339</td>
+        <td class="num">0.9%</td>
+        <td class="num">14</td>
+        <td class="num warn">8</td>
+        <td>
+          <span class="score-badge score-low">稀用</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>救急科</td>
+        <td class="num">310</td>
+        <td class="num">66.1%</td>
+        <td class="num">3</td>
+        <td class="num">0</td>
+        <td>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>内科</td>
+        <td class="num">299</td>
+        <td class="num">55.2%</td>
+        <td class="num">2</td>
+        <td class="num warn">1</td>
+        <td>
+          <span class="score-badge score-low">稀用</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>脳神経外科</td>
+        <td class="num">260</td>
+        <td class="num">13.8%</td>
+        <td class="num">19</td>
+        <td class="num warn">10</td>
+        <td>
+          <span class="score-badge score-low">稀用</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>呼吸器外科</td>
+        <td class="num">221</td>
+        <td class="num">2.7%</td>
+        <td class="num">9</td>
+        <td class="num warn">4</td>
+        <td>
+          <span class="score-badge score-low">稀用</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>心臓血管外科</td>
+        <td class="num">213</td>
+        <td class="num">1.4%</td>
+        <td class="num">7</td>
+        <td class="num warn">4</td>
+        <td>
+          <span class="score-badge score-low">稀用</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>臨床腫瘍科</td>
+        <td class="num">164</td>
+        <td class="num">0.0%</td>
+        <td class="num">5</td>
+        <td class="num warn">1</td>
+        <td>
+          <span class="score-badge score-low">稀用</span>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>アレルギー科</td>
+        <td class="num">162</td>
+        <td class="num">1.2%</td>
+        <td class="num">11</td>
+        <td class="num warn">6</td>
+        <td>
+          <span class="score-badge score-low">稀用</span>
+        </td>
+      </tr>
+      
+    </tbody>
+  </table>
+  </div>
+  
+  <p class="meta">各科の詳細は「診療科 再編診断」の 04 枠ミックスセクションで確認できます。</p>
+</div>
+
+<div class="lateral-nav">
+  <div class="group">
+    <a href="../2025-05/slot.html">← 前月</a>
+    <a href="../2025-07/slot.html">翌月 →</a>
+  </div>
+  <div class="group">
+    <a href="../../index.html">↑ ホーム</a>
+  </div>
+</div>
+
+
+</main>
+
+<footer class="site">
+  外来再編分析ダッシュボード
+  
+</footer>
+
+<script>
+/* グローバルヘッダ：月セレクタとビュー切替の連動。
+   現在のビュー（data-view）と現在の科コード（data-code）を保ったまま
+   月だけを切り替える。ホームの場合はその月の monthly に遷移する。 */
+(function(){
+  const body = document.body;
+  const view = body.getAttribute('data-view');
+  const code = body.getAttribute('data-code');
+  const sel = document.getElementById('gh-month-select');
+  const prevBtn = document.getElementById('gh-prev-month');
+  const nextBtn = document.getElementById('gh-next-month');
+  if (!sel) return;
+
+  const months = Array.from(sel.options).map(o => o.value); // 新→旧
+
+  function targetUrl(month, view, code){
+    /* root から見たパス。各ページで root_prefix が異なるため
+       絶対パスではなく、ビューに応じた相対パスを構築する。 */
+    if (view === 'home') {
+      return rootPrefix() + 'monthly/' + month + '.html';
+    }
+    if (view === 'monthly') {
+      return rootPrefix() + 'monthly/' + month + '.html';
+    }
+    if (view === 'dept' || view === 'dept-detail') {
+      const filename = code ? (code + '.html') : 'index.html';
+      return rootPrefix() + 'dept/' + month + '/' + filename;
+    }
+    if (view && view.startsWith('theme-')) {
+      const slug = view.replace('theme-', '');
+      return rootPrefix() + 'themes/' + month + '/' + slug + '.html';
+    }
+    return rootPrefix() + 'index.html';
+  }
+
+  function rootPrefix(){
+    /* グローバルヘッダの「ホーム」リンクから root_prefix を推測する。
+       href の末尾が "index.html" でその直前までが prefix。 */
+    const a = document.querySelector('header.site .gh-views a');
+    if (!a) return '';
+    const href = a.getAttribute('href') || '';
+    return href.replace(/index\.html$/, '');
+  }
+
+  sel.addEventListener('change', () => {
+    const m = sel.value;
+    location.href = targetUrl(m, view, code);
+  });
+
+  function shiftMonth(delta){
+    /* sel.options は新→旧で並んでいる。delta=-1 で前月（旧側=index増）、+1 で翌月。 */
+    const idx = sel.selectedIndex;
+    const newIdx = idx - delta; // 翌月に進む = 新側＝idx 減
+    if (newIdx < 0 || newIdx >= sel.options.length) return;
+    sel.selectedIndex = newIdx;
+    sel.dispatchEvent(new Event('change'));
+  }
+  if (prevBtn) prevBtn.addEventListener('click', () => shiftMonth(-1));
+  if (nextBtn) nextBtn.addEventListener('click', () => shiftMonth(+1));
+
+  // 端で押せないボタンは disabled に
+  function refreshBtns(){
+    const idx = sel.selectedIndex;
+    if (prevBtn) prevBtn.disabled = (idx >= sel.options.length - 1);
+    if (nextBtn) nextBtn.disabled = (idx <= 0);
+  }
+  refreshBtns();
+  sel.addEventListener('change', refreshBtns);
+})();
+
+/* テーマドロップダウン：クリックトグル */
+(function(){
+  const btn  = document.getElementById('gh-theme-btn');
+  const menu = btn && btn.parentElement.querySelector('.gh-dropdown-menu');
+  if (!btn || !menu) return;
+
+  btn.addEventListener('click', function(e){
+    e.stopPropagation();
+    menu.classList.toggle('open');
+  });
+
+  /* メニュー項目クリックで閉じる（ページ遷移前に閉じておく） */
+  menu.addEventListener('click', function(){ menu.classList.remove('open'); });
+
+  /* ドロップダウン外クリックで閉じる */
+  document.addEventListener('click', function(){ menu.classList.remove('open'); });
+})();
+</script>
+
+
+<script>
+const TZ_DATA = {"labels": ["月", "火", "水", "木", "金"], "datasets": [{"label": "午前(〜12時)", "data": [5590, 4754, 4756, 3943, 4498]}, {"label": "午後前半(12-15時)", "data": [1422, 1130, 1324, 1159, 1095]}, {"label": "午後後半(15-17時)", "data": [220, 180, 180, 180, 173]}, {"label": "夕方以降(17時〜)", "data": [85, 60, 65, 57, 108]}]};
+if (TZ_DATA && TZ_DATA.labels && document.getElementById('chartTimezone')) {
+  const palette = ['#3F7FC1', '#D08620', '#2B9DB8', '#8B6FB6'];
+  new Chart(document.getElementById('chartTimezone'), {
+    type: 'bar',
+    data: {
+      labels: TZ_DATA.labels,
+      datasets: TZ_DATA.datasets.map((ds, i) => ({
+        label: ds.label,
+        data: ds.data,
+        backgroundColor: palette[i % palette.length],
+      })),
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom' } },
+      scales: {
+        x: { stacked: true, grid: { display: false } },
+        y: { stacked: true, beginAtZero: true, grid: { color: '#EBE8E3' } },
+      },
+    },
+  });
+}
+</script>
+
+</body>
+</html>
