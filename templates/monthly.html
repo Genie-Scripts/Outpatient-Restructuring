@@ -550,7 +550,10 @@ buildHeatmap('kus');
 function commonOpts(yLabel) {
   return {
     responsive:true, maintainAspectRatio:false,
-    plugins:{legend:{position:'bottom', labels:{boxWidth:12}}},
+    plugins:{
+      legend:{position:'bottom', labels:{boxWidth:12, filter: item => !item.text.includes('回帰')}},
+      tooltip:{filter: item => !item.dataset.label.includes('回帰')}
+    },
     scales:{
       y:{beginAtZero:true, title:{display:!!yLabel, text:yLabel}, grid:{color:CC.grid}},
       x:{grid:{display:false}}
@@ -564,30 +567,52 @@ function dashedLineDataset(label, val, color, count) {
     pointRadius:0, fill:false, type:'line'
   };
 }
+function linReg(arr){
+  const n = arr.length;
+  const sumX = (n*(n-1))/2;
+  const sumX2 = (n*(n-1)*(2*n-1))/6;
+  const sumY = arr.reduce((a,b)=>a+b,0);
+  const sumXY = arr.reduce((s,y,i)=>s+i*y,0);
+  const slope = (n*sumXY - sumX*sumY) / (n*sumX2 - sumX*sumX);
+  const intercept = (sumY - slope*sumX) / n;
+  return arr.map((_,i) => +( intercept + slope*i ).toFixed(2));
+}
+function regDataset(data, color) {
+  return {
+    label:'回帰', data:linReg(data),
+    borderColor:color, backgroundColor:'transparent',
+    borderWidth:1.5, borderDash:[5,5],
+    pointRadius:0, fill:false, tension:0
+  };
+}
 const N = DATA.months.length;
 
 charts.shoTrend = new Chart(document.getElementById('chartShoTrend'),{
   type:'line',
   data:{labels:DATA.monthLabels, datasets:[
-    {label:'初診件数（換算）', data:DATA.total_sho_monthly, borderColor:CC.blue, backgroundColor:CC.blueL, borderWidth:2.5, tension:.3, pointRadius:4, pointBackgroundColor:CC.blue},
+    {label:'初診件数（換算）', data:DATA.total_sho_monthly, borderColor:CC.blue, backgroundColor:'transparent', borderWidth:2.5, tension:0, pointRadius:4, pointBackgroundColor:CC.blue},
+    regDataset(DATA.total_sho_monthly, CC.blue),
     dashedLineDataset('全体目標', DATA.global_sho_target, CC.target, N)
   ]},
   options:commonOpts('件数')
 });
 
+const spsData = spsSpark.map(v => Number(v.toFixed(1)));
 charts.spsTrend = new Chart(document.getElementById('chartSpsTrend'),{
   type:'line',
-  data:{labels:DATA.monthLabels, datasets:[{
-    label:'再診/初診 比率', data:spsSpark.map(v => Number(v.toFixed(1))),
-    borderColor:CC.other, backgroundColor:CC.otherL, borderWidth:2.5, tension:.3, pointRadius:4, pointBackgroundColor:CC.other
-  }]},
+  data:{labels:DATA.monthLabels, datasets:[
+    {label:'再診/初診 比率', data:spsData,
+    borderColor:CC.other, backgroundColor:'transparent', borderWidth:2.5, tension:0, pointRadius:4, pointBackgroundColor:CC.other},
+    regDataset(spsData, CC.other)
+  ]},
   options:commonOpts('倍')
 });
 
 charts.kusTrend = new Chart(document.getElementById('chartKusTrend'),{
   type:'line',
   data:{labels:DATA.monthLabels, datasets:[
-    {label:'薬のみ再診（換算）', data:DATA.total_kus_monthly, borderColor:CC.gold, backgroundColor:CC.goldL, borderWidth:2.5, tension:.3, pointRadius:4, pointBackgroundColor:CC.gold},
+    {label:'薬のみ再診（換算）', data:DATA.total_kus_monthly, borderColor:CC.gold, backgroundColor:'transparent', borderWidth:2.5, tension:0, pointRadius:4, pointBackgroundColor:CC.gold},
+    regDataset(DATA.total_kus_monthly, CC.gold),
     dashedLineDataset('全体目標(以下)', DATA.global_kus_target, CC.target, N)
   ]},
   options:commonOpts('件数')
