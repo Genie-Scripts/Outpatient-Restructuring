@@ -193,7 +193,7 @@
       <div class="sub">Outpatient Restructuring</div>
     </div>
     <div class="gh-meta">
-      <div>更新 2026-04-30 06:00</div>
+      <div>更新 2026-06-01 13:58</div>
       
     </div>
   </div>
@@ -229,6 +229,8 @@
       <label>月:</label>
       <button id="gh-prev-month" type="button" title="前月">←</button>
       <select id="gh-month-select">
+        
+        <option value="2026-05">2026-05</option>
         
         <option value="2026-04" selected>2026-04</option>
         
@@ -291,25 +293,25 @@
   <div class="card-head">
     <span class="card-num">00</span>
     <h2>内科 <span class="type-badge naika">内科</span></h2>
-    <span class="card-sub">2026-04 ／ 再編診断 ／ 実営業日 16日</span>
+    <span class="card-sub">2026-04 ／ 再編診断 ／ 実営業日 21日（祝日・病院休 1日除外）</span>
   </div>
 
   <div class="summary-row">
     <div class="summary-stat">
       <div class="summary-stat-k">総件数</div>
-      <div class="summary-stat-v">251<span class="summary-stat-u">件</span></div>
+      <div class="summary-stat-v">341<span class="summary-stat-u">件</span></div>
     </div>
     <div class="summary-stat">
       <div class="summary-stat-k">初診率</div>
-      <div class="summary-stat-v">55.38<span class="summary-stat-u">%</span></div>
+      <div class="summary-stat-v">56.89<span class="summary-stat-u">%</span></div>
     </div>
     <div class="summary-stat">
       <div class="summary-stat-k">紹介率（初診）</div>
-      <div class="summary-stat-v">12.95<span class="summary-stat-u">%</span></div>
+      <div class="summary-stat-v">12.37<span class="summary-stat-u">%</span></div>
     </div>
     <div class="summary-stat">
       <div class="summary-stat-k">未来院率</div>
-      <div class="summary-stat-v">0.8<span class="summary-stat-u">%</span></div>
+      <div class="summary-stat-v">0.59<span class="summary-stat-u">%</span></div>
     </div>
   </div>
   <p class="meta">※ 詳細な医師別内訳・KPI評価は医師フィードバックサイト側で確認できます。</p>
@@ -361,14 +363,14 @@
       <tr>
         <td>DR_IM001</td>
         <td>SL_0015</td>
-        <td class="num">108</td>
-        <td class="num">38.0%</td>
-        <td class="num">87.0%</td>
-        <td class="num">9.5</td>
+        <td class="num">143</td>
+        <td class="num">35.7%</td>
+        <td class="num">87.4%</td>
+        <td class="num">11.0</td>
         <td class="num">
           
           <span class="score-badge
-            score-low">41.1</span>
+            score-low">48.4</span>
           
         </td>
       </tr>
@@ -414,11 +416,11 @@
       
       <tr>
         <td>SL_0015</td>
-        <td class="num">247</td>
-        <td class="num">139</td>
-        <td class="num">108</td>
-        <td class="num">18</td>
-        <td class="num">56.3%</td>
+        <td class="num">337</td>
+        <td class="num">194</td>
+        <td class="num">143</td>
+        <td class="num">24</td>
+        <td class="num">57.6%</td>
         <td>
           
         </td>
@@ -449,7 +451,7 @@
   </div>
   <div class="group">
     <a href="../2026-03/IM.html">← 前月の同科</a>
-    
+    <a href="../2026-05/IM.html">翌月の同科 →</a>
   </div>
   <div class="group">
     <a href="../../index.html">↑ ハブへ</a>
@@ -556,7 +558,7 @@
 
 
 <script>
-const TZ_DATA = {"labels": ["月", "火", "水", "木", "金"], "datasets": [{"label": "午前(〜12時)", "data": [11, 14, 13, 10, 14]}, {"label": "午後前半(12-15時)", "data": [1, 1, 3, 1, 0]}, {"label": "午後後半(15-17時)", "data": [0, 0, 0, 0, 0]}, {"label": "夕方以降(17時〜)", "data": [19, 15, 20, 20, 17]}]};
+const TZ_DATA = {"labels": ["月", "火", "水", "木", "金"], "datasets": [{"label": "午前(〜12時)", "data": [16, 18, 17, 19, 18]}, {"label": "午後前半(12-15時)", "data": [1, 1, 5, 1, 0]}, {"label": "午後後半(15-17時)", "data": [0, 0, 0, 0, 0]}, {"label": "夕方以降(17時〜)", "data": [28, 20, 27, 36, 19]}]};
 if (TZ_DATA && TZ_DATA.labels && document.getElementById('chartTimezone')) {
   const palette = ['#3F7FC1', '#D08620', '#2B9DB8', '#8B6FB6'];
   new Chart(document.getElementById('chartTimezone'), {
