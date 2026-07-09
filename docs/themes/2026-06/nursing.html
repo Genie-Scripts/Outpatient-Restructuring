@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>曜日×時間帯 分析 ／ 2026-06 | 外来再編分析</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&family=DM+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F3EF; --surface:#FFFFFF; --surface2:#FAF9F6; --surface3:#F0EDE8;
+    --border:#E5E3DF; --border-strong:#D6D3CC;
+    --text:#2C2A28; --text-soft:#5A5651; --dim:#8A847C; --muted:#B0ABA3;
+    --header:#3D3A35; --header-line:#4F4B45;
+    --blue:#3F7FC1; --blue-light:#E7F0FA;
+    --naika:#2B9DB8; --naika-bg:#E4F3F6;
+    --geka:#D08620;  --geka-bg:#FAEEDB;
+    --other:#8B6FB6; --other-bg:#EFEAF5;
+    --up:#2F7A4B; --up-bg:#E5F1E9;
+    --down:#A33838; --down-bg:#F5E4E4;
+    --flat:#8A847C; --flat-bg:#EDEBE7;
+    --warn:#8A6D1A; --warn-bg:#FAF3E0; --warn-border:#D4B860;
+    --grade-s-bg:#C89020;  --grade-s-fg:#FFFFFF;
+    --grade-a-bg:#2F7A4B;  --grade-a-fg:#FFFFFF;
+    --grade-b-bg:#2E5F85;  --grade-b-fg:#FFFFFF;
+    --grade-c-bg:#7A746B;  --grade-c-fg:#FFFFFF;
+    --grade-d-bg:#A33838;  --grade-d-fg:#FFFFFF;
+    --grade-na-bg:#E5E3DF; --grade-na-fg:#8A847C;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.55;}
+  a{color:inherit;text-decoration:none;}
+
+  /* ===== Global header (sticky) ===== */
+  header.site{position:sticky;top:0;z-index:30;background:var(--header);color:#fff;
+              border-bottom:3px solid var(--geka);box-shadow:0 2px 8px rgba(0,0,0,.06);}
+  .gh-row1{display:flex;align-items:center;gap:14px;padding:12px 28px;
+           border-bottom:1px solid var(--header-line);flex-wrap:wrap;}
+  .gh-logo{width:34px;height:34px;background:var(--geka);border-radius:8px;
+           display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;
+           font-family:'DM Mono',monospace;flex-shrink:0;}
+  .gh-title h1{font-size:16px;font-weight:700;color:#fff;margin:0;line-height:1.2;}
+  .gh-title .sub{font-size:11px;color:rgba(255,255,255,.65);font-family:'DM Mono',monospace;}
+  .gh-meta{margin-left:auto;display:flex;gap:14px;align-items:center;font-size:11px;
+           color:rgba(255,255,255,.65);font-family:'DM Mono',monospace;flex-wrap:wrap;}
+
+  .gh-row2{display:flex;align-items:center;gap:18px;padding:8px 28px;
+           background:rgba(0,0,0,.12);flex-wrap:wrap;}
+  .gh-views{display:flex;gap:4px;flex-wrap:wrap;}
+  .gh-views a{font-size:12px;color:rgba(255,255,255,.85);padding:6px 14px;border-radius:6px;
+              transition:background .15s, color .15s;font-weight:500;white-space:nowrap;}
+  .gh-views a:hover{background:rgba(255,255,255,.12);color:#fff;}
+  .gh-views a.active{background:#fff;color:var(--header);font-weight:700;}
+  .gh-views a.disabled{color:rgba(255,255,255,.35);cursor:not-allowed;}
+
+  .gh-month{margin-left:auto;display:flex;gap:8px;align-items:center;font-size:12px;color:rgba(255,255,255,.85);flex-wrap:nowrap;}
+  .gh-month label{color:rgba(255,255,255,.6);font-size:11px;letter-spacing:.04em;text-transform:uppercase;font-weight:700;}
+  .gh-month select{background:rgba(255,255,255,.95);color:var(--text);
+                   border:none;padding:5px 10px;border-radius:6px;
+                   font-family:'DM Mono',monospace;font-size:13px;font-weight:600;cursor:pointer;
+                   min-width:110px;}
+  .gh-month button{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.2);
+                   padding:4px 10px;border-radius:5px;font-size:12px;cursor:pointer;
+                   font-family:'DM Mono',monospace;}
+  .gh-month button:hover:not(:disabled){background:rgba(255,255,255,.2);}
+  .gh-month button:disabled{opacity:.35;cursor:not-allowed;}
+
+  /* ===== ヘッダのレスポンシブ ===== */
+  @media (max-width: 760px){
+    .gh-row1, .gh-row2{padding-left:14px;padding-right:14px;}
+    .gh-meta{margin-left:0;flex-basis:100%;}
+    .gh-month{margin-left:0;width:100%;justify-content:flex-end;}
+    .gh-views{flex-basis:100%;justify-content:flex-start;}
+  }
+  @media (max-width: 760px){
+    .container{padding:16px 14px 30px;}
+    .breadcrumb{padding:8px 14px;}
+  }
+
+  .breadcrumb{background:var(--surface2);border-bottom:1px solid var(--border);
+              padding:8px 28px;font-size:12px;color:var(--text-soft);
+              display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .breadcrumb a{color:var(--blue);}
+  .breadcrumb a:hover{text-decoration:underline;}
+  .breadcrumb .sep{color:var(--dim);}
+  .breadcrumb .current{color:var(--text);font-weight:600;}
+
+  .container{max-width:1400px;margin:0 auto;padding:24px 28px 40px;}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+        padding:22px 26px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.03);}
+  .card-head{display:flex;align-items:baseline;gap:10px;margin-bottom:16px;
+             padding-bottom:10px;border-bottom:1px solid var(--border);}
+  .card-num{font-size:10px;font-family:'DM Mono',monospace;color:var(--blue);
+            background:var(--blue-light);padding:3px 8px;border-radius:4px;
+            font-weight:700;letter-spacing:.04em;}
+  .card-title{font-size:15px;font-weight:700;color:var(--text);}
+  .card-sub{font-size:12px;color:var(--dim);margin-left:4px;}
+  h2{font-size:16px;font-weight:700;color:var(--text);}
+  h3{font-size:13px;font-weight:600;color:var(--text-soft);margin-bottom:8px;}
+  p{font-size:13px;color:var(--text-soft);line-height:1.6;}
+  .meta{font-size:12px;color:var(--dim);margin-top:4px;}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  table thead th{background:var(--surface2);padding:9px 12px;text-align:left;
+                 font-size:11px;font-weight:700;color:var(--text-soft);
+                 border-bottom:1px solid var(--border-strong);text-transform:uppercase;letter-spacing:.04em;}
+  table tbody td{padding:8px 12px;border-bottom:1px solid var(--border);}
+  table tbody tr:hover td{background:var(--surface2);}
+  table .num{text-align:right;font-family:'DM Mono',monospace;}
+  table .num.warn{color:var(--warn);font-weight:700;}
+
+  .type-badge{display:inline-block;padding:1px 8px;border-radius:4px;font-size:10px;
+              font-weight:700;letter-spacing:.04em;margin-left:6px;vertical-align:middle;}
+  .type-badge.naika{background:var(--naika-bg);color:var(--naika);}
+  .type-badge.geka{background:var(--geka-bg);color:var(--geka);}
+  .type-badge.other{background:var(--other-bg);color:var(--other);}
+
+  .summary-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+               gap:12px;margin-bottom:16px;}
+  .summary-stat{background:var(--surface2);padding:12px 14px;border-radius:8px;border:1px solid var(--border);}
+  .summary-stat-k{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.04em;font-weight:700;}
+  .summary-stat-v{font-size:22px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text);margin-top:4px;}
+  .summary-stat-u{font-size:11px;color:var(--text-soft);margin-left:3px;font-weight:500;}
+  .summary-stat-norm{font-size:10px;color:var(--dim);font-family:'DM Mono',monospace;margin-top:2px;}
+
+  .nav-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+  .nav-pill{padding:6px 12px;background:var(--surface2);border:1px solid var(--border);
+            border-radius:6px;font-size:12px;color:var(--text-soft);transition:all .15s;}
+  .nav-pill:hover{border-color:var(--blue);color:var(--blue);}
+  .nav-pill.current{background:var(--header);color:#fff;border-color:var(--header);}
+
+  .chart-wrap{position:relative;height:240px;}
+
+  .lateral-nav{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;
+               padding:14px 22px;background:var(--surface2);border:1px solid var(--border);
+               border-radius:10px;margin-top:24px;}
+  .lateral-nav a{font-size:12px;color:var(--blue);padding:6px 12px;
+                 border-radius:6px;background:var(--surface);
+                 border:1px solid var(--border);transition:all .15s;}
+  .lateral-nav a:hover{border-color:var(--blue);background:var(--blue-light);}
+  .lateral-nav .group{display:flex;gap:6px;flex-wrap:wrap;}
+
+  .empty{color:var(--dim);font-size:13px;padding:16px;background:var(--surface3);
+         border-radius:6px;text-align:center;}
+
+  .score-badge{display:inline-block;min-width:36px;padding:2px 8px;
+               border-radius:4px;font-weight:700;text-align:center;
+               font-family:'DM Mono',monospace;font-size:12px;}
+  .score-high{background:var(--down);color:#fff;}
+  .score-mid{background:#E0A344;color:#fff;}
+  .score-low{background:var(--surface3);color:var(--text-soft);}
+
+  /* Grade badges (monthly scorecard) */
+  .grade{display:inline-block;min-width:24px;padding:2px 8px;border-radius:4px;
+         font-weight:700;text-align:center;font-family:'DM Mono',monospace;font-size:12px;}
+  .grade-S{background:var(--grade-s-bg);color:var(--grade-s-fg);}
+  .grade-A{background:var(--grade-a-bg);color:var(--grade-a-fg);}
+  .grade-B{background:var(--grade-b-bg);color:var(--grade-b-fg);}
+  .grade-C{background:var(--grade-c-bg);color:var(--grade-c-fg);}
+  .grade-D{background:var(--grade-d-bg);color:var(--grade-d-fg);}
+  .grade-NA{background:var(--grade-na-bg);color:var(--grade-na-fg);}
+
+  footer.site{padding:18px 28px;text-align:center;color:var(--dim);font-size:11px;
+              border-top:1px solid var(--border);margin-top:20px;}
+  footer.site .feedback-link{color:var(--blue);}
+
+  /* テーマドロップダウン（JS クリックトグル） */
+  .gh-dropdown{position:relative;}
+  .gh-dropdown-menu{
+    display:none;position:absolute;top:calc(100% + 6px);left:0;
+    background:var(--header);border:1px solid var(--header-line);
+    border-radius:8px;min-width:200px;z-index:100;padding:6px 0;
+    box-shadow:0 4px 16px rgba(0,0,0,.2);
+  }
+  .gh-dropdown-menu.open{ display:block; }
+  .gh-dropdown-menu a{
+    display:block;padding:8px 16px;font-size:12px;
+    color:rgba(255,255,255,.85);white-space:nowrap;
+  }
+  .gh-dropdown-menu a:hover{background:rgba(255,255,255,.12);color:#fff;}
+  .gh-dropdown-menu a.active{background:rgba(255,255,255,.15);color:#fff;font-weight:700;}
+</style>
+
+<style>
+.hm-controls{
+  display:flex;gap:14px;align-items:center;flex-wrap:wrap;
+  margin-bottom:16px;padding:12px 16px;
+  background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+}
+.hm-ctrl-group{display:flex;align-items:center;gap:8px;}
+.hm-ctrl-group label{
+  font-size:11px;color:var(--dim);font-weight:700;
+  text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;
+}
+.hm-ctrl-group select{
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--text);padding:5px 10px;border-radius:6px;
+  font-size:12px;cursor:pointer;min-width:180px;
+}
+.metric-tabs{display:flex;gap:4px;flex-wrap:wrap;}
+.metric-tab{
+  padding:5px 12px;background:var(--surface);border:1px solid var(--border);
+  border-radius:5px;font-size:12px;color:var(--text-soft);cursor:pointer;
+  transition:all .15s;
+}
+.metric-tab:hover{border-color:var(--blue);color:var(--blue);}
+.metric-tab.active{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:600;}
+.heatmap-wrap{overflow-x:auto;margin-top:8px;}
+.heatmap-tbl{border-collapse:collapse;font-size:11px;white-space:nowrap;}
+.heatmap-tbl th{
+  padding:4px 6px;background:var(--surface2);font-weight:700;
+  color:var(--text-soft);font-size:10px;border:1px solid var(--border);
+}
+.heatmap-tbl td{
+  padding:3px 5px;text-align:center;border:1px solid var(--border);
+  font-family:'DM Mono',monospace;font-size:10px;min-width:34px;
+  transition:background .12s;
+}
+.heatmap-tbl .row-label{
+  font-weight:700;color:var(--text);background:var(--surface2) !important;
+  text-align:left;padding-left:8px !important;min-width:32px;
+}
+</style>
+
+</head>
+<body data-view="theme-nursing" data-month="2026-06">
+
+<header class="site">
+  <div class="gh-row1">
+    <div class="gh-logo">OR</div>
+    <div class="gh-title">
+      <h1>外来再編分析</h1>
+      <div class="sub">Outpatient Restructuring</div>
+    </div>
+    <div class="gh-meta">
+      <div>更新 2026-07-09 13:01</div>
+      
+    </div>
+  </div>
+  <div class="gh-row2">
+    <div class="gh-views">
+      <a href="../../index.html">ホーム</a>
+      <a href="../../monthly/2026-06.html">月次経営サマリ</a>
+      <a href="../../dept/2026-06/index.html">診療科 再編診断</a>
+      <div class="gh-dropdown">
+        <button type="button" id="gh-theme-btn"
+           class="active"
+           style="background:none;border:none;cursor:pointer;font-family:inherit;font-size:12px;
+                  color:var(--header);
+                  padding:6px 14px;border-radius:6px;font-weight:700;
+                  display:flex;align-items:center;gap:4px;white-space:nowrap;
+                  background:#fff;">テーマ分析 <span style="font-size:9px;">▾</span></button>
+        <div class="gh-dropdown-menu">
+          <a href="../../themes/2026-06/referral.html"
+             >紹介・逆紹介</a>
+          <a href="../../themes/2026-06/slot.html"
+             >予約枠サマリ</a>
+          <a href="../../themes/2026-06/nursing.html"
+             class="active">曜日×時間帯 分析</a>
+          <a href="../../themes/2026-06/doctor.html"
+             >医師×時間帯 分析</a>
+          <a href="../../themes/2026-06/slot-heatmap.html"
+             >外来枠×時間帯 分析</a>
+        </div>
+      </div>
+    </div>
+    
+    <div class="gh-month">
+      <label>月:</label>
+      <button id="gh-prev-month" type="button" title="前月">←</button>
+      <select id="gh-month-select">
+        
+        <option value="2026-06" selected>2026-06</option>
+        
+        <option value="2026-05">2026-05</option>
+        
+        <option value="2026-04">2026-04</option>
+        
+        <option value="2026-03">2026-03</option>
+        
+        <option value="2026-02">2026-02</option>
+        
+        <option value="2026-01">2026-01</option>
+        
+        <option value="2025-12">2025-12</option>
+        
+        <option value="2025-11">2025-11</option>
+        
+        <option value="2025-10">2025-10</option>
+        
+        <option value="2025-09">2025-09</option>
+        
+        <option value="2025-08">2025-08</option>
+        
+        <option value="2025-07">2025-07</option>
+        
+        <option value="2025-06">2025-06</option>
+        
+        <option value="2025-05">2025-05</option>
+        
+        <option value="2025-04">2025-04</option>
+        
+      </select>
+      <button id="gh-next-month" type="button" title="翌月">→</button>
+    </div>
+    
+  </div>
+</header>
+
+
+<div class="breadcrumb">
+  
+    
+    <a href="../../index.html">ホーム</a>
+    
+    <span class="sep">/</span>
+  
+    
+    <span class="current">テーマ：曜日×時間帯 分析 ／ 2026-06</span>
+    
+    
+  
+</div>
+
+
+<main class="container">
+
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-num">00</span>
+    <h2>曜日×時間帯 来院ヒートマップ</h2>
+    <span class="card-sub">2026-06 ／ 評価対象科 ／ 実営業日 22日</span>
+  </div>
+  <p style="font-size:13px;color:var(--text-soft);line-height:1.7;margin-bottom:16px;">
+    時間帯ゾーン別・曜日別の患者数を集計し、看護師の人員配置計画に活用します。
+    15時以降のピークが高い場合、日勤帯シフトとの乖離が生じリスクとなります。
+  </p>
+
+  <div class="hm-controls">
+    <div class="hm-ctrl-group">
+      <label>対象：</label>
+      <select id="filter-select"></select>
+    </div>
+    <div class="hm-ctrl-group">
+      <label>指標：</label>
+      <div class="metric-tabs">
+        <button class="metric-tab active" data-metric="arrivals">到着件数（日平均）</button>
+        <button class="metric-tab" data-metric="conc_med">同時並行（中央値）</button>
+        <button class="metric-tab" data-metric="conc_max">同時並行（最大）</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="heatmap-wrap">
+    <div id="hm-container"></div>
+  </div>
+  <p class="meta" style="margin-top:8px;">
+    値は平日当たり日平均。色が濃いほど来院が集中している時間帯。
+    15時以降も高い診療科はシフト延長の要検討候補。
+  </p>
+</div>
+
+<div class="lateral-nav">
+  <div class="group">
+    <a href="../2026-05/nursing.html">← 前月</a>
+    
+  </div>
+  <div class="group">
+    <a href="../../index.html">↑ ホーム</a>
+  </div>
+</div>
+
+
+</main>
+
+<footer class="site">
+  外来再編分析ダッシュボード
+  
+</footer>
+
+<script>
+/* グローバルヘッダ：月セレクタとビュー切替の連動。
+   現在のビュー（data-view）と現在の科コード（data-code）を保ったまま
+   月だけを切り替える。ホームの場合はその月の monthly に遷移する。 */
+(function(){
+  const body = document.body;
+  const view = body.getAttribute('data-view');
+  const code = body.getAttribute('data-code');
+  const sel = document.getElementById('gh-month-select');
+  const prevBtn = document.getElementById('gh-prev-month');
+  const nextBtn = document.getElementById('gh-next-month');
+  if (!sel) return;
+
+  const months = Array.from(sel.options).map(o => o.value); // 新→旧
+
+  function targetUrl(month, view, code){
+    /* root から見たパス。各ページで root_prefix が異なるため
+       絶対パスではなく、ビューに応じた相対パスを構築する。 */
+    if (view === 'home') {
+      return rootPrefix() + 'monthly/' + month + '.html';
+    }
+    if (view === 'monthly') {
+      return rootPrefix() + 'monthly/' + month + '.html';
+    }
+    if (view === 'dept' || view === 'dept-detail') {
+      const filename = code ? (code + '.html') : 'index.html';
+      return rootPrefix() + 'dept/' + month + '/' + filename;
+    }
+    if (view && view.startsWith('theme-')) {
+      const slug = view.replace('theme-', '');
+      return rootPrefix() + 'themes/' + month + '/' + slug + '.html';
+    }
+    return rootPrefix() + 'index.html';
+  }
+
+  function rootPrefix(){
+    /* グローバルヘッダの「ホーム」リンクから root_prefix を推測する。
+       href の末尾が "index.html" でその直前までが prefix。 */
+    const a = document.querySelector('header.site .gh-views a');
+    if (!a) return '';
+    const href = a.getAttribute('href') || '';
+    return href.replace(/index\.html$/, '');
+  }
+
+  sel.addEventListener('change', () => {
+    const m = sel.value;
+    location.href = targetUrl(m, view, code);
+  });
+
+  function shiftMonth(delta){
+    /* sel.options は新→旧で並んでいる。delta=-1 で前月（旧側=index増）、+1 で翌月。 */
+    const idx = sel.selectedIndex;
+    const newIdx = idx - delta; // 翌月に進む = 新側＝idx 減
+    if (newIdx < 0 || newIdx >= sel.options.length) return;
+    sel.selectedIndex = newIdx;
+    sel.dispatchEvent(new Event('change'));
+  }
+  if (prevBtn) prevBtn.addEventListener('click', () => shiftMonth(-1));
+  if (nextBtn) nextBtn.addEventListener('click', () => shiftMonth(+1));
+
+  // 端で押せないボタンは disabled に
+  function refreshBtns(){
+    const idx = sel.selectedIndex;
+    if (prevBtn) prevBtn.disabled = (idx >= sel.options.length - 1);
+    if (nextBtn) nextBtn.disabled = (idx <= 0);
+  }
+  refreshBtns();
+  sel.addEventListener('change', refreshBtns);
+})();
+
+/* テーマドロップダウン：クリックトグル */
+(function(){
+  const btn  = document.getElementById('gh-theme-btn');
+  const menu = btn && btn.parentElement.querySelector('.gh-dropdown-menu');
+  if (!btn || !menu) return;
+
+  btn.addEventListener('click', function(e){
+    e.stopPropagation();
+    menu.classList.toggle('open');
+  });
+
+  /* メニュー項目クリックで閉じる（ページ遷移前に閉じておく） */
+  menu.addEventListener('click', function(){ menu.classList.remove('open'); });
+
+  /* ドロップダウン外クリックで閉じる */
+  document.addEventListener('click', function(){ menu.classList.remove('open'); });
+})();
+</script>
+
+
+<script>
+const DATASET    = {"filter_opts": [{"key": "all", "label": "全評価科合計"}, {"key": "naika", "label": "内科系"}, {"key": "geka", "label": "外科系"}, {"key": "DEPT_U", "label": "泌尿器科（外科系）"}, {"key": "DEPT_E", "label": "眼科（外科系）"}, {"key": "DEPT_G", "label": "産婦人科（外科系）"}, {"key": "DEPT_OR", "label": "整形外科（外科系）"}, {"key": "DEPT_ENT", "label": "耳鼻咽喉科（外科系）"}, {"key": "DEPT_GI", "label": "消化器内科（内科系）"}, {"key": "DEPT_BR", "label": "乳腺外科（外科系）"}, {"key": "DEPT_CV", "label": "循環器内科（内科系）"}, {"key": "DEPT_RS", "label": "呼吸器内科（内科系）"}, {"key": "DEPT_GM", "label": "総合内科（内科系）"}, {"key": "DEPT_DM", "label": "皮膚科（外科系）"}, {"key": "DEPT_GS", "label": "一般消化器外科（外科系）"}, {"key": "DEPT_RH", "label": "リウマチ膠原病内科（内科系）"}, {"key": "DEPT_OS", "label": "歯科口腔外科（外科系）"}, {"key": "DEPT_RT", "label": "放射線治療科（その他）"}, {"key": "DEPT_HE", "label": "血液内科（内科系）"}, {"key": "DEPT_NE", "label": "腎内科（内科系）"}, {"key": "DEPT_PD", "label": "小児科（内科系）"}, {"key": "DEPT_NR", "label": "脳神経内科（内科系）"}, {"key": "DEPT_PS", "label": "形成外科（外科系）"}, {"key": "DEPT_ER", "label": "救急科（その他）"}, {"key": "DEPT_IM", "label": "内科（内科系）"}, {"key": "DEPT_MN", "label": "メンタルケア科（内科系）"}, {"key": "DEPT_NS", "label": "脳神経外科（外科系）"}, {"key": "DEPT_CS", "label": "心臓血管外科（外科系）"}, {"key": "DEPT_RS2", "label": "呼吸器外科（外科系）"}, {"key": "DEPT_ON", "label": "臨床腫瘍科（内科系）"}, {"key": "DEPT_AL", "label": "アレルギー科（内科系）"}, {"key": "DEPT_DB", "label": "糖尿病内分泌内科（内科系）"}], "series": {"all": {"label": "全評価科合計", "arrivals": [[7.0, 35.7, 117.47, 121.93, 121.23, 121.78, 107.65, 100.55, 77.82, 62.2, 66.27, 64.67, 70.92, 63.23, 52.24, 41.47, 33.8, 29.25, 17.0, 12.5, 11.0, 3.0, 6.0, 7.0], [6.08, 43.72, 118.95, 121.75, 125.88, 110.82, 117.37, 106.28, 86.8, 61.23, 67.47, 68.22, 62.23, 58.0, 45.62, 34.45, 33.59, 20.43, 14.99, 3.0, 7.0, 3.25, 3.0, 2.0], [5.0, 31.5, 107.58, 122.91, 114.5, 103.25, 107.5, 99.17, 70.26, 48.74, 59.0, 63.75, 65.17, 57.16, 60.34, 45.0, 34.26, 19.42, 8.0, 11.5, 3.25, 2.0, 5.0, 2.0], [2.0, 34.34, 105.58, 119.67, 121.25, 111.24, 108.5, 102.83, 73.74, 50.17, 56.0, 59.16, 61.66, 63.5, 54.33, 43.83, 35.08, 24.08, 14.0, 9.75, 4.0, 4.0, 4.0, 4.0], [1.0, 35.42, 116.08, 107.75, 111.84, 112.01, 110.25, 105.16, 80.0, 55.57, 59.42, 61.0, 69.58, 69.33, 56.08, 35.75, 22.42, 20.42, 11.33, 10.0, 4.0, 3.0, 2.0, 5.0], [2.0, 1.0, 1.0, 2.0, 3.0, 2.0, 3.0, 3.0, 1.0, 4.0, 3.0, 2.33, 1.0, 2.0, 2.33, 0.0, 2.0, 2.0, 2.5, 2.0, 2.0, 2.0, 0.0, 2.0]], "conc_med": [[7.0, 36.5, 127.0, 147.0, 150.0, 151.0, 143.0, 124.0, 105.5, 72.5, 82.5, 80.0, 87.0, 83.0, 65.5, 55.5, 45.5, 36.0, 26.0, 15.0, 16.5, 11.5, 10.0, 10.0], [5.5, 44.5, 133.5, 144.5, 157.5, 144.0, 152.5, 140.5, 113.5, 86.0, 91.5, 84.0, 84.5, 76.0, 60.5, 43.5, 43.0, 30.5, 20.5, 8.0, 7.5, 5.0, 4.0, 2.0], [5.0, 32.0, 125.0, 151.0, 139.0, 136.5, 141.0, 126.5, 102.5, 63.5, 75.0, 84.0, 84.0, 75.5, 74.5, 59.0, 43.5, 23.5, 15.5, 14.0, 4.0, 4.0, 6.0, 4.5], [2.0, 33.5, 120.0, 151.5, 163.5, 151.0, 142.5, 128.5, 101.0, 72.0, 69.0, 81.5, 82.0, 87.5, 73.5, 59.0, 53.0, 37.5, 23.0, 16.5, 12.0, 7.0, 4.0, 4.5], [1.0, 34.5, 128.0, 131.5, 145.0, 143.5, 142.5, 134.5, 109.5, 73.5, 74.0, 79.0, 80.0, 85.5, 71.0, 48.0, 33.0, 24.5, 18.5, 13.5, 9.0, 5.5, 4.0, 6.0], [2.0, 2.0, 1.0, 3.0, 4.0, 3.0, 3.5, 4.5, 3.0, 3.0, 3.0, 3.0, 2.0, 2.5, 3.0, 1.0, 2.0, 2.0, 3.0, 3.0, 3.0, 3.0, 1.0, 2.0]], "conc_max": [[7.0, 53.0, 175.0, 204.0, 199.0, 204.0, 208.0, 179.0, 161.0, 118.0, 120.0, 125.0, 127.0, 119.0, 107.0, 84.0, 67.0, 54.0, 36.0, 17.0, 17.0, 12.0, 10.0, 10.0], [8.0, 68.0, 191.0, 209.0, 212.0, 203.0, 201.0, 196.0, 169.0, 121.0, 121.0, 128.0, 119.0, 106.0, 88.0, 66.0, 62.0, 45.0, 24.0, 8.0, 9.0, 6.0, 5.0, 3.0], [5.0, 45.0, 151.0, 207.0, 204.0, 181.0, 195.0, 190.0, 138.0, 97.0, 98.0, 110.0, 119.0, 108.0, 108.0, 87.0, 61.0, 36.0, 16.0, 14.0, 6.0, 5.0, 7.0, 5.0], [2.0, 40.0, 153.0, 188.0, 202.0, 196.0, 193.0, 185.0, 149.0, 104.0, 96.0, 108.0, 109.0, 109.0, 99.0, 87.0, 66.0, 46.0, 31.0, 18.0, 12.0, 7.0, 4.0, 5.0], [1.0, 48.0, 170.0, 182.0, 183.0, 189.0, 187.0, 187.0, 150.0, 105.0, 103.0, 104.0, 122.0, 115.0, 99.0, 71.0, 41.0, 35.0, 22.0, 16.0, 9.0, 6.0, 4.0, 6.0], [2.0, 2.0, 1.0, 3.0, 4.0, 3.0, 4.0, 5.0, 3.0, 4.0, 3.0, 4.0, 3.0, 3.0, 4.0, 1.0, 2.0, 2.0, 3.0, 4.0, 3.0, 3.0, 1.0, 2.0]]}, "naika": {"label": "内科系", "arrivals": [[5.0, 14.97, 44.25, 48.4, 49.83, 47.63, 42.65, 43.05, 32.7, 27.25, 25.0, 26.67, 28.05, 21.83, 19.98, 13.45, 11.8, 11.0, 6.5, 3.0, 5.0, 2.0, 3.0, 5.0], [5.08, 14.7, 40.95, 43.05, 45.81, 39.0, 44.77, 39.85, 35.45, 25.53, 24.37, 26.14, 22.23, 20.8, 15.42, 14.3, 12.68, 7.93, 6.33, 2.0, 4.0, 2.25, 1.0, 2.0], [4.0, 8.25, 32.33, 42.41, 43.75, 36.25, 38.0, 38.25, 28.51, 23.16, 27.92, 26.33, 23.75, 23.5, 24.84, 13.0, 6.67, 5.5, 3.0, 6.0, 1.0, 2.0, 2.0, 2.0], [2.0, 9.67, 40.25, 49.5, 49.25, 43.99, 44.5, 44.33, 34.08, 19.09, 23.0, 22.33, 29.0, 24.25, 22.5, 19.58, 12.25, 9.25, 4.5, 5.75, 2.0, 2.0, 2.0, 1.0], [0.0, 13.0, 41.5, 38.33, 41.17, 41.67, 41.25, 41.16, 30.58, 21.91, 22.0, 19.5, 21.5, 22.0, 14.58, 9.25, 5.0, 6.67, 6.0, 2.0, 3.0, 2.0, 1.0, 1.0], [1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.33, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 2.0]], "conc_med": [[5.0, 16.5, 48.0, 57.0, 60.0, 59.5, 58.0, 54.0, 42.5, 26.5, 31.5, 32.0, 36.0, 27.5, 25.0, 18.0, 15.5, 10.0, 10.0, 4.0, 6.0, 5.0, 3.0, 6.0], [4.5, 16.0, 48.5, 53.0, 58.5, 53.0, 60.0, 57.0, 40.5, 35.0, 33.0, 31.0, 31.5, 29.0, 22.0, 18.5, 17.5, 13.5, 8.0, 4.0, 4.5, 3.0, 1.0, 2.0], [4.0, 9.0, 36.5, 50.5, 52.5, 49.0, 49.5, 42.5, 38.5, 26.0, 35.5, 38.5, 31.5, 30.5, 29.5, 20.0, 12.5, 6.0, 5.0, 7.0, 2.0, 2.0, 3.0, 3.5], [2.0, 9.0, 43.5, 61.0, 65.5, 59.0, 57.5, 55.5, 45.5, 30.0, 29.0, 29.0, 36.5, 33.0, 32.5, 26.5, 19.5, 16.0, 8.0, 8.0, 7.0, 4.0, 2.0, 1.5], [0.0, 13.0, 43.5, 47.5, 52.5, 55.5, 54.0, 55.5, 45.0, 31.0, 29.0, 27.5, 26.0, 27.0, 21.0, 12.5, 8.0, 7.0, 8.0, 5.0, 4.0, 2.5, 3.0, 2.0], [1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.5, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 2.0]], "conc_max": [[5.0, 21.0, 71.0, 84.0, 84.0, 84.0, 83.0, 75.0, 62.0, 48.0, 53.0, 47.0, 49.0, 42.0, 38.0, 27.0, 21.0, 17.0, 13.0, 5.0, 6.0, 5.0, 3.0, 6.0], [7.0, 22.0, 65.0, 74.0, 84.0, 72.0, 80.0, 76.0, 63.0, 52.0, 47.0, 49.0, 43.0, 36.0, 28.0, 27.0, 22.0, 16.0, 9.0, 4.0, 5.0, 4.0, 2.0, 3.0], [4.0, 13.0, 46.0, 76.0, 78.0, 67.0, 74.0, 77.0, 56.0, 46.0, 47.0, 46.0, 45.0, 46.0, 44.0, 30.0, 16.0, 8.0, 5.0, 7.0, 2.0, 3.0, 4.0, 4.0], [2.0, 11.0, 58.0, 71.0, 78.0, 77.0, 79.0, 80.0, 66.0, 44.0, 37.0, 39.0, 49.0, 41.0, 37.0, 36.0, 24.0, 17.0, 12.0, 9.0, 7.0, 4.0, 2.0, 2.0], [0.0, 15.0, 65.0, 71.0, 75.0, 75.0, 75.0, 78.0, 64.0, 49.0, 43.0, 38.0, 40.0, 36.0, 27.0, 20.0, 10.0, 9.0, 9.0, 6.0, 4.0, 3.0, 3.0, 2.0], [1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 3.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 2.0]]}, "geka": {"label": "外科系", "arrivals": [[2.0, 18.4, 66.3, 69.03, 67.4, 68.4, 61.0, 53.5, 43.45, 32.95, 38.52, 34.67, 40.27, 35.8, 29.6, 26.35, 20.0, 16.25, 8.5, 8.5, 5.0, 1.0, 3.0, 2.0], [1.0, 26.77, 74.0, 74.7, 74.27, 66.42, 69.0, 63.1, 48.6, 33.2, 41.1, 38.75, 36.8, 34.6, 27.2, 17.9, 18.91, 10.5, 8.66, 0.0, 1.0, 1.0, 2.0, 0.0], [1.0, 20.92, 70.0, 73.5, 65.5, 61.5, 66.75, 58.67, 39.75, 23.58, 27.83, 33.42, 37.67, 30.66, 32.75, 28.0, 23.59, 12.92, 4.0, 4.5, 1.0, 0.0, 2.0, 0.0], [0.0, 22.67, 62.58, 68.92, 69.75, 63.75, 59.75, 55.5, 39.66, 28.08, 31.0, 33.83, 30.33, 36.75, 28.83, 22.25, 20.5, 12.83, 9.5, 2.0, 2.0, 1.0, 1.0, 2.0], [1.0, 19.67, 67.58, 64.17, 64.67, 65.09, 65.25, 59.75, 46.92, 31.16, 35.75, 36.75, 44.83, 43.33, 36.5, 23.5, 16.42, 12.75, 4.33, 5.0, 1.0, 1.0, 1.0, 3.0], [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 1.0, 0.0, 0.0]], "conc_med": [[2.0, 17.0, 72.0, 84.5, 85.0, 85.5, 79.5, 66.0, 60.0, 44.0, 47.0, 43.5, 48.0, 49.0, 38.5, 34.5, 28.0, 24.0, 13.5, 10.0, 8.5, 4.5, 5.0, 3.0], [1.0, 26.5, 81.0, 87.5, 93.0, 85.0, 87.5, 80.5, 70.0, 48.0, 56.0, 50.0, 49.0, 43.5, 35.0, 22.5, 23.0, 14.0, 11.5, 3.0, 1.0, 1.0, 3.0, 0.0], [1.0, 21.0, 82.0, 92.5, 80.0, 81.5, 87.5, 81.0, 62.0, 35.5, 36.0, 41.0, 46.5, 40.5, 41.5, 34.0, 28.0, 15.5, 9.5, 5.0, 1.0, 0.0, 2.0, 0.0], [0.0, 22.5, 73.5, 88.0, 94.5, 88.0, 79.0, 71.0, 54.5, 38.0, 38.0, 49.5, 42.5, 51.5, 38.5, 30.0, 30.0, 18.5, 13.0, 6.5, 4.0, 2.0, 1.0, 2.0], [1.0, 18.5, 77.5, 77.0, 86.0, 82.0, 84.5, 75.5, 61.0, 39.0, 42.0, 46.5, 49.5, 54.0, 46.0, 31.5, 23.0, 15.5, 9.5, 5.5, 4.0, 2.0, 1.0, 3.0], [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 2.0, 0.0, 0.0]], "conc_max": [[2.0, 29.0, 94.0, 113.0, 109.0, 112.0, 117.0, 98.0, 96.0, 68.0, 63.0, 71.0, 71.0, 68.0, 63.0, 52.0, 44.0, 35.0, 20.0, 11.0, 9.0, 5.0, 5.0, 3.0], [1.0, 43.0, 120.0, 129.0, 121.0, 121.0, 115.0, 111.0, 101.0, 66.0, 71.0, 75.0, 71.0, 65.0, 55.0, 36.0, 37.0, 25.0, 14.0, 3.0, 1.0, 1.0, 3.0, 0.0], [1.0, 29.0, 98.0, 120.0, 118.0, 107.0, 115.0, 110.0, 79.0, 49.0, 47.0, 59.0, 66.0, 55.0, 58.0, 52.0, 41.0, 26.0, 10.0, 5.0, 1.0, 0.0, 2.0, 0.0], [0.0, 27.0, 90.0, 113.0, 119.0, 112.0, 106.0, 99.0, 82.0, 56.0, 57.0, 65.0, 56.0, 64.0, 56.0, 47.0, 38.0, 26.0, 17.0, 7.0, 4.0, 2.0, 1.0, 2.0], [1.0, 29.0, 95.0, 103.0, 99.0, 104.0, 104.0, 99.0, 82.0, 52.0, 56.0, 61.0, 76.0, 73.0, 65.0, 46.0, 29.0, 23.0, 12.0, 7.0, 4.0, 2.0, 1.0, 3.0], [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 2.0, 0.0, 0.0]]}, "DEPT_U": {"label": "泌尿器科", "arrivals": [[1.0, 2.4, 13.2, 14.6, 13.2, 12.4, 11.8, 9.0, 8.2, 3.6, 7.4, 8.4, 7.2, 5.2, 5.4, 4.75, 1.8, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 2.5, 17.2, 13.6, 14.0, 10.0, 13.2, 11.8, 9.4, 6.4, 8.5, 7.0, 5.2, 5.2, 2.4, 2.67, 2.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0], [0.0, 3.0, 14.75, 18.5, 16.75, 13.25, 13.75, 13.25, 8.75, 6.5, 10.0, 7.5, 11.0, 9.5, 9.25, 7.0, 4.0, 1.67, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 5.0, 4.5, 4.5, 5.0, 4.25, 3.0, 1.75, 2.5, 1.0, 1.0, 2.0, 4.0, 1.25, 1.5, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0], [0.0, 2.67, 10.0, 12.25, 11.0, 10.5, 13.75, 11.5, 7.0, 3.5, 7.25, 8.5, 5.0, 8.75, 7.5, 4.0, 1.67, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_med": [[1.0, 2.0, 13.0, 15.0, 15.0, 15.0, 14.0, 9.0, 9.0, 4.0, 8.0, 9.0, 9.0, 5.0, 5.0, 4.5, 2.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0], [0.0, 2.5, 18.0, 17.0, 15.0, 13.0, 16.0, 14.0, 11.0, 9.0, 11.5, 8.0, 8.0, 6.0, 3.0, 3.0, 2.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0], [0.0, 2.5, 18.0, 20.5, 17.5, 15.5, 16.5, 16.0, 12.0, 8.5, 11.0, 10.0, 12.5, 11.0, 12.0, 8.5, 4.0, 2.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 5.5, 6.0, 6.5, 6.5, 5.5, 4.0, 2.5, 1.5, 1.0, 1.0, 2.0, 4.5, 1.0, 2.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0], [0.0, 3.0, 11.0, 13.5, 14.0, 11.5, 15.0, 13.0, 9.5, 3.5, 9.0, 10.5, 6.0, 10.5, 7.0, 6.0, 2.5, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_max": [[1.0, 5.0, 17.0, 21.0, 18.0, 16.0, 20.0, 18.0, 19.0, 6.0, 11.0, 11.0, 14.0, 10.0, 10.0, 10.0, 6.0, 2.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0], [0.0, 4.0, 23.0, 19.0, 17.0, 14.0, 19.0, 16.0, 16.0, 9.0, 13.0, 12.0, 10.0, 9.0, 5.0, 6.0, 5.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0], [0.0, 5.0, 18.0, 23.0, 25.0, 20.0, 19.0, 21.0, 16.0, 10.0, 15.0, 13.0, 18.0, 16.0, 14.0, 11.0, 7.0, 3.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 8.0, 7.0, 9.0, 9.0, 7.0, 5.0, 5.0, 3.0, 1.0, 1.0, 2.0, 5.0, 2.0, 3.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0], [0.0, 3.0, 12.0, 17.0, 15.0, 13.0, 17.0, 16.0, 11.0, 7.0, 11.0, 12.0, 11.0, 11.0, 12.0, 7.0, 3.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]}, "DEPT_E": {"label": "眼科", "arrivals": [[0.0, 2.0, 8.4, 9.8, 9.8, 9.8, 8.0, 9.2, 8.0, 5.8, 6.8, 6.8, 11.0, 8.6, 5.2, 5.6, 4.5, 3.4, 1.5, 1.0, 2.0, 1.0, 0.0, 1.0], [0.0, 5.6, 12.4, 5.8, 7.6, 6.2, 5.8, 5.2, 1.8, 2.6, 5.0, 5.2, 9.4, 9.2, 6.4, 2.6, 2.0, 1.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 2.0, 7.25, 8.75, 9.0, 7.75, 8.75, 7.75, 6.75, 4.25, 3.5, 5.0, 3.75, 4.33, 6.0, 8.25, 8.25, 3.25, 1.0, 2.5, 0.0, 0.0, 0.0, 0.0], [0.0, 2.0, 8.75, 10.5, 11.75, 9.5, 10.5, 8.5, 5.0, 2.5, 2.25, 4.25, 3.75, 6.0, 4.5, 4.0, 4.75, 3.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 2.75, 8.75, 11.25, 12.0, 11.25, 10.75, 8.5, 10.75, 7.75, 4.5, 3.5, 9.25, 9.5, 8.0, 6.75, 5.25, 2.25, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_med": [[0.0, 1.5, 10.0, 12.0, 12.0, 11.0, 9.0, 11.0, 13.0, 8.0, 9.0, 7.0, 11.0, 10.0, 6.0, 8.0, 7.0, 5.0, 2.0, 1.0, 2.0, 2.0, 1.0, 1.0], [0.0, 6.0, 14.0, 7.0, 9.0, 9.0, 8.0, 6.0, 4.0, 3.0, 5.0, 8.0, 11.0, 11.0, 6.0, 4.0, 2.5, 1.5, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 2.0, 9.0, 12.5, 12.5, 11.0, 12.5, 13.0, 12.0, 6.5, 6.5, 6.0, 4.5, 5.5, 6.5, 9.0, 11.0, 5.5, 2.5, 3.0, 0.0, 0.0, 0.0, 0.0], [0.0, 2.0, 10.5, 12.5, 15.5, 13.5, 12.5, 11.0, 6.5, 3.0, 3.5, 6.0, 5.5, 8.0, 6.5, 5.5, 6.0, 4.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 2.5, 10.5, 12.5, 15.5, 14.5, 13.5, 12.5, 12.0, 11.0, 7.0, 5.5, 10.0, 11.0, 10.5, 8.0, 7.5, 3.5, 2.5, 1.0, 1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_max": [[0.0, 4.0, 10.0, 13.0, 15.0, 15.0, 16.0, 14.0, 15.0, 13.0, 10.0, 18.0, 16.0, 14.0, 9.0, 9.0, 9.0, 6.0, 4.0, 1.0, 2.0, 2.0, 1.0, 1.0], [0.0, 9.0, 20.0, 12.0, 11.0, 11.0, 10.0, 10.0, 6.0, 4.0, 10.0, 9.0, 13.0, 13.0, 14.0, 5.0, 5.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 3.0, 9.0, 14.0, 15.0, 13.0, 15.0, 15.0, 13.0, 8.0, 7.0, 9.0, 7.0, 6.0, 11.0, 14.0, 13.0, 9.0, 3.0, 3.0, 0.0, 0.0, 0.0, 0.0], [0.0, 3.0, 12.0, 16.0, 18.0, 15.0, 17.0, 11.0, 15.0, 6.0, 4.0, 8.0, 7.0, 11.0, 7.0, 9.0, 7.0, 6.0, 3.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 5.0, 13.0, 15.0, 16.0, 20.0, 15.0, 13.0, 16.0, 13.0, 10.0, 9.0, 18.0, 15.0, 13.0, 15.0, 10.0, 7.0, 4.0, 1.0, 1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]}, "DEPT_G": {"label": "産婦人科", "arrivals": [[0.0, 1.5, 5.4, 7.2, 7.0, 8.4, 7.0, 7.0, 6.0, 5.0, 5.2, 3.6, 5.6, 5.6, 5.6, 2.8, 2.2, 2.2, 2.0, 2.0, 1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 3.0, 4.6, 4.4, 4.6, 3.0, 5.8, 3.4, 2.0, 1.75, 2.25, 1.75, 1.0, 1.0, 1.33, 1.33, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 2.0, 8.5, 10.75, 8.5, 8.75, 8.0, 9.75, 6.75, 4.33, 4.75, 5.25, 6.0, 4.0, 3.5, 3.5, 3.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 4.0, 7.0, 6.5, 7.75, 6.5, 7.5, 5.25, 4.0, 6.0, 5.25, 5.0, 4.75, 3.75, 3.25, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0], [0.0, 1.5, 4.75, 4.5, 5.75, 5.5, 5.0, 5.0, 3.0, 1.33, 2.67, 4.25, 2.0, 2.67, 1.5, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_med": [[0.0, 1.5, 6.0, 9.0, 8.0, 9.0, 9.0, 8.0, 8.0, 6.0, 7.0, 6.0, 5.0, 8.0, 7.0, 4.0, 3.0, 3.0, 2.0, 3.0, 1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 4.0, 7.0, 8.0, 7.0, 6.0, 7.0, 5.0, 5.0, 4.0, 4.0, 2.0, 2.0, 2.0, 1.5, 3.0, 1.5, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 2.0, 9.0, 14.0, 10.5, 14.0, 12.5, 15.0, 12.5, 5.5, 7.0, 7.0, 7.5, 4.5, 5.0, 5.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 4.5, 8.5, 9.5, 9.5, 9.0, 11.0, 7.0, 6.0, 8.0, 9.5, 9.0, 9.5, 5.5, 5.0, 3.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0], [0.0, 1.5, 5.0, 5.5, 8.0, 6.5, 7.0, 6.5, 5.0, 3.0, 2.0, 5.0, 2.0, 4.0, 2.5, 1.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_max": [[0.0, 2.0, 6.0, 11.0, 13.0, 17.0, 12.0, 13.0, 13.0, 10.0, 8.0, 7.0, 11.0, 10.0, 11.0, 8.0, 5.0, 5.0, 3.0, 3.0, 1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 4.0, 8.0, 10.0, 8.0, 7.0, 9.0, 8.0, 6.0, 6.0, 7.0, 5.0, 4.0, 3.0, 3.0, 3.0, 2.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 2.0, 13.0, 14.0, 15.0, 15.0, 14.0, 17.0, 15.0, 9.0, 8.0, 10.0, 14.0, 8.0, 6.0, 9.0, 6.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 6.0, 11.0, 10.0, 11.0, 11.0, 15.0, 11.0, 9.0, 11.0, 12.0, 10.0, 11.0, 10.0, 10.0, 4.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0], [0.0, 2.0, 7.0, 7.0, 9.0, 10.0, 9.0, 7.0, 6.0, 3.0, 7.0, 6.0, 3.0, 5.0, 3.0, 1.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]}, "DEPT_OR": {"label": "整形外科", "arrivals": [[1.0, 2.0, 10.4, 6.8, 10.0, 8.4, 7.2, 5.8, 4.0, 3.8, 4.6, 4.0, 4.6, 3.6, 2.4, 2.5, 1.2, 1.5, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0], [1.0, 3.8, 8.4, 9.6, 9.6, 8.8, 7.0, 8.4, 9.0, 8.4, 6.0, 4.6, 1.8, 1.5, 2.0, 1.4, 2.0, 1.5, 1.33, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 5.75, 10.75, 6.5, 10.0, 6.5, 7.5, 5.75, 4.5, 2.5, 2.5, 5.75, 5.75, 4.0, 3.0, 1.5, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 2.0, 10.75, 9.5, 10.75, 7.25, 5.75, 8.25, 5.5, 4.25, 4.0, 3.5, 3.0, 2.25, 1.33, 2.0, 2.0, 1.5, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0], [0.0, 4.75, 8.75, 5.75, 7.5, 5.25, 6.25, 6.0, 5.0, 3.75, 4.75, 3.0, 3.5, 2.75, 4.0, 1.5, 1.0, 1.5, 1.0, 2.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0]], "conc_med": [[1.0, 2.0, 11.0, 8.0, 12.0, 12.0, 9.0, 8.0, 5.0, 5.0, 6.0, 5.0, 6.0, 6.0, 4.0, 4.0, 2.0, 2.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0], [1.0, 4.0, 10.0, 13.0, 12.0, 11.0, 10.0, 11.0, 11.0, 11.0, 9.0, 6.0, 2.0, 2.5, 2.0, 1.0, 2.0, 2.0, 1.5, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 5.5, 14.5, 9.5, 11.0, 6.5, 9.0, 9.5, 7.0, 3.5, 3.0, 6.5, 7.0, 5.5, 5.0, 2.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 2.0, 11.5, 13.0, 15.5, 11.5, 8.5, 10.0, 8.0, 5.5, 5.0, 4.5, 3.0, 2.5, 1.0, 2.0, 3.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0], [0.0, 3.5, 10.5, 7.5, 9.0, 7.0, 8.5, 8.0, 7.0, 5.5, 7.0, 4.5, 3.5, 3.5, 5.0, 3.5, 2.0, 2.0, 1.5, 1.5, 1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 0.0, 0.0]], "conc_max": [[1.0, 3.0, 15.0, 14.0, 13.0, 13.0, 13.0, 10.0, 7.0, 8.0, 9.0, 9.0, 10.0, 9.0, 7.0, 5.0, 2.0, 3.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0], [1.0, 5.0, 13.0, 13.0, 15.0, 15.0, 13.0, 13.0, 13.0, 13.0, 11.0, 9.0, 7.0, 4.0, 4.0, 3.0, 4.0, 4.0, 3.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 8.0, 17.0, 13.0, 13.0, 14.0, 13.0, 11.0, 10.0, 7.0, 6.0, 8.0, 9.0, 7.0, 7.0, 3.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 3.0, 16.0, 17.0, 16.0, 16.0, 11.0, 14.0, 9.0, 8.0, 6.0, 6.0, 6.0, 4.0, 2.0, 3.0, 3.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0], [0.0, 9.0, 12.0, 11.0, 11.0, 8.0, 10.0, 11.0, 9.0, 6.0, 7.0, 5.0, 6.0, 5.0, 7.0, 4.0, 2.0, 4.0, 2.0, 2.0, 1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 0.0, 0.0]]}, "DEPT_ENT": {"label": "耳鼻咽喉科", "arrivals": [[0.0, 1.0, 1.4, 3.2, 3.2, 2.8, 2.8, 2.75, 1.25, 1.5, 1.0, 1.0, 1.67, 0.0, 1.0, 1.5, 1.5, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 4.0, 5.8, 7.6, 7.2, 7.0, 7.25, 5.8, 4.4, 2.4, 4.4, 4.0, 5.2, 5.6, 4.6, 2.4, 1.5, 1.5, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 3.33, 5.0, 3.75, 4.5, 4.5, 4.75, 2.0, 1.5, 1.33, 2.75, 1.5, 2.0, 3.0, 2.25, 1.67, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 5.5, 9.0, 11.25, 11.25, 11.0, 8.0, 7.25, 6.25, 2.25, 4.5, 6.0, 4.75, 6.25, 5.75, 3.5, 3.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 1.75, 2.25, 1.0, 1.75, 1.33, 3.0, 2.25, 1.5, 2.0, 2.0, 3.5, 2.33, 2.5, 1.25, 1.5, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_med": [[0.0, 1.0, 2.0, 4.0, 5.0, 5.0, 5.0, 3.0, 2.0, 2.5, 1.0, 1.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 3.0, 6.0, 9.0, 9.0, 8.0, 8.0, 7.0, 5.0, 3.0, 6.0, 5.0, 7.0, 7.0, 7.0, 3.0, 2.0, 1.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 4.0, 5.5, 5.0, 5.5, 5.0, 4.5, 3.5, 1.5, 2.0, 3.5, 3.0, 4.0, 3.0, 2.5, 3.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 5.0, 12.0, 14.0, 15.0, 14.5, 8.5, 9.5, 8.0, 4.0, 5.0, 7.0, 6.0, 8.0, 6.5, 5.0, 3.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 1.5, 3.0, 2.0, 2.0, 2.0, 2.0, 2.5, 1.0, 1.5, 2.0, 4.5, 2.0, 3.5, 2.0, 2.5, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_max": [[0.0, 1.0, 3.0, 6.0, 7.0, 6.0, 6.0, 4.0, 3.0, 3.0, 2.0, 1.0, 2.0, 2.0, 2.0, 3.0, 2.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 9.0, 11.0, 15.0, 13.0, 15.0, 14.0, 15.0, 13.0, 6.0, 7.0, 9.0, 8.0, 10.0, 7.0, 5.0, 3.0, 3.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 4.0, 9.0, 7.0, 8.0, 10.0, 10.0, 4.0, 2.0, 2.0, 6.0, 3.0, 4.0, 4.0, 4.0, 3.0, 3.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 7.0, 13.0, 16.0, 16.0, 19.0, 13.0, 11.0, 11.0, 6.0, 9.0, 13.0, 10.0, 11.0, 13.0, 7.0, 6.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 3.0, 3.0, 2.0, 2.0, 2.0, 5.0, 4.0, 2.0, 2.0, 4.0, 6.0, 6.0, 4.0, 3.0, 3.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]}, "DEPT_GI": {"label": "消化器内科", "arrivals": [[0.0, 3.4, 9.4, 7.8, 6.0, 8.0, 6.2, 7.2, 6.0, 4.2, 6.8, 5.8, 6.6, 5.0, 2.5, 2.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0], [1.0, 1.0, 4.6, 4.8, 4.6, 3.6, 3.6, 3.6, 4.0, 1.75, 3.0, 4.4, 4.4, 4.2, 3.2, 1.6, 2.33, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [1.0, 2.25, 5.75, 5.75, 3.75, 5.25, 4.25, 3.25, 2.5, 3.5, 3.5, 4.75, 3.0, 3.75, 4.75, 3.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 7.75, 5.5, 5.75, 5.0, 6.0, 5.75, 2.25, 1.75, 4.25, 4.75, 5.5, 3.5, 2.75, 1.33, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0], [0.0, 2.5, 5.25, 5.25, 6.5, 5.25, 4.75, 5.25, 3.25, 2.33, 3.75, 3.75, 3.0, 3.0, 2.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_med": [[0.0, 3.0, 10.0, 11.0, 8.0, 9.0, 8.0, 9.0, 7.0, 4.0, 7.0, 7.0, 8.0, 6.0, 2.5, 2.0, 1.5, 0.0, 1.0, 0.0, 1.0, 2.0, 1.0, 0.0], [1.0, 1.0, 5.0, 6.0, 6.0, 6.0, 6.0, 5.0, 2.0, 2.0, 4.0, 6.0, 6.0, 6.0, 5.0, 3.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [1.0, 2.0, 7.5, 7.5, 5.5, 6.0, 5.0, 4.0, 3.5, 3.5, 4.5, 6.5, 4.0, 5.0, 6.0, 3.5, 3.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 8.5, 7.5, 7.5, 6.5, 7.5, 7.5, 4.5, 2.5, 5.5, 6.5, 7.5, 4.0, 4.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0], [0.0, 2.5, 6.5, 7.0, 8.0, 6.0, 6.0, 6.5, 5.0, 2.0, 3.5, 5.0, 4.5, 4.0, 3.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_max": [[0.0, 5.0, 13.0, 11.0, 8.0, 10.0, 9.0, 10.0, 9.0, 7.0, 11.0, 8.0, 11.0, 8.0, 6.0, 3.0, 2.0, 0.0, 1.0, 0.0, 1.0, 2.0, 1.0, 0.0], [1.0, 2.0, 7.0, 8.0, 7.0, 6.0, 7.0, 7.0, 5.0, 3.0, 5.0, 8.0, 7.0, 7.0, 5.0, 4.0, 4.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [1.0, 4.0, 8.0, 10.0, 7.0, 7.0, 7.0, 7.0, 5.0, 6.0, 6.0, 9.0, 6.0, 6.0, 7.0, 7.0, 3.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 10.0, 8.0, 8.0, 8.0, 9.0, 10.0, 6.0, 4.0, 6.0, 8.0, 9.0, 7.0, 4.0, 3.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0], [0.0, 4.0, 9.0, 8.0, 10.0, 9.0, 10.0, 8.0, 6.0, 7.0, 7.0, 5.0, 5.0, 5.0, 3.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]}, "DEPT_BR": {"label": "乳腺外科", "arrivals": [[0.0, 1.0, 3.4, 6.6, 5.0, 6.4, 4.8, 6.0, 4.4, 5.0, 3.25, 3.67, 1.6, 2.8, 2.6, 2.8, 2.2, 1.25, 1.33, 1.0, 1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 5.4, 5.8, 6.8, 6.2, 7.4, 7.6, 7.0, 4.2, 5.8, 4.8, 2.2, 3.4, 2.6, 3.0, 4.33, 3.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 3.67, 3.25, 3.0, 4.75, 5.5, 6.75, 3.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.5, 1.67, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 2.0, 3.75, 3.5, 2.75, 3.25, 1.5, 2.0, 1.33, 1.0, 2.0, 2.0, 1.33, 1.5, 1.5, 2.0, 2.0, 1.0, 1.5, 1.0, 1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 6.33, 7.67, 8.0, 7.0, 7.67, 7.67, 8.67, 6.33, 7.33, 7.0, 7.33, 6.0, 3.33, 1.33, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0]], "conc_med": [[0.0, 1.0, 3.0, 7.0, 6.0, 7.0, 7.0, 7.0, 6.0, 6.0, 3.0, 2.5, 2.0, 4.0, 4.0, 3.0, 3.0, 2.0, 2.0, 1.0, 1.5, 1.0, 0.0, 0.0], [0.0, 1.0, 5.0, 6.0, 9.0, 7.0, 7.0, 8.0, 8.0, 5.0, 7.0, 6.0, 4.0, 4.0, 2.0, 4.0, 5.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 3.0, 4.5, 4.0, 6.0, 5.5, 7.0, 3.5, 1.5, 1.5, 1.0, 1.0, 1.0, 1.0, 1.5, 2.0, 1.5, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 2.0, 4.0, 4.5, 4.0, 3.5, 2.0, 1.0, 2.0, 1.0, 2.5, 4.0, 2.0, 2.0, 2.0, 1.0, 2.0, 1.0, 2.0, 1.5, 1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 7.0, 9.0, 10.0, 8.0, 9.0, 8.0, 7.0, 7.0, 7.0, 8.0, 8.0, 7.0, 3.0, 2.0, 2.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0]], "conc_max": [[0.0, 1.0, 5.0, 11.0, 8.0, 9.0, 9.0, 10.0, 10.0, 8.0, 7.0, 8.0, 3.0, 6.0, 8.0, 4.0, 5.0, 4.0, 3.0, 1.0, 2.0, 1.0, 0.0, 0.0], [0.0, 1.0, 7.0, 11.0, 11.0, 12.0, 10.0, 11.0, 10.0, 8.0, 8.0, 9.0, 4.0, 7.0, 6.0, 4.0, 7.0, 6.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 5.0, 8.0, 7.0, 8.0, 12.0, 14.0, 5.0, 2.0, 2.0, 2.0, 3.0, 2.0, 2.0, 2.0, 3.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 2.0, 4.0, 6.0, 4.0, 6.0, 5.0, 4.0, 2.0, 2.0, 4.0, 4.0, 2.0, 2.0, 3.0, 3.0, 3.0, 2.0, 2.0, 2.0, 1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 8.0, 10.0, 10.0, 10.0, 10.0, 12.0, 14.0, 8.0, 8.0, 11.0, 9.0, 9.0, 8.0, 3.0, 2.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0]]}, "DEPT_CV": {"label": "循環器内科", "arrivals": [[2.0, 2.4, 5.2, 6.4, 5.2, 5.4, 6.2, 4.8, 5.2, 3.6, 2.8, 3.8, 2.8, 4.0, 2.6, 2.2, 2.8, 2.0, 2.5, 1.0, 1.0, 0.0, 1.0, 2.0], [0.0, 2.0, 4.2, 4.0, 3.8, 3.4, 4.4, 3.0, 2.8, 1.8, 3.25, 3.2, 3.0, 3.4, 2.8, 2.0, 2.6, 1.6, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0], [0.0, 1.0, 6.0, 6.5, 7.5, 5.75, 5.5, 5.75, 6.5, 3.75, 4.5, 3.75, 2.25, 1.5, 1.67, 2.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 4.75, 4.25, 4.25, 4.25, 4.5, 5.0, 2.33, 2.5, 2.0, 2.0, 6.75, 8.0, 6.75, 7.0, 5.75, 4.25, 3.5, 2.75, 0.0, 1.0, 1.0, 0.0], [0.0, 1.5, 5.25, 4.25, 3.75, 4.25, 5.5, 5.0, 3.5, 2.25, 3.5, 3.0, 6.25, 4.25, 2.75, 3.25, 2.0, 2.67, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0]], "conc_med": [[2.0, 3.0, 6.0, 7.0, 6.0, 6.0, 7.0, 6.0, 7.0, 4.0, 5.0, 4.0, 3.0, 5.0, 3.0, 3.0, 3.0, 2.0, 3.0, 1.0, 1.0, 0.0, 1.0, 3.0], [0.0, 2.0, 6.0, 6.0, 6.0, 4.0, 5.0, 5.0, 3.0, 3.0, 3.0, 4.0, 4.0, 5.0, 4.0, 3.0, 3.0, 3.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0], [0.0, 1.0, 6.0, 7.5, 8.5, 7.5, 6.5, 6.0, 9.0, 5.5, 6.0, 6.0, 4.0, 1.0, 2.0, 1.5, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 5.0, 6.0, 7.0, 6.0, 6.0, 6.0, 4.0, 4.0, 3.5, 3.0, 7.0, 10.0, 9.5, 9.5, 8.5, 7.0, 4.0, 4.0, 1.0, 1.0, 1.0, 0.0], [0.0, 1.5, 6.0, 5.5, 4.5, 5.0, 6.0, 7.5, 4.5, 3.0, 3.0, 3.5, 6.0, 6.0, 4.5, 3.5, 3.0, 2.5, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0]], "conc_max": [[2.0, 4.0, 9.0, 13.0, 9.0, 8.0, 11.0, 7.0, 8.0, 6.0, 6.0, 9.0, 6.0, 7.0, 6.0, 5.0, 5.0, 5.0, 5.0, 2.0, 1.0, 0.0, 1.0, 3.0], [0.0, 2.0, 7.0, 7.0, 7.0, 6.0, 8.0, 6.0, 6.0, 5.0, 5.0, 6.0, 7.0, 6.0, 6.0, 4.0, 4.0, 4.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0], [0.0, 1.0, 8.0, 10.0, 11.0, 10.0, 9.0, 11.0, 10.0, 7.0, 9.0, 7.0, 5.0, 5.0, 3.0, 2.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 6.0, 7.0, 8.0, 7.0, 9.0, 10.0, 7.0, 5.0, 5.0, 5.0, 8.0, 10.0, 10.0, 13.0, 10.0, 8.0, 8.0, 5.0, 1.0, 1.0, 1.0, 0.0], [0.0, 2.0, 7.0, 6.0, 6.0, 5.0, 8.0, 9.0, 9.0, 5.0, 9.0, 8.0, 11.0, 7.0, 6.0, 8.0, 5.0, 4.0, 2.0, 2.0, 0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0]]}, "DEPT_RS": {"label": "呼吸器内科", "arrivals": [[0.0, 2.0, 3.6, 4.0, 4.8, 5.0, 2.2, 4.5, 2.0, 1.0, 2.25, 2.8, 4.0, 4.2, 2.8, 1.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [1.25, 3.2, 5.4, 5.4, 7.0, 4.8, 7.4, 4.2, 3.8, 3.0, 4.2, 4.8, 6.2, 5.2, 2.0, 3.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 3.25, 1.75, 3.5, 3.5, 4.5, 2.75, 2.67, 2.33, 4.25, 4.25, 5.5, 4.5, 3.5, 1.5, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 4.75, 4.25, 4.0, 3.75, 5.75, 4.5, 5.0, 2.75, 3.0, 3.0, 3.25, 4.0, 4.5, 3.25, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 2.33, 5.0, 6.75, 6.5, 8.25, 7.0, 5.0, 3.0, 2.25, 2.0, 3.0, 2.25, 1.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_med": [[0.0, 2.0, 5.0, 5.0, 6.0, 7.0, 4.0, 5.0, 4.0, 1.0, 2.0, 4.0, 6.0, 5.0, 5.0, 2.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [1.0, 3.0, 7.0, 5.0, 9.0, 8.0, 9.0, 8.0, 6.0, 4.0, 5.0, 6.0, 8.0, 6.0, 3.0, 3.5, 1.5, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 3.5, 3.0, 4.0, 4.5, 5.5, 3.5, 4.0, 1.5, 5.5, 6.0, 7.0, 7.5, 5.0, 3.5, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 4.5, 5.5, 5.5, 5.0, 6.0, 6.0, 6.5, 4.0, 3.5, 3.5, 5.0, 4.0, 5.0, 4.5, 2.5, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 2.0, 4.5, 7.5, 9.0, 10.0, 9.0, 7.5, 5.5, 3.5, 3.0, 4.0, 4.0, 2.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_max": [[0.0, 3.0, 7.0, 7.0, 8.0, 8.0, 5.0, 7.0, 5.0, 2.0, 5.0, 6.0, 6.0, 7.0, 7.0, 3.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [2.0, 6.0, 8.0, 8.0, 13.0, 11.0, 12.0, 10.0, 7.0, 6.0, 7.0, 9.0, 10.0, 8.0, 4.0, 5.0, 2.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 4.0, 3.0, 5.0, 6.0, 8.0, 8.0, 5.0, 5.0, 6.0, 6.0, 9.0, 10.0, 8.0, 4.0, 2.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 8.0, 7.0, 6.0, 7.0, 9.0, 8.0, 8.0, 6.0, 4.0, 5.0, 6.0, 6.0, 7.0, 5.0, 4.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 4.0, 8.0, 12.0, 10.0, 13.0, 14.0, 10.0, 7.0, 4.0, 4.0, 6.0, 5.0, 3.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]}, "DEPT_GM": {"label": "総合内科", "arrivals": [[0.0, 1.0, 5.6, 4.75, 5.0, 5.0, 3.0, 3.0, 2.5, 2.4, 3.6, 3.4, 3.25, 1.8, 2.75, 2.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 4.0, 3.6, 3.2, 4.2, 4.6, 3.5, 2.0, 3.2, 2.6, 3.0, 2.6, 1.0, 1.25, 1.25, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 1.5, 2.75, 3.25, 2.5, 3.25, 2.25, 1.67, 2.5, 3.25, 2.75, 2.25, 2.33, 2.25, 1.5, 1.0, 1.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 5.75, 7.5, 3.75, 6.5, 7.5, 6.0, 7.0, 3.75, 2.25, 1.0, 2.5, 1.0, 1.0, 1.5, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 2.0, 5.25, 4.25, 3.5, 4.25, 4.25, 6.25, 5.5, 4.5, 6.5, 2.75, 2.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_med": [[0.0, 1.0, 6.0, 6.0, 6.0, 7.0, 7.0, 5.0, 3.0, 3.0, 4.0, 4.0, 4.0, 2.0, 3.5, 3.0, 1.5, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 4.0, 5.0, 6.0, 5.0, 8.0, 6.0, 4.0, 5.0, 5.0, 4.0, 4.0, 3.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 1.5, 2.5, 4.5, 4.0, 4.5, 4.0, 3.5, 2.0, 5.0, 5.0, 4.0, 2.0, 2.5, 2.0, 1.0, 1.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 5.5, 9.0, 7.0, 8.0, 10.0, 9.5, 10.0, 6.5, 4.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 2.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 2.0, 5.0, 6.0, 6.0, 6.0, 6.5, 8.0, 8.0, 7.0, 8.0, 3.5, 2.5, 1.5, 4.0, 1.5, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_max": [[0.0, 1.0, 8.0, 9.0, 12.0, 11.0, 8.0, 7.0, 4.0, 7.0, 10.0, 6.0, 5.0, 6.0, 4.0, 4.0, 2.0, 2.0, 2.0, 1.0, 1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 6.0, 7.0, 8.0, 8.0, 10.0, 8.0, 5.0, 9.0, 7.0, 9.0, 7.0, 5.0, 3.0, 3.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 2.0, 6.0, 7.0, 7.0, 8.0, 5.0, 4.0, 7.0, 5.0, 5.0, 6.0, 6.0, 7.0, 4.0, 2.0, 1.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 7.0, 10.0, 8.0, 11.0, 13.0, 11.0, 11.0, 10.0, 5.0, 2.0, 5.0, 1.0, 1.0, 2.0, 1.0, 2.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 2.0, 8.0, 8.0, 7.0, 9.0, 7.0, 12.0, 11.0, 10.0, 10.0, 7.0, 6.0, 4.0, 4.0, 2.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]}, "DEPT_DM": {"label": "皮膚科", "arrivals": [[0.0, 2.5, 7.2, 6.2, 5.2, 4.8, 4.6, 3.0, 2.6, 1.0, 2.0, 1.0, 1.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.67, 9.0, 7.4, 6.4, 6.6, 5.6, 5.6, 4.2, 3.0, 2.25, 2.6, 4.25, 3.0, 2.0, 1.5, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.25, 8.5, 5.25, 3.0, 4.75, 7.0, 3.75, 2.0, 1.0, 0.0, 1.0, 4.0, 2.5, 2.25, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 2.75, 4.75, 4.0, 3.5, 3.5, 3.5, 4.0, 1.0, 1.0, 4.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0], [1.0, 2.25, 10.25, 8.5, 5.75, 8.0, 6.0, 5.5, 3.0, 1.0, 2.0, 2.0, 7.67, 3.0, 2.67, 4.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_med": [[0.0, 2.0, 8.0, 9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 1.0, 2.0, 1.0, 2.0, 2.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 2.0, 8.0, 7.0, 9.0, 9.0, 8.0, 8.0, 7.0, 5.0, 4.0, 2.0, 6.0, 4.0, 3.0, 2.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 8.5, 7.0, 4.5, 7.0, 9.0, 6.0, 3.5, 2.5, 0.0, 1.0, 4.0, 3.5, 3.5, 1.5, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 3.5, 5.0, 5.0, 5.5, 5.0, 4.5, 5.0, 2.0, 1.0, 5.0, 2.0, 1.5, 1.0, 1.0, 0.0, 1.0, 2.0, 2.0, 0.0, 0.0, 0.0, 0.0], [1.0, 2.5, 13.5, 10.0, 9.0, 11.5, 8.5, 8.5, 5.5, 1.0, 1.5, 3.0, 7.5, 7.0, 4.5, 4.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_max": [[0.0, 5.0, 13.0, 11.0, 9.0, 8.0, 11.0, 7.0, 9.0, 2.0, 2.0, 1.0, 2.0, 2.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 2.0, 15.0, 16.0, 12.0, 13.0, 9.0, 11.0, 11.0, 8.0, 5.0, 6.0, 7.0, 5.0, 4.0, 3.0, 3.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 2.0, 13.0, 10.0, 9.0, 8.0, 10.0, 8.0, 5.0, 4.0, 0.0, 1.0, 5.0, 5.0, 6.0, 3.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 4.0, 7.0, 9.0, 7.0, 8.0, 7.0, 7.0, 3.0, 3.0, 5.0, 2.0, 2.0, 1.0, 1.0, 0.0, 1.0, 2.0, 2.0, 0.0, 0.0, 0.0, 0.0], [1.0, 3.0, 15.0, 15.0, 11.0, 15.0, 16.0, 11.0, 7.0, 2.0, 2.0, 3.0, 10.0, 8.0, 7.0, 6.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]}, "DEPT_GS": {"label": "一般消化器外科", "arrivals": [[0.0, 0.0, 1.0, 1.33, 2.0, 2.6, 3.8, 3.6, 3.6, 3.0, 3.4, 3.4, 3.8, 3.8, 2.8, 2.4, 3.0, 2.4, 1.67, 1.0, 0.0, 0.0, 1.0, 0.0], [0.0, 2.0, 2.4, 8.2, 6.6, 5.0, 6.4, 3.6, 4.0, 2.2, 1.8, 1.5, 1.25, 1.5, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0], [0.0, 0.0, 4.25, 7.25, 4.25, 5.5, 6.25, 4.25, 3.0, 1.5, 2.25, 1.5, 1.67, 1.33, 3.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 2.67, 5.0, 8.75, 6.0, 7.0, 9.5, 7.25, 6.0, 4.75, 4.5, 3.0, 2.75, 4.0, 4.5, 3.0, 3.0, 2.33, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 1.25, 1.25, 1.75, 2.67, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 2.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_med": [[0.0, 0.0, 1.0, 1.0, 2.5, 3.0, 5.0, 5.0, 4.0, 5.0, 4.0, 4.0, 4.0, 5.0, 4.0, 3.0, 3.0, 3.0, 2.0, 1.0, 0.0, 0.0, 1.0, 0.0], [0.0, 2.0, 3.0, 7.0, 8.0, 7.0, 7.0, 6.0, 6.0, 2.0, 3.0, 2.0, 1.0, 2.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0], [0.0, 0.0, 4.5, 8.5, 5.5, 6.0, 7.5, 5.0, 3.5, 3.0, 3.0, 2.5, 2.0, 1.5, 2.0, 1.0, 1.5, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 3.0, 5.5, 10.5, 8.5, 9.0, 12.0, 9.5, 7.0, 6.5, 5.5, 4.5, 3.5, 4.5, 5.0, 4.0, 4.5, 3.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 1.0, 2.0, 2.0, 3.0, 2.0, 2.0, 0.0, 1.0, 0.0, 0.0, 0.0, 2.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_max": [[0.0, 0.0, 1.0, 2.0, 3.0, 5.0, 7.0, 7.0, 8.0, 6.0, 5.0, 7.0, 6.0, 7.0, 5.0, 4.0, 5.0, 5.0, 3.0, 1.0, 0.0, 0.0, 1.0, 0.0], [0.0, 2.0, 4.0, 13.0, 10.0, 10.0, 9.0, 6.0, 6.0, 5.0, 3.0, 3.0, 4.0, 3.0, 3.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0], [0.0, 0.0, 6.0, 11.0, 7.0, 7.0, 9.0, 8.0, 6.0, 4.0, 4.0, 4.0, 2.0, 3.0, 4.0, 1.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 3.0, 7.0, 12.0, 12.0, 11.0, 13.0, 13.0, 9.0, 7.0, 10.0, 6.0, 6.0, 6.0, 6.0, 4.0, 6.0, 5.0, 3.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 2.0, 2.0, 2.0, 3.0, 2.0, 2.0, 0.0, 1.0, 0.0, 0.0, 0.0, 2.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]}, "DEPT_RH": {"label": "リウマチ膠原病内科", "arrivals": [[1.0, 0.0, 2.2, 5.0, 5.0, 3.0, 5.2, 4.75, 2.8, 5.0, 1.6, 1.67, 2.5, 1.5, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0], [0.0, 1.5, 6.75, 6.25, 6.33, 5.0, 6.67, 6.5, 6.33, 5.0, 5.67, 1.67, 1.33, 0.0, 1.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 3.75, 5.5, 4.0, 3.25, 3.5, 3.25, 1.75, 3.25, 5.0, 3.25, 3.5, 3.25, 2.67, 1.25, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 2.75, 5.25, 5.25, 5.0, 3.25, 4.75, 4.0, 3.0, 4.0, 3.5, 3.25, 3.0, 3.25, 1.33, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 5.75, 4.25, 5.0, 5.0, 4.75, 4.5, 3.75, 3.0, 3.5, 3.25, 1.75, 3.0, 3.33, 2.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_med": [[1.0, 0.0, 2.0, 6.0, 6.0, 3.0, 7.0, 5.0, 4.0, 1.0, 2.0, 2.0, 3.5, 2.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 8.5, 8.5, 9.0, 7.0, 8.0, 9.0, 7.0, 7.0, 6.0, 2.0, 3.0, 1.0, 1.0, 0.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 4.5, 6.5, 4.0, 4.5, 3.5, 4.5, 2.0, 3.0, 5.5, 6.0, 4.5, 5.0, 2.5, 2.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 3.0, 5.5, 6.5, 6.0, 4.5, 6.5, 4.0, 3.5, 4.5, 5.5, 4.0, 4.5, 4.5, 1.5, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 7.0, 6.5, 5.0, 7.0, 6.5, 6.5, 5.5, 3.5, 4.0, 4.5, 3.0, 3.5, 3.5, 2.5, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_max": [[1.0, 0.0, 4.0, 8.0, 9.0, 6.0, 8.0, 9.0, 6.0, 5.0, 4.0, 3.0, 5.0, 2.0, 2.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0], [0.0, 3.0, 11.0, 11.0, 11.0, 8.0, 10.0, 11.0, 10.0, 9.0, 9.0, 3.0, 3.0, 1.0, 1.0, 0.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 5.0, 10.0, 8.0, 6.0, 10.0, 6.0, 6.0, 8.0, 9.0, 6.0, 7.0, 6.0, 5.0, 3.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 4.0, 9.0, 9.0, 9.0, 7.0, 8.0, 7.0, 6.0, 7.0, 6.0, 7.0, 6.0, 5.0, 3.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 9.0, 9.0, 10.0, 7.0, 10.0, 9.0, 9.0, 6.0, 5.0, 5.0, 4.0, 6.0, 7.0, 5.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]}, "DEPT_OS": {"label": "歯科口腔外科", "arrivals": [[0.0, 2.0, 7.2, 6.2, 5.6, 5.4, 4.4, 4.0, 3.2, 1.0, 2.2, 2.8, 2.8, 2.2, 2.6, 3.0, 2.6, 1.5, 1.0, 1.5, 1.0, 0.0, 0.0, 0.0], [0.0, 2.4, 4.6, 4.8, 5.0, 5.0, 5.6, 3.8, 2.4, 0.0, 2.6, 3.8, 2.75, 3.2, 2.2, 2.0, 1.75, 1.0, 1.33, 0.0, 0.0, 0.0, 1.0, 0.0], [0.0, 1.67, 4.0, 3.67, 2.25, 2.0, 2.5, 1.0, 1.0, 1.0, 1.5, 2.67, 1.0, 2.0, 1.75, 1.0, 2.0, 3.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0], [0.0, 2.5, 6.0, 3.0, 5.5, 4.25, 4.0, 3.75, 1.33, 1.5, 2.75, 2.5, 2.5, 2.0, 2.5, 2.0, 2.5, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0], [0.0, 2.25, 3.25, 3.0, 3.25, 2.25, 1.75, 2.25, 2.25, 1.0, 3.0, 1.5, 1.33, 1.5, 1.0, 1.67, 3.0, 3.0, 2.33, 1.0, 1.0, 0.0, 0.0, 1.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_med": [[0.0, 2.0, 8.0, 9.0, 8.0, 8.0, 8.0, 5.0, 6.0, 2.5, 3.0, 5.0, 6.0, 5.0, 4.0, 5.0, 6.0, 4.5, 2.5, 2.0, 2.0, 1.5, 1.0, 1.0], [0.0, 2.0, 7.0, 5.0, 6.0, 6.0, 8.0, 7.0, 6.0, 2.0, 3.0, 6.0, 4.0, 4.0, 5.0, 3.0, 3.5, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0], [0.0, 2.0, 5.0, 4.5, 4.0, 4.0, 4.5, 1.5, 2.0, 1.0, 1.0, 2.5, 3.0, 3.0, 3.5, 2.0, 2.5, 1.0, 2.0, 0.0, 0.0, 0.0, 1.0, 0.0], [0.0, 2.5, 8.0, 6.0, 8.5, 7.0, 7.5, 4.5, 3.5, 1.5, 3.0, 5.0, 4.5, 4.0, 4.5, 3.5, 5.0, 2.5, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0], [0.0, 2.0, 5.0, 5.0, 5.0, 3.5, 2.5, 3.0, 4.0, 2.0, 4.0, 2.5, 2.0, 2.0, 2.0, 2.0, 3.5, 3.0, 3.5, 1.0, 1.0, 1.0, 0.0, 1.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_max": [[0.0, 3.0, 11.0, 10.0, 10.0, 9.0, 9.0, 8.0, 7.0, 5.0, 4.0, 6.0, 6.0, 5.0, 7.0, 6.0, 8.0, 6.0, 4.0, 3.0, 2.0, 2.0, 1.0, 1.0], [0.0, 5.0, 11.0, 11.0, 9.0, 10.0, 10.0, 10.0, 7.0, 3.0, 4.0, 7.0, 9.0, 8.0, 6.0, 6.0, 5.0, 3.0, 2.0, 1.0, 0.0, 0.0, 1.0, 0.0], [0.0, 2.0, 6.0, 8.0, 9.0, 6.0, 6.0, 2.0, 2.0, 1.0, 2.0, 5.0, 3.0, 3.0, 4.0, 4.0, 4.0, 5.0, 2.0, 0.0, 0.0, 0.0, 1.0, 0.0], [0.0, 3.0, 9.0, 7.0, 10.0, 9.0, 9.0, 9.0, 6.0, 5.0, 4.0, 6.0, 5.0, 5.0, 5.0, 5.0, 6.0, 3.0, 2.0, 1.0, 1.0, 0.0, 1.0, 0.0], [0.0, 3.0, 6.0, 8.0, 5.0, 5.0, 4.0, 4.0, 5.0, 3.0, 4.0, 4.0, 4.0, 3.0, 2.0, 4.0, 5.0, 5.0, 4.0, 2.0, 1.0, 1.0, 0.0, 1.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]}, "DEPT_RT": {"label": "放射線治療科", "arrivals": [[0.0, 2.33, 5.25, 3.5, 3.0, 4.75, 2.5, 3.0, 1.67, 1.0, 2.75, 3.33, 1.6, 2.6, 1.33, 1.67, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 2.25, 4.0, 3.0, 4.8, 4.4, 2.6, 2.33, 1.75, 1.0, 1.0, 2.0, 2.2, 1.6, 2.0, 1.25, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.33, 5.25, 6.0, 4.25, 3.5, 1.75, 2.25, 1.0, 1.0, 1.75, 3.0, 3.75, 3.0, 2.75, 3.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 2.75, 1.25, 2.25, 2.0, 4.25, 2.0, 0.0, 2.0, 2.0, 1.5, 1.33, 1.5, 2.0, 1.0, 1.33, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 2.75, 5.0, 5.25, 6.0, 5.25, 2.75, 2.75, 1.5, 1.0, 1.67, 1.75, 2.25, 3.0, 3.5, 2.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_med": [[0.0, 3.0, 6.0, 4.5, 3.0, 5.0, 3.5, 3.0, 2.0, 1.0, 3.0, 3.5, 2.0, 4.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], [0.0, 2.0, 4.0, 3.0, 5.0, 5.0, 4.0, 2.0, 2.0, 1.0, 1.0, 2.0, 3.0, 2.0, 2.5, 1.5, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 5.5, 7.0, 5.5, 4.5, 2.0, 3.0, 1.0, 1.0, 2.0, 3.5, 5.0, 4.5, 3.5, 4.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 3.0, 2.5, 3.5, 2.5, 5.0, 1.0, 0.0, 2.0, 2.0, 1.5, 1.0, 1.5, 1.0, 1.0, 2.0, 2.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0], [0.0, 3.0, 5.0, 6.0, 6.5, 6.0, 3.0, 2.5, 2.5, 2.0, 2.0, 2.0, 3.0, 3.5, 2.5, 2.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_max": [[0.0, 3.0, 7.0, 6.0, 4.0, 7.0, 5.0, 5.0, 2.0, 1.0, 3.0, 6.0, 5.0, 5.0, 4.0, 4.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], [0.0, 3.0, 6.0, 5.0, 6.0, 9.0, 5.0, 8.0, 4.0, 1.0, 1.0, 2.0, 4.0, 3.0, 4.0, 2.0, 1.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 2.0, 6.0, 10.0, 7.0, 5.0, 4.0, 3.0, 2.0, 1.0, 2.0, 4.0, 7.0, 7.0, 6.0, 4.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 5.0, 4.0, 5.0, 5.0, 7.0, 5.0, 0.0, 2.0, 2.0, 2.0, 2.0, 2.0, 4.0, 2.0, 2.0, 2.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0], [0.0, 4.0, 8.0, 7.0, 9.0, 10.0, 7.0, 8.0, 3.0, 2.0, 3.0, 2.0, 4.0, 5.0, 5.0, 3.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]}, "DEPT_HE": {"label": "血液内科", "arrivals": [[0.0, 1.5, 3.8, 5.6, 5.6, 4.0, 4.2, 4.4, 2.0, 2.8, 2.0, 1.0, 1.5, 1.33, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 5.8, 6.0, 5.0, 3.4, 3.8, 4.0, 3.67, 3.2, 1.2, 1.67, 1.5, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 1.33, 2.25, 5.25, 2.0, 4.0, 3.75, 3.0, 1.0, 2.75, 2.25, 1.5, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 2.75, 7.25, 7.25, 5.25, 4.0, 3.0, 2.67, 1.0, 1.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 5.0, 3.75, 3.75, 5.25, 4.0, 4.33, 3.0, 2.33, 0.0, 1.0, 1.5, 2.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_med": [[0.0, 1.5, 5.0, 5.0, 6.0, 6.0, 4.0, 6.0, 2.5, 4.0, 2.0, 1.0, 1.5, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 6.0, 7.0, 6.0, 5.0, 5.0, 6.0, 3.0, 3.0, 2.0, 1.0, 1.0, 1.0, 1.5, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 1.0, 3.5, 6.0, 3.0, 5.5, 4.5, 3.5, 1.0, 3.0, 2.5, 2.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 3.0, 9.0, 8.5, 7.0, 6.0, 2.5, 2.5, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 5.0, 4.5, 4.0, 6.5, 5.0, 6.0, 4.0, 2.0, 2.0, 1.0, 2.0, 1.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_max": [[0.0, 2.0, 5.0, 9.0, 8.0, 8.0, 8.0, 7.0, 4.0, 4.0, 4.0, 2.0, 2.0, 2.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 9.0, 10.0, 9.0, 5.0, 8.0, 9.0, 9.0, 6.0, 3.0, 2.0, 2.0, 1.0, 2.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 2.0, 4.0, 7.0, 6.0, 6.0, 8.0, 8.0, 1.0, 4.0, 4.0, 3.0, 3.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 3.0, 9.0, 10.0, 8.0, 7.0, 7.0, 5.0, 2.0, 2.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 7.0, 6.0, 6.0, 12.0, 7.0, 8.0, 4.0, 5.0, 2.0, 1.0, 3.0, 2.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]}, "DEPT_NE": {"label": "腎内科", "arrivals": [[0.0, 1.0, 3.6, 3.6, 4.0, 3.0, 4.0, 2.6, 2.5, 2.0, 2.2, 3.0, 2.4, 1.0, 2.33, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [1.33, 1.0, 2.2, 3.4, 3.0, 3.4, 5.0, 3.8, 2.6, 2.25, 1.25, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [2.0, 0.0, 3.0, 5.75, 4.0, 4.25, 4.25, 5.0, 2.75, 1.5, 1.0, 1.33, 2.0, 1.0, 2.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [1.0, 0.0, 3.75, 4.25, 4.0, 5.25, 4.0, 3.25, 2.33, 1.67, 1.0, 1.5, 3.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 1.67, 2.33, 3.0, 3.67, 2.25, 4.33, 2.33, 1.5, 1.5, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_med": [[0.0, 1.0, 3.0, 4.0, 5.0, 4.0, 5.0, 4.0, 3.0, 2.0, 3.0, 4.0, 4.0, 1.0, 2.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [1.0, 2.0, 2.0, 4.0, 4.0, 5.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [2.0, 1.0, 3.0, 7.0, 5.0, 6.0, 5.5, 6.0, 4.0, 2.5, 1.5, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0], [1.0, 0.0, 4.0, 5.5, 5.5, 7.0, 5.5, 4.5, 2.0, 3.0, 2.0, 2.0, 4.0, 2.5, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 1.0, 2.0, 4.0, 5.0, 3.0, 4.5, 4.0, 3.0, 2.0, 2.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_max": [[0.0, 1.0, 7.0, 7.0, 5.0, 7.0, 9.0, 6.0, 5.0, 3.0, 5.0, 5.0, 4.0, 3.0, 3.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [2.0, 2.0, 4.0, 6.0, 7.0, 8.0, 7.0, 5.0, 5.0, 5.0, 3.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [2.0, 1.0, 5.0, 9.0, 7.0, 6.0, 7.0, 11.0, 5.0, 3.0, 2.0, 3.0, 2.0, 1.0, 2.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0], [1.0, 0.0, 5.0, 6.0, 7.0, 9.0, 8.0, 7.0, 6.0, 4.0, 3.0, 3.0, 5.0, 3.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 3.0, 5.0, 5.0, 6.0, 5.0, 6.0, 5.0, 4.0, 3.0, 2.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]}, "DEPT_PD": {"label": "小児科", "arrivals": [[0.0, 1.0, 2.4, 2.25, 2.0, 2.0, 1.5, 2.4, 2.2, 1.0, 1.0, 1.6, 2.0, 2.0, 2.0, 1.75, 2.5, 3.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0], [0.0, 1.0, 1.0, 2.25, 3.0, 2.2, 1.0, 1.75, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.5, 1.2, 1.75, 1.0, 1.33, 1.0, 1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 1.75, 2.33, 2.0, 1.75, 1.0, 2.5, 0.0, 0.0, 1.0, 1.0, 1.0, 1.67, 2.5, 1.75, 1.67, 1.5, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0], [1.0, 4.0, 1.5, 2.75, 2.5, 1.33, 1.0, 3.0, 1.5, 0.0, 1.0, 1.33, 1.0, 1.5, 2.0, 1.5, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 3.0, 2.75, 3.0, 2.25, 2.25, 2.0, 1.25, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]], "conc_med": [[0.0, 1.0, 3.0, 4.0, 3.0, 3.0, 2.5, 3.0, 3.0, 2.0, 2.0, 2.0, 3.0, 2.5, 4.0, 2.0, 3.0, 2.0, 2.0, 0.0, 1.0, 1.0, 0.0, 1.0], [0.0, 1.0, 1.5, 2.5, 3.0, 2.0, 2.0, 2.5, 3.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.5, 2.0, 3.0, 1.5, 2.0, 1.0, 1.0, 1.0, 0.0, 0.0], [0.0, 0.0, 2.0, 3.5, 3.0, 3.5, 2.0, 1.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.5, 3.5, 2.5, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], [1.0, 4.0, 2.0, 4.0, 4.5, 2.5, 1.5, 2.5, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 3.0, 2.5, 1.5, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 3.0, 4.5, 6.0, 4.5, 4.5, 3.5, 2.0, 1.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.5, 1.0, 0.0, 1.0, 1.5, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]], "conc_max": [[0.0, 1.0, 4.0, 5.0, 5.0, 6.0, 6.0, 6.0, 6.0, 4.0, 3.0, 3.0, 5.0, 4.0, 6.0, 6.0, 5.0, 5.0, 2.0, 0.0, 1.0, 1.0, 0.0, 1.0], [0.0, 1.0, 2.0, 4.0, 6.0, 5.0, 3.0, 3.0, 4.0, 2.0, 1.0, 3.0, 1.0, 1.0, 2.0, 4.0, 4.0, 2.0, 2.0, 1.0, 1.0, 1.0, 0.0, 0.0], [0.0, 0.0, 2.0, 5.0, 6.0, 4.0, 3.0, 4.0, 2.0, 1.0, 1.0, 1.0, 1.0, 3.0, 5.0, 5.0, 4.0, 4.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], [1.0, 4.0, 4.0, 5.0, 5.0, 3.0, 2.0, 3.0, 2.0, 1.0, 1.0, 2.0, 1.0, 2.0, 3.0, 3.0, 2.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 4.0, 7.0, 6.0, 6.0, 5.0, 6.0, 4.0, 1.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 0.0, 1.0, 2.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]]}, "DEPT_NR": {"label": "脳神経内科", "arrivals": [[1.0, 1.67, 2.0, 3.0, 5.0, 3.6, 2.0, 2.4, 1.75, 2.0, 1.75, 1.6, 2.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 2.2, 2.25, 3.5, 2.4, 2.4, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 2.25, 3.75, 3.25, 1.67, 2.25, 3.0, 4.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.67, 4.5, 3.25, 5.5, 5.0, 3.5, 4.5, 2.0, 1.67, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 3.0, 4.0, 4.5, 4.25, 2.25, 1.75, 1.5, 2.0, 2.0, 0.0, 1.75, 2.0, 2.5, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_med": [[1.0, 2.0, 2.0, 3.0, 6.0, 5.0, 3.0, 3.0, 2.0, 1.5, 2.5, 2.0, 2.0, 2.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 3.0, 2.0, 3.5, 3.0, 3.0, 1.5, 1.0, 1.0, 1.0, 1.0, 1.5, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 2.5, 3.5, 4.0, 2.0, 3.0, 1.5, 3.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 5.0, 4.0, 6.0, 7.0, 5.5, 5.0, 3.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 3.0, 3.0, 4.0, 4.5, 4.0, 2.0, 2.0, 2.5, 2.0, 1.0, 2.0, 1.0, 2.5, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_max": [[1.0, 2.0, 4.0, 5.0, 7.0, 6.0, 4.0, 4.0, 4.0, 4.0, 3.0, 3.0, 4.0, 2.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 3.0, 4.0, 6.0, 4.0, 4.0, 4.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 4.0, 8.0, 8.0, 5.0, 4.0, 6.0, 5.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 3.0, 8.0, 4.0, 8.0, 8.0, 9.0, 7.0, 6.0, 3.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 3.0, 8.0, 10.0, 9.0, 5.0, 4.0, 3.0, 4.0, 2.0, 1.0, 3.0, 2.0, 3.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]}, "DEPT_PS": {"label": "形成外科", "arrivals": [[0.0, 1.0, 4.8, 3.6, 3.4, 4.2, 3.6, 1.75, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 2.0, 2.2, 2.75, 2.5, 2.67, 4.25, 3.5, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [1.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 2.0, 4.0, 3.5, 4.0, 2.0, 3.0, 2.5, 1.0, 3.0, 1.0, 2.33, 2.25, 1.75, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.5, 5.0, 3.5, 3.5, 4.5, 5.25, 4.33, 1.5, 1.0, 0.0, 1.0, 2.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_med": [[0.0, 1.0, 6.0, 6.0, 5.0, 5.0, 4.0, 3.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.5, 1.0, 1.0, 2.5, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0], [0.0, 2.0, 2.0, 3.5, 3.0, 3.0, 6.0, 3.5, 3.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [1.0, 2.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 2.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 2.0, 5.0, 5.0, 3.5, 3.5, 4.0, 3.0, 2.0, 4.0, 1.5, 2.0, 3.0, 3.0, 1.5, 0.0, 1.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.5, 5.0, 5.0, 5.0, 6.0, 7.0, 5.0, 3.0, 1.0, 0.0, 1.0, 2.0, 1.5, 2.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_max": [[0.0, 1.0, 7.0, 7.0, 6.0, 8.0, 8.0, 5.0, 2.0, 2.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 3.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0], [0.0, 3.0, 4.0, 4.0, 4.0, 5.0, 7.0, 5.0, 7.0, 2.0, 1.0, 1.0, 1.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [1.0, 3.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 2.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 2.0, 6.0, 7.0, 10.0, 4.0, 5.0, 5.0, 3.0, 4.0, 2.0, 3.0, 4.0, 3.0, 3.0, 0.0, 1.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 2.0, 8.0, 6.0, 6.0, 7.0, 8.0, 9.0, 4.0, 1.0, 0.0, 1.0, 2.0, 2.0, 2.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]}, "DEPT_ER": {"label": "救急科", "arrivals": [[0.0, 0.0, 1.67, 1.0, 1.0, 1.0, 1.5, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 3.0, 1.33, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.5, 1.0, 1.33, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 2.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 1.0, 1.0, 2.0, 1.0, 0.0, 1.0, 1.0, 1.5, 1.0, 0.0, 0.0, 0.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.25, 0.0, 1.0, 0.0], [0.0, 1.0, 0.0, 0.0, 0.0, 1.5, 0.0, 1.0, 0.0, 1.0, 0.0, 1.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0], [0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 1.0, 1.5, 1.0, 1.5, 0.0, 3.0, 1.0, 1.0, 1.5, 1.0, 1.0, 1.0, 0.0, 2.0, 0.0, 0.0, 0.0, 1.0], [0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 3.0, 1.0, 1.33, 1.0, 1.0, 0.0, 0.0, 2.0, 1.0, 1.5, 1.0, 0.0, 0.0, 0.0, 0.0]], "conc_med": [[0.0, 0.0, 1.0, 1.0, 2.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.5, 1.0, 1.0, 1.0, 1.0, 1.5, 0.0, 1.0, 1.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.5, 1.0, 1.0, 1.5, 1.0, 1.0, 1.5, 2.0, 0.0, 1.0, 2.0, 1.0, 0.0, 0.0], [0.0, 1.0, 1.0, 1.0, 1.0, 1.5, 2.0, 0.0, 1.0, 1.0, 1.5, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 2.0, 1.0, 1.0], [0.0, 1.0, 0.0, 0.0, 0.0, 1.5, 1.0, 1.0, 1.0, 2.0, 0.0, 1.5, 2.0, 1.5, 1.5, 1.5, 1.5, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0], [0.0, 0.0, 2.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.5, 1.0, 3.0, 1.5, 1.0, 1.5, 2.0, 1.0, 1.0, 0.0, 2.0, 1.0, 1.0, 0.0, 1.0], [0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.5, 1.0, 2.0, 1.0, 1.0, 1.0, 1.5, 1.0, 0.0, 2.0, 1.0, 2.0, 2.0, 1.0, 0.0, 0.0, 0.0]], "conc_max": [[0.0, 0.0, 3.0, 1.0, 2.0, 1.0, 3.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 4.0, 2.0, 1.0, 1.0, 1.0, 2.0, 0.0, 1.0, 1.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 1.0, 2.0, 1.0, 1.0, 2.0, 2.0, 0.0, 1.0, 3.0, 1.0, 0.0, 0.0], [0.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 0.0, 1.0, 1.0, 2.0, 1.0, 1.0, 0.0, 0.0, 1.0, 2.0, 1.0, 1.0, 2.0, 3.0, 2.0, 1.0, 1.0], [0.0, 1.0, 0.0, 0.0, 0.0, 2.0, 1.0, 1.0, 1.0, 2.0, 0.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0], [0.0, 0.0, 2.0, 1.0, 0.0, 0.0, 1.0, 2.0, 1.0, 2.0, 1.0, 3.0, 2.0, 1.0, 2.0, 2.0, 1.0, 2.0, 0.0, 2.0, 1.0, 1.0, 0.0, 1.0], [0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 3.0, 1.0, 2.0, 2.0, 2.0, 1.0, 0.0, 2.0, 1.0, 2.0, 3.0, 1.0, 0.0, 0.0, 0.0]]}, "DEPT_IM": {"label": "内科", "arrivals": [[1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.5, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0], [1.5, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.25, 1.0, 1.0], [0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 2.0, 1.0, 1.0, 1.0, 1.0], [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0], [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0], [1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.33, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0]], "conc_med": [[1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], [1.5, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2.0, 2.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.5, 1.0, 1.0, 1.0], [0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 2.0, 1.0, 1.0, 1.0, 1.5], [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 1.0, 1.0, 1.5], [0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0], [1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0]], "conc_max": [[1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], [2.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2.0, 2.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0], [0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 2.0, 1.0, 2.0, 2.0, 2.0], [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 1.0, 1.0, 2.0], [0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0], [1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0]]}, "DEPT_MN": {"label": "メンタルケア科", "arrivals": [[0.0, 1.0, 2.8, 2.0, 2.8, 3.0, 3.25, 2.25, 3.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0], [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 1.33, 1.2, 1.4, 1.2, 2.0, 1.67, 1.75, 1.0, 1.33, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [1.0, 2.0, 2.75, 2.5, 2.5, 2.75, 3.0, 3.0, 2.67, 1.0, 1.67, 2.0, 1.75, 3.5, 2.5, 2.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 1.0, 1.0, 0.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_med": [[0.0, 1.0, 3.0, 1.5, 3.0, 3.0, 4.0, 2.0, 2.0, 2.0, 0.0, 1.0, 1.0, 1.0, 0.0, 2.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0], [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0], [1.0, 2.0, 3.5, 3.0, 3.0, 4.0, 4.5, 2.0, 3.0, 1.0, 2.0, 2.5, 3.0, 5.0, 4.0, 2.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 1.0, 1.0, 1.5, 1.5, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_max": [[0.0, 1.0, 5.0, 4.0, 5.0, 5.0, 5.0, 5.0, 5.0, 3.0, 0.0, 1.0, 1.0, 1.0, 0.0, 2.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0], [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 2.0, 4.0, 3.0, 3.0, 3.0, 3.0, 3.0, 2.0, 3.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0], [1.0, 4.0, 4.0, 6.0, 5.0, 4.0, 5.0, 5.0, 4.0, 2.0, 3.0, 4.0, 5.0, 5.0, 4.0, 3.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 2.0, 2.0, 4.0, 2.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]}, "DEPT_NS": {"label": "脳神経外科", "arrivals": [[0.0, 1.0, 1.5, 1.75, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0], [0.0, 1.8, 3.6, 2.8, 2.5, 2.6, 2.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 3.25, 2.75, 2.33, 3.0, 2.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 1.33, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 6.0, 2.0, 1.67, 1.67, 2.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_med": [[0.0, 1.0, 1.0, 2.0, 1.5, 1.5, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0], [0.0, 2.0, 4.0, 4.0, 3.0, 3.0, 1.5, 1.0, 3.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 3.5, 4.0, 2.5, 2.5, 4.0, 3.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 1.0, 1.5, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 6.0, 1.0, 2.0, 3.0, 3.0, 2.5, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_max": [[0.0, 1.0, 2.0, 3.0, 2.0, 2.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0], [0.0, 3.0, 8.0, 5.0, 6.0, 5.0, 4.0, 2.0, 3.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 4.0, 4.0, 6.0, 8.0, 5.0, 3.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 2.0, 3.0, 2.0, 1.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 7.0, 6.0, 5.0, 3.0, 4.0, 3.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]}, "DEPT_CS": {"label": "心臓血管外科", "arrivals": [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.75, 1.67, 1.75, 1.5, 1.0, 0.0, 1.0, 2.0, 1.0, 2.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 1.5, 2.25, 3.5, 3.75, 4.5, 3.0, 2.5, 2.0, 2.25, 2.0, 1.5, 2.5, 3.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_med": [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 2.0, 2.0, 2.0, 2.0, 2.0, 1.0, 1.0, 1.5, 1.0, 2.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 1.5, 3.0, 4.5, 4.5, 6.5, 4.5, 3.5, 2.0, 2.0, 2.5, 2.5, 2.0, 4.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_max": [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 2.0, 3.0, 3.0, 3.0, 3.0, 1.0, 1.0, 2.0, 2.0, 2.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 2.0, 3.0, 7.0, 7.0, 7.0, 6.0, 4.0, 5.0, 4.0, 4.0, 3.0, 4.0, 4.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]}, "DEPT_RS2": {"label": "呼吸器外科", "arrivals": [[0.0, 2.0, 2.4, 1.75, 2.0, 2.2, 2.0, 1.4, 1.2, 2.25, 1.67, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 2.25, 2.25, 2.0, 1.75, 2.0, 1.67, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0], [0.0, 2.0, 2.25, 1.67, 1.75, 2.25, 2.25, 2.0, 2.25, 1.33, 2.0, 0.0, 2.0, 3.25, 2.75, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 2.0, 1.75, 1.33, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_med": [[0.0, 2.0, 3.0, 2.5, 2.0, 2.0, 2.5, 2.0, 2.0, 2.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 2.5, 3.5, 3.0, 2.0, 2.5, 2.5, 1.5, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0], [0.0, 2.0, 2.5, 1.5, 2.0, 3.0, 3.5, 2.0, 3.0, 3.0, 2.0, 1.0, 2.0, 4.0, 4.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 2.0, 1.5, 1.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_max": [[0.0, 3.0, 4.0, 4.0, 5.0, 4.0, 5.0, 2.0, 3.0, 5.0, 3.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 3.0, 4.0, 3.0, 3.0, 4.0, 3.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0], [0.0, 2.0, 3.0, 4.0, 3.0, 4.0, 5.0, 4.0, 4.0, 3.0, 3.0, 1.0, 2.0, 4.0, 4.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 2.0, 4.0, 3.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]}, "DEPT_ON": {"label": "臨床腫瘍科", "arrivals": [[0.0, 0.0, 1.0, 1.33, 1.6, 1.8, 2.4, 1.75, 1.25, 1.25, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0], [0.0, 1.0, 1.6, 1.2, 3.33, 2.0, 1.6, 2.25, 1.25, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 1.0, 1.33, 2.0, 1.33, 1.0, 1.75, 1.0, 1.33, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 1.0, 1.0, 3.0, 1.33, 2.0, 1.33, 3.0, 1.0, 1.0, 1.5, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_med": [[0.0, 0.0, 1.0, 1.5, 2.0, 2.0, 3.0, 2.0, 2.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0], [0.0, 1.0, 2.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.5, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 1.5, 1.0, 2.0, 1.0, 1.5, 2.0, 2.0, 2.0, 1.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 2.0, 1.0, 2.5, 1.0, 2.0, 2.0, 4.0, 1.5, 1.0, 1.5, 1.0, 1.0, 1.0, 1.5, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_max": [[0.0, 0.0, 1.0, 2.0, 3.0, 3.0, 5.0, 3.0, 2.0, 2.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0], [0.0, 1.0, 3.0, 3.0, 5.0, 4.0, 3.0, 5.0, 3.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 2.0, 2.0, 3.0, 2.0, 2.0, 3.0, 2.0, 3.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 2.0, 1.0, 4.0, 2.0, 3.0, 2.0, 4.0, 2.0, 1.0, 2.0, 1.0, 2.0, 1.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]}, "DEPT_AL": {"label": "アレルギー科", "arrivals": [[0.0, 0.0, 1.4, 1.67, 1.5, 2.5, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 2.2, 2.4, 1.8, 2.0, 2.8, 1.25, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 2.25, 2.75, 1.25, 1.5, 2.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 3.25, 2.0, 1.33, 2.0, 2.25, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_med": [[0.0, 0.0, 1.0, 2.0, 2.0, 3.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 2.0, 3.0, 2.0, 3.0, 3.0, 2.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 2.0, 3.0, 2.0, 1.5, 3.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 3.0, 3.0, 1.0, 2.0, 2.5, 2.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_max": [[0.0, 0.0, 2.0, 2.0, 3.0, 4.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 3.0, 4.0, 3.0, 3.0, 4.0, 2.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 3.0, 4.0, 3.0, 4.0, 3.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 4.0, 3.0, 3.0, 2.0, 5.0, 2.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]}, "DEPT_DB": {"label": "糖尿病内分泌内科", "arrivals": [[0.0, 0.0, 1.25, 1.0, 1.33, 1.33, 1.5, 2.0, 1.5, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 1.0, 1.5, 1.25, 1.6, 1.5, 2.0, 2.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.75, 1.75, 1.25, 2.25, 1.67, 1.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 1.0, 1.0, 1.67, 1.0, 1.5, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_med": [[0.0, 0.0, 1.0, 1.0, 1.0, 1.5, 1.5, 3.0, 2.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 1.5, 2.0, 1.0, 2.0, 2.0, 3.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0, 3.0, 3.0, 3.5, 3.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 1.0, 1.0, 2.0, 1.0, 2.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], "conc_max": [[0.0, 0.0, 2.0, 2.0, 2.0, 2.0, 3.0, 3.0, 3.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 2.0, 2.0, 2.0, 3.0, 3.0, 4.0, 3.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 4.0, 5.0, 3.0, 5.0, 4.0, 3.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 2.0, 1.0, 2.0, 2.0, 3.0, 2.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]}}};
+const BIN_LABELS = ["08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00", "19:30"];
+const WD_LABELS  = ["月", "火", "水", "木", "金"];
+
+const N_WD  = WD_LABELS.length;   // 5 (月〜金)
+const N_BIN = BIN_LABELS.length;  // 24 bins
+
+let currentFilter = 'all';
+let currentMetric = 'arrivals';
+
+/* ── テーブル構築（DOM 作成） ── */
+function buildTable() {
+  const tbl = document.createElement('table');
+  tbl.className = 'heatmap-tbl';
+
+  /* thead */
+  const hRow = tbl.createTHead().insertRow();
+  const thWd = document.createElement('th');
+  thWd.textContent = '曜日';
+  hRow.appendChild(thWd);
+  BIN_LABELS.forEach(b => {
+    const th = document.createElement('th');
+    th.textContent = b;
+    hRow.appendChild(th);
+  });
+
+  /* tbody */
+  const tbody = tbl.createTBody();
+  WD_LABELS.forEach((wd, i) => {
+    const tr = tbody.insertRow();
+    const lc = tr.insertCell();
+    lc.textContent = wd;
+    lc.className = 'row-label';
+    for (let j = 0; j < N_BIN; j++) {
+      const td = tr.insertCell();
+      td.id = `hm-${i}-${j}`;
+    }
+  });
+
+  const cont = document.getElementById('hm-container');
+  cont.innerHTML = '';
+  cont.appendChild(tbl);
+}
+
+/* ── レンダリング ── */
+function renderHeatmap() {
+  const series = DATASET.series[currentFilter];
+  if (!series) return;
+  const matrix = series[currentMetric];
+  if (!matrix) return;
+
+  /* 最大値（全曜日・全ビン） */
+  let max = 0;
+  for (let i = 0; i < N_WD; i++)
+    for (let j = 0; j < N_BIN; j++)
+      if (matrix[i] && matrix[i][j] > max) max = matrix[i][j];
+
+  for (let i = 0; i < N_WD; i++) {
+    for (let j = 0; j < N_BIN; j++) {
+      const cell = document.getElementById(`hm-${i}-${j}`);
+      if (!cell) continue;
+      const v = (matrix[i] && matrix[i][j]) || 0;
+      const alpha = max > 0 ? Math.min(v / max * 0.78, 0.78) : 0;
+      cell.style.background = alpha > 0.015
+        ? `rgba(63,127,193,${alpha.toFixed(2)})` : '';
+      cell.style.color = alpha > 0.50 ? '#fff' : '';
+      cell.textContent = v > 0 ? v.toFixed(1) : '';
+    }
+  }
+}
+
+/* ── フィルタ select 構築 ── */
+const filterSel = document.getElementById('filter-select');
+(DATASET.filter_opts || []).forEach(opt => {
+  const el = document.createElement('option');
+  el.value   = opt.key;
+  el.textContent = opt.label;
+  filterSel.appendChild(el);
+});
+filterSel.addEventListener('change', () => {
+  currentFilter = filterSel.value;
+  renderHeatmap();
+});
+
+/* ── メトリクスタブ ── */
+document.querySelectorAll('.metric-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.metric-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentMetric = btn.dataset.metric;
+    renderHeatmap();
+  });
+});
+
+buildTable();
+renderHeatmap();
+</script>
+
+</body>
+</html>

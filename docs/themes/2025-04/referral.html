@@ -202,7 +202,7 @@
       <div class="sub">Outpatient Restructuring</div>
     </div>
     <div class="gh-meta">
-      <div>更新 2026-06-01 13:57</div>
+      <div>更新 2026-07-09 13:00</div>
       
     </div>
   </div>
@@ -238,6 +238,8 @@
       <label>月:</label>
       <button id="gh-prev-month" type="button" title="前月">←</button>
       <select id="gh-month-select">
+        
+        <option value="2026-06">2026-06</option>
         
         <option value="2026-05">2026-05</option>
         
@@ -1146,7 +1148,7 @@
 
 
 <script>
-const TREND_ALL  = {"全評価科合計": [{"month": "2025-04", "sho_rate": 9.2, "ref_rate": 71.2}], "呼吸器内科": [{"month": "2025-04", "sho_rate": 7.1, "ref_rate": 89.8}], "皮膚科": [{"month": "2025-04", "sho_rate": 8.7, "ref_rate": 77.8}], "臨床腫瘍科": [{"month": "2025-04", "sho_rate": 0.7, "ref_rate": 100.0}], "小児科": [{"month": "2025-04", "sho_rate": 20.6, "ref_rate": 48.0}], "形成外科": [{"month": "2025-04", "sho_rate": 6.7, "ref_rate": 97.5}], "メンタルケア科": [{"month": "2025-04", "sho_rate": 0.0, "ref_rate": 0.0}], "血液内科": [{"month": "2025-04", "sho_rate": 3.7, "ref_rate": 96.7}], "リウマチ膠原病内科": [{"month": "2025-04", "sho_rate": 3.0, "ref_rate": 93.1}], "歯科口腔外科": [{"month": "2025-04", "sho_rate": 26.0, "ref_rate": 67.1}], "心臓血管外科": [{"month": "2025-04", "sho_rate": 2.7, "ref_rate": 66.7}], "耳鼻咽喉科": [{"month": "2025-04", "sho_rate": 9.9, "ref_rate": 83.5}], "循環器内科": [{"month": "2025-04", "sho_rate": 9.4, "ref_rate": 88.7}], "放射線治療科": [{"month": "2025-04", "sho_rate": 1.1, "ref_rate": 91.7}], "アレルギー科": [{"month": "2025-04", "sho_rate": 0.7, "ref_rate": 100.0}], "内科": [{"month": "2025-04", "sho_rate": 57.6, "ref_rate": 13.0}], "呼吸器外科": [{"month": "2025-04", "sho_rate": 5.3, "ref_rate": 100.0}], "泌尿器科": [{"month": "2025-04", "sho_rate": 3.6, "ref_rate": 81.0}], "総合内科": [{"month": "2025-04", "sho_rate": 17.4, "ref_rate": 53.6}], "脳神経内科": [{"month": "2025-04", "sho_rate": 11.7, "ref_rate": 98.4}], "眼科": [{"month": "2025-04", "sho_rate": 6.9, "ref_rate": 90.5}], "整形外科": [{"month": "2025-04", "sho_rate": 12.1, "ref_rate": 94.2}], "救急科": [{"month": "2025-04", "sho_rate": 66.3, "ref_rate": 4.6}], "消化器内科": [{"month": "2025-04", "sho_rate": 12.9, "ref_rate": 91.0}], "脳神経外科": [{"month": "2025-04", "sho_rate": 13.2, "ref_rate": 72.7}], "一般消化器外科": [{"month": "2025-04", "sho_rate": 5.5, "ref_rate": 85.1}], "腎内科": [{"month": "2025-04", "sho_rate": 3.4, "ref_rate": 96.3}], "乳腺外科": [{"month": "2025-04", "sho_rate": 4.2, "ref_rate": 92.9}], "産婦人科": [{"month": "2025-04", "sho_rate": 7.6, "ref_rate": 85.1}]};
+const TREND_ALL  = {"全評価科合計": [{"month": "2025-04", "sho_rate": 9.2, "ref_rate": 71.2}], "脳神経内科": [{"month": "2025-04", "sho_rate": 11.7, "ref_rate": 98.4}], "リウマチ膠原病内科": [{"month": "2025-04", "sho_rate": 3.0, "ref_rate": 93.1}], "臨床腫瘍科": [{"month": "2025-04", "sho_rate": 0.7, "ref_rate": 100.0}], "小児科": [{"month": "2025-04", "sho_rate": 20.6, "ref_rate": 48.0}], "形成外科": [{"month": "2025-04", "sho_rate": 6.7, "ref_rate": 97.5}], "産婦人科": [{"month": "2025-04", "sho_rate": 7.6, "ref_rate": 85.1}], "循環器内科": [{"month": "2025-04", "sho_rate": 9.4, "ref_rate": 88.7}], "泌尿器科": [{"month": "2025-04", "sho_rate": 3.6, "ref_rate": 81.0}], "歯科口腔外科": [{"month": "2025-04", "sho_rate": 26.0, "ref_rate": 67.1}], "腎内科": [{"month": "2025-04", "sho_rate": 3.4, "ref_rate": 96.3}], "アレルギー科": [{"month": "2025-04", "sho_rate": 0.7, "ref_rate": 100.0}], "耳鼻咽喉科": [{"month": "2025-04", "sho_rate": 9.9, "ref_rate": 83.5}], "皮膚科": [{"month": "2025-04", "sho_rate": 8.7, "ref_rate": 77.8}], "救急科": [{"month": "2025-04", "sho_rate": 66.3, "ref_rate": 4.6}], "内科": [{"month": "2025-04", "sho_rate": 57.6, "ref_rate": 13.0}], "呼吸器外科": [{"month": "2025-04", "sho_rate": 5.3, "ref_rate": 100.0}], "乳腺外科": [{"month": "2025-04", "sho_rate": 4.2, "ref_rate": 92.9}], "メンタルケア科": [{"month": "2025-04", "sho_rate": 0.0, "ref_rate": 0.0}], "脳神経外科": [{"month": "2025-04", "sho_rate": 13.2, "ref_rate": 72.7}], "呼吸器内科": [{"month": "2025-04", "sho_rate": 7.1, "ref_rate": 89.8}], "眼科": [{"month": "2025-04", "sho_rate": 6.9, "ref_rate": 90.5}], "消化器内科": [{"month": "2025-04", "sho_rate": 12.9, "ref_rate": 91.0}], "血液内科": [{"month": "2025-04", "sho_rate": 3.7, "ref_rate": 96.7}], "総合内科": [{"month": "2025-04", "sho_rate": 17.4, "ref_rate": 53.6}], "整形外科": [{"month": "2025-04", "sho_rate": 12.1, "ref_rate": 94.2}], "一般消化器外科": [{"month": "2025-04", "sho_rate": 5.5, "ref_rate": 85.1}], "放射線治療科": [{"month": "2025-04", "sho_rate": 1.1, "ref_rate": 91.7}], "心臓血管外科": [{"month": "2025-04", "sho_rate": 2.7, "ref_rate": 66.7}]};
 const DEPT_NAMES = ["アレルギー科", "メンタルケア科", "リウマチ膠原病内科", "一般消化器外科", "乳腺外科", "全評価科合計", "内科", "呼吸器内科", "呼吸器外科", "小児科", "形成外科", "循環器内科", "心臓血管外科", "放射線治療科", "救急科", "整形外科", "歯科口腔外科", "泌尿器科", "消化器内科", "産婦人科", "皮膚科", "眼科", "総合内科", "耳鼻咽喉科", "脳神経内科", "脳神経外科", "腎内科", "臨床腫瘍科", "血液内科"];
 
 const sel  = document.getElementById('dept-select');
